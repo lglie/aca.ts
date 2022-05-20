@@ -1,0 +1,16 @@
+{
+  "include": [
+    "src",
+  ],
+  "compilerOptions": {
+    "module": "CommonJS",
+    "target": "ES2021",
+    "outDir": "dist",
+    "esModuleInterop": true,
+    "removeComments": true,
+    "downlevelIteration": true,
+    "resolveJsonModule": true,
+    "experimentalDecorators": true,
+    "suppressImplicitAnyIndexErrors": true
+  }
+}

@@ -1,0 +1,40 @@
+export class $Request {
+  constructor(url: string, requestInit?: RequestInit) {
+    if (!url) throw `没有url参数，请在生成的api目录的index.ts中填写`
+    this.url = url
+    if (requestInit) Object.assign(this.requestInit, requestInit)
+  }
+
+  private url = ''
+  public requestInit: RequestInit = {
+    method: 'post',
+    mode: 'cors',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  }
+
+  public async req(args: any) {
+    if (typeof this.reqIntercept === 'function') this.reqIntercept(args)
+    let fetch = window?.fetch
+
+    if (!fetch) {
+      try {
+        fetch = await import(<any>'fetch')
+      } catch (e) {
+        throw new Error(`没有安装fetch, 请在该应用下安装：npm install fetch`)
+      }
+    }
+
+    const rtn = await fetch(this.url, {
+      ...this.requestInit,
+      body: JSON.stringify(args),
+    })
+    const rtnJson = await rtn.json()
+    if (typeof this.resIntercept === 'function') this.resIntercept(rtnJson)
+    return rtnJson
+  }
+
+  reqIntercept = <(args: $ApiBridge) => void>((args: $ApiBridge) => {})
+  resIntercept = <(rtn: any) => void>((rtn: any) => {})
+}

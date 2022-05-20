@@ -1,0 +1,23 @@
+{
+  "$schema": "config.schema.json",
+  "orm": "example-blog.ts",
+  "database": {
+    "default": {
+      "tableNameWithNamespace": true,
+      "onlyApi": false,
+      "idDefaultType": "cuid",
+      "foreignKeyConstraint": true,
+      "onUpdate": "cascade",
+      "onDelete": "cascade",
+      "connectOption": {
+        "driver": "betterSqlite3",
+        "envConnect": "",
+        "connect": {
+          "filename": "example.sqlite3"
+        }
+      }
+    }
+  },
+  "serverApps": {},
+  "clientApps": {}
+}

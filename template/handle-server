@@ -1,0 +1,193 @@
+
+
+function $Handle(trx: Knex.Transaction<any, any[]>) {
+  const sql: string[] = []
+  return async function Iter<Tb extends keyof $TB>({
+    query,
+    args,
+    table,
+  }: {
+    query: $FindQuery | $AggregateQuery | $MutationQuery
+    args?: any
+    table?: Tb
+  }) {
+    // 去掉undefined
+    args = args && JSON.parse(JSON.stringify(args))
+    let data
+
+    const mutatedSelect = async (data, select) => {
+      let rtn
+      if (Array.isArray(data)) {
+        if (select) {
+          if (Object.keys(select).length) {
+            // 是否含有关系字段
+            const yes = Object.values(select).some((v) => typeof v === 'object')
+            if (yes) {
+              // 提取data的id字段，进行where in查询
+              const whereIn = data.map((record) =>
+                $Att[table].id.reduce((_, v) => (_.push(record[v]), _), [])
+              )
+              rtn = await this.$Handle({
+                query: 'findMany',
+                args: {
+                  where: {
+                    [$Att[table].id.join(',')]: { in: whereIn },
+                  },
+                  select,
+                },
+                table,
+              })
+
+              rtn = rtn.data
+            } else {
+              rtn = $RtnSelect(table, data, select)
+            }
+          } else {
+            // 传空对象返回全部标量字段
+            rtn = data
+          }
+        } else {
+          // 不传select返回受影响的行数
+          rtn = { data }
+        }
+      } else {
+        if (select) {
+          if (Object.keys(select).length) {
+            // 是否含有关系字段
+            const yes = Object.values(select).some((v) => typeof v === 'object')
+            if (yes) {
+              // 提取data的id字段，进行where in查询
+              rtn = await this.$Handle({
+                query: 'findOne',
+                args: {
+                  where:
+                    $Att[table].id.length === 1
+                      ? {
+                          [$Att[table].id[0]]: data[$Att[table].id[0]],
+                        }
+                      : {
+                          [$Att[table].id.join('_')]: $Att[table].id.reduce(
+                            (_, v) => ((_[v] = data[v]), _),
+                            {}
+                          ),
+                        },
+                  select,
+                },
+                table,
+              })
+              rtn = rtn.data
+            } else {
+              ;[rtn] = $RtnSelect(table, [data], select)
+            }
+          } else {
+            // 传空对象返回全部标量字段
+            rtn = data
+          }
+        } else {
+          // 不传select返回受影响的行
+          rtn = data
+        }
+      }
+      return rtn
+    }
+
+    switch (query) {
+      case 'findOne':
+        data = await $Queries(trx, sql).finder(table, {
+          where: (<$TableQuery<Tb>['findOne']>args).where,
+          select: (<$TableQuery<Tb>['findOne']>args).select,
+        })
+        data = data[0]
+        break
+
+      case 'findFirst':
+        data = await $Queries(trx, sql).finder(table, {
+          where: (<$TableQuery<Tb>['findMany']>args)?.where,
+          select: (<$TableQuery<Tb>['findMany']>args)?.select,
+          orderBy: (<$TableQuery<Tb>['findMany']>args)?.orderBy,
+          limit: 1,
+        })
+        data = data[0]
+        break
+
+      case 'findMany':
+        data = await $Queries(trx, sql).finder(table, {
+          where: (<$TableQuery<Tb>['findMany']>args)?.where,
+          select: (<$TableQuery<Tb>['findMany']>args)?.select,
+          orderBy: (<$TableQuery<Tb>['findMany']>args)?.orderBy,
+          limit: (<$TableQuery<Tb>['findMany']>args)?.limit,
+          offset: (<$TableQuery<Tb>['findMany']>args)?.offset,
+        })
+        break
+
+      case 'insert':
+        data = await $Queries(trx, sql).insert(
+          table,
+          <$TableMutationType<Tb, 'insert'>>args
+        )
+        if (typeof data === 'object')
+          data = Array.isArray((<$TableMutationType<Tb, 'insert'>>args).data)
+            ? data
+            : data[0]
+        break
+
+      case 'upsert':
+        data = await $Queries(trx, sql).upsert(table, {
+          where: (<$TableMutationType<Tb, 'upsert'>>args).where,
+          insert: (<$TableMutationType<Tb, 'upsert'>>args).insert,
+          update: (<$TableMutationType<Tb, 'upsert'>>args).update,
+        })
+
+        data = data[0]
+        break
+
+      case 'update':
+        data = await $Queries(trx, sql).update(table, {
+          where: (<$TableMutationType<Tb, 'update'>>args).where,
+          data: (<$TableMutationType<Tb, 'update'>>args).data,
+        })
+        data = data[0]
+        break
+
+      case 'updateMany':
+        data = await $Queries(trx, sql).updateMany(table, {
+          where: (<any>args).where,
+          data: (<any>args).data,
+        })
+        break
+
+      case 'delete':
+        data = await $Queries(trx, sql).delete(table, {
+          where: (<$TableMutationType<Tb, 'delete'>>args).where,
+        })
+        data = data[0]
+        break
+
+      case 'deleteMany':
+        data = await $Queries(trx, sql).deleteMany(table, {
+          where: (<any>args).where,
+        })
+        break
+
+      case 'count':
+      case 'countDistinct':
+      case 'sum':
+      case 'sumDistinct':
+      case 'avg':
+      case 'avgDistinct':
+      case 'max':
+      case 'mix':
+        data = await $Queries(trx, sql).aggregate(table, query, <any>args)
+        data = Number(data[0][query.replace('Distinct', '')])
+        break
+      default:
+    }
+
+    if ($MutationQuery[<$MutationQuery>query])
+      data = await mutatedSelect(data, args.select)
+
+    data = data ?? null
+
+    return args?.sql ? { data, sql } : { data }
+  }
+}

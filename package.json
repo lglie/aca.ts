@@ -1,0 +1,34 @@
+{
+  "name": "aca.ts",
+  "version": "0.0.28",
+  "description": "Aca.ts is a node.js CLI based on Typescript and Knex.js. It could automatically syncs database schema according to a custom ORM. It could also automatically generates APIs for accessing the database. More importantly, it automatically creates frontend APIs through backend functions and the generated database APIs (like RPC), so frontend developers can easily access the backend without defining routing.",
+  "keywords": [
+    "graphql",
+    "database",
+    "fullstack",
+    "framework",
+    "orm",
+    "serverless",
+    "typeorm",
+    "sequelize"
+  ],
+  "author": {
+    "name": "Guolie Liao",
+    "email": "liaoguolie@gmail.com"
+  },
+  "license": "MIT",
+  "bin": {
+    "aca": "dist/index.js"
+  },
+  "dependencies": {
+    "@microsoft/api-extractor": "",
+    "dts-generator": "",
+    "shelljs": "",
+    "typescript": "",
+    "util": "",
+    "yargs": ""
+  },
+  "devDependencies": {
+    "@types/node": ""
+  }
+}
