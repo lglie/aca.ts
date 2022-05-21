@@ -1,0 +1,5 @@
+// 本文件为自动生成，各个远程函数的导出
+// 只支持具名的异步函数写法，第一个参数默认为上下文（context）
+// 如：
+// export async function fn(ctx:any, arg:any){...}
+export {}

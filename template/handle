@@ -1,0 +1,1725 @@
+
+
+// 将数组列表的项转化为boolean形式的returning格式
+const $ArrayTrue = (arrayItem: string[]) =>
+  arrayItem.reduce((_, v) => ((_[v] = true), _), {})
+
+// 处理返回的数据库记录
+function $RtnSelect<
+  Tb extends keyof $TB,
+  X extends keyof $TB[Tb],
+  S extends $RelationSign
+>(
+  table: Tb,
+  rtnCols: any,
+  select?: $Select<Tb, X, S> | $TableType<Tb>['selectScalar'] | { '*': true }
+) {
+  if (Array.isArray(rtnCols)) {
+    const rtn = []
+    for (const v of rtnCols) rtn.push($RtnSelect(table, v, select))
+    return rtn
+  } else {
+    const rtn = {}
+    const scalarCols = $Att[table].scalarColumns
+
+    const jsName = (name: string) => {
+      rtn[name] = rtnCols[name]
+      if (typeof rtn[name] === 'string') rtn[name] = rtn[name].trim()
+      switch($Att[table].columns[name].type){
+        case "int":
+        case "bigint":
+          rtn[name] = Math.round(Number(rtn[name]))
+          break
+        case "float":
+          rtn[name] = Number(rtn[name])
+      }
+    }
+
+    const scalarRtn = (selectCols) => {
+      if (Array.isArray(selectCols)) {
+        for (const v of selectCols) {
+          if (v !== '*') jsName(v)
+        }
+      } else
+        for (const k in selectCols) {
+          if (k !== '*') jsName(k)
+        }
+    }
+
+    if (Object.keys(rtnCols).length) {
+      if (select && Object.keys(select).length) {
+        if (Object.keys(select).includes('*'))
+          scalarRtn([...scalarCols, ...Object.keys(select)])
+        else scalarRtn(select)
+      } // 返回该表的所有标量字段
+      else scalarRtn(scalarCols)
+
+      return rtn
+    } else return rtnCols
+  }
+}
+
+const $Queries = function <Tb extends keyof $TB>(trx: any, sql: string[] = []) {
+  const trxQuery = async (clause: any) => {
+    sql.push(clause.toString())
+    return await clause
+  }
+
+  function argsValidate<Tb extends keyof $TB>(
+    table: Tb,
+    args: $Enumerable<Partial<$TB[Tb]>>,
+    query: 'select' | 'insert' | 'update' | 'delete'
+  ): $Enumerable<Partial<$TB[Tb]>> {
+    const records = Array.isArray(args) ? args : [args]
+    const AttCols = $Att[table].columns
+    // 用于存放添加或修改的列
+    const addedColumns = <any>records.map((v) => ({}))
+    for (let i = 0; i < records.length; i++) {
+      for (const AttCol in AttCols) {
+        if (AttCols[AttCol].relation) continue
+        if (records[i][AttCol] !== undefined) {
+          // 判断jsType
+          if (
+            AttCols[AttCol].type === 'enum'
+              ? !$EnumType[<keyof $EnumType>AttCols[AttCol].jsType].includes(
+                  <any>records[i][AttCol]
+                )
+              : typeof records[i][AttCol] !== AttCols[AttCol].jsType
+          ) {
+            throw `表 "${$Att[table].dbName}" 字段 "${AttCol}" 数据类型不符`
+          }
+          // 如果是number类型，且是整型
+          if (
+            AttCols[AttCol].type === 'int' &&
+            typeof records[i][AttCol] === 'number'
+          ) {
+            records[i][AttCol] = <any>Math.round(Number(records[i][AttCol]))
+            // 判断数据是否超限(check约束)
+          } else if (
+            AttCols[AttCol].type === 'object' &&
+            typeof records[i][AttCol] === 'object'
+          ) {
+            records[i][AttCol] = <any>JSON.stringify(records[i][AttCol])
+          }
+        } else {
+          // insert时，如果是可空外键，值设为nulll
+          if (query === 'insert') {
+            if (
+              AttCols[AttCol].type === 'id' &&
+              !$Att[table].foreignKeys.includes(AttCol) &&
+              (AttCols[AttCol].dbType === 'uuid' ||
+                AttCols[AttCol].dbType === 'cuid')
+            ) {
+              addedColumns[i][AttCol] = { uuid: uuidv4(), cuid: cuid() }[
+                AttCols[AttCol].dbType
+              ]
+            } else if ('required' !== AttCols[AttCol].optional) {
+              if ($Att[table].foreignKeys.includes(AttCol))
+                addedColumns[i][AttCol] = null
+            } else {
+              throw `"${$Att[table].dbName}" 缺少必输字段："${AttCol}"`
+            }
+          }
+        }
+      }
+    }
+
+    const rtns = addedColumns.map((v: object, i: number) => ({
+      ...records[i],
+      ...v,
+    }))
+
+    return Array.isArray(args) ? rtns : rtns[0]
+  }
+
+  const trxWhere = <
+    Tb extends keyof $TB,
+    X extends keyof $TB[Tb],
+    S extends $RelationSign
+  >(
+    Kx: any,
+    table: Tb,
+    where: $Where<Tb, X, S>,
+    logic: $WhereLogic = 'AND'
+  ) => {
+    const operator = {
+      eq: '=',
+      lt: '<',
+      gt: '>',
+      lte: '<=',
+      gte: '>=',
+      like: 'like',
+    }
+
+    const whereLogic = {
+      AND: 'where',
+      OR: 'orWhere',
+      NOT: 'whereNot',
+    }[logic]
+
+    for (const key in where) {
+      const AttCol = $Att[table].columns[key]
+      // 是关系字段
+      if (AttCol?.relation) {
+        // 判断是主键表还是外键表
+        switch (AttCol.relation.kind) {
+          case 'primary':
+            // 查找主键表的所有满足条件记录的引用字段
+            if (AttCol.relation.toOne) {
+              Kx[whereLogic + 'In'](
+                AttCol.relation.references,
+                trxWhere(
+                  trx($Att[AttCol.type].dbName),
+                  AttCol.type,
+                  where[key]
+                ).select(AttCol.relation.keys)
+              )
+            } else {
+              for (const k in where[key])
+                Kx[`where${k === 'some' ? '' : 'Not'}In`](
+                  AttCol.relation.references,
+                  trxWhere(
+                    trx($Att[table].dbName)
+                      .select(
+                        `${$Att[table].dbName}.${AttCol.relation.references}`
+                      )
+                      .innerJoin(
+                        $Att[AttCol.type].dbName,
+                        function (this: any) {
+                          for (
+                            let i = 0,
+                              r = AttCol.relation.references,
+                              f = AttCol.relation.keys;
+                            i < r.length;
+                            i++
+                          ) {
+                            this.andOn(
+                              `${$Att[table].dbName}.${r[i]}`,
+                              '=',
+                              `${$Att[AttCol.type].dbName}.${f[i]}`
+                            )
+                          }
+                        }
+                      ),
+                    AttCol.type,
+                    where[key][k],
+                    k === 'every' ? 'NOT' : undefined
+                  )
+                )
+            }
+            break
+          case 'foreign':
+            Kx[whereLogic + 'In'](
+              AttCol.relation.keys,
+              trxWhere(
+                trx($Att[AttCol.type].dbName),
+                AttCol.type,
+                where[key]
+              ).select(AttCol.relation.references)
+            )
+            break
+          case 'many':
+            for (const k in where[key]) {
+              Kx[`where${k === 'some' ? '' : 'Not'}In`](
+                $Att[table].id.map((v: string) => `${$Att[table].dbName}.${v}`),
+                trxWhere(
+                  trx(AttCol.relation.mapTable)
+                    .select(
+                      $Att[table].id.map(
+                        (v: string) =>
+                          `${AttCol.relation.mapTable}.${$Att[table].dbName}_${v}`
+                      )
+                    )
+                    .join($Att[AttCol.type].dbName, function (this: any) {
+                      for (const v of $Att[AttCol.type].id) {
+                        this.andOn(
+                          `${AttCol.relation.mapTable}.${
+                            $Att[AttCol.type].dbName
+                          }_${v}`,
+                          '=',
+                          `${$Att[AttCol.type].dbName}.${v}`
+                        )
+                      }
+                    }),
+                  AttCol.type,
+                  where[key][k],
+                  k === 'every' ? 'NOT' : undefined
+                )
+              )
+            }
+        }
+      } else if (['AND', 'OR', 'NOT'].includes(key)) {
+        if (Array.isArray(where[key])) {
+          for (const v of where[key]) {
+            trxWhere(Kx, table, v, <$WhereLogic>key)
+          }
+        } else if (where[key]) {
+          trxWhere(Kx, table, where[key])
+        }
+      } else {
+        let newKey = `${$Att[table].dbName}.${key}`
+        if (where[key] && typeof where[key] === 'object') {
+          const operators = Object.keys(where[key])
+          for (const op of operators) {
+            let newOp = op,
+              newWhere = where[key][op]
+            switch (op) {
+              case 'contains':
+              case 'startsWith':
+              case 'endsWith':
+                newWhere = `${op === 'startsWith' ? '' : '%'}${newWhere}${
+                  op === 'endsWith' ? '' : '%'
+                }`
+                newOp = 'like'
+              case 'eq':
+                if (newWhere === null) {
+                  Kx = Kx[whereLogic + 'Null'](newKey)
+                  break
+                }
+              case 'lt':
+              case 'gt':
+              case 'lte':
+              case 'gte':
+              case 'like':
+                Kx = Kx[whereLogic](newKey, operator[newOp], newWhere)
+                break
+              case 'in':
+                Kx = key.includes(',')
+                  ? Kx[whereLogic + 'In'](
+                      key.split(',').map((v) => `${$Att[table].dbName}.${v}`),
+                      newWhere
+                    )
+                  : Kx[whereLogic + 'In'](
+                      newKey,
+                      newWhere.map((v: any) => v)
+                    )
+                break
+              case 'between':
+                Kx = Kx[whereLogic + 'Between'](newKey, newWhere)
+                break
+              case 'not':
+                if (newWhere !== null && typeof newWhere === 'object')
+                  for (const key2 in newWhere) {
+                    switch (key2) {
+                      case 'eq':
+                        newWhere.eq === null
+                          ? (Kx =
+                              Kx[
+                                whereLogic === 'whereNot'
+                                  ? 'whereNull'
+                                  : whereLogic + 'NotNull'
+                              ](newKey))
+                          : (Kx = Kx[
+                              whereLogic === 'whereNot'
+                                ? 'where'
+                                : whereLogic + 'Not'
+                            ](newKey, newWhere.eq))
+
+                        break
+                      case 'like':
+                        Kx = Kx[
+                          whereLogic === 'whereNot'
+                            ? 'where'
+                            : whereLogic + 'Not'
+                        ](newKey, 'like', newWhere.like)
+                        break
+                      case 'in':
+                        Kx = key.includes(',')
+                          ? Kx[
+                              whereLogic === 'whereNot'
+                                ? 'whereIn'
+                                : whereLogic + 'NotIn'
+                            ](
+                              key
+                                .split(',')
+                                .map((v) => `${$Att[table].dbName}.${v}`),
+                              newWhere.in
+                            )
+                          : Kx[
+                              whereLogic === 'whereNot'
+                                ? 'whereIn'
+                                : whereLogic + 'NotIn'
+                            ](newKey, newWhere.in)
+
+                        break
+                      case 'between':
+                        Kx = Kx[
+                          whereLogic === 'whereNot'
+                            ? 'whereBetween'
+                            : whereLogic + 'NotBetween'
+                        ](newKey, newWhere.between)
+                    }
+                  }
+                else {
+                  newWhere === null
+                    ? (Kx =
+                        Kx[
+                          whereLogic === 'whereNot'
+                            ? 'whereNull'
+                            : whereLogic + 'NotNull'
+                        ](newKey))
+                    : (Kx = Kx[
+                        whereLogic === 'whereNot' ? 'where' : whereLogic + 'Not'
+                      ](newKey, newWhere))
+                }
+            }
+          }
+        } else {
+          Kx =
+            where[key] === null
+              ? Kx[whereLogic + 'Null'](newKey)
+              : Kx[whereLogic](newKey, where[key])
+        }
+      }
+    }
+
+    return Kx
+  }
+
+  // 将where、having、on封装为knex格式
+  const trxCondition = <
+    Tb extends keyof $TB,
+    X extends keyof $TB[Tb],
+    S extends $RelationSign
+  >(
+    kind: 'where' | 'having' | 'on',
+    Kx: any,
+    table: any,
+    where: $Where<Tb, X, S>,
+    logic: $WhereLogic = 'AND'
+  ) => {
+    const operator = {
+      eq: '=',
+      lt: '<',
+      gt: '>',
+      lte: '<=',
+      gte: '>=',
+      like: 'like',
+    }
+
+    const whereLogic = {
+      AND: 'where',
+      OR: 'orWhere',
+      NOT: 'whereNot',
+    }[logic]
+
+    for (const key in where) {
+      const AttCol = $Att[table].columns[key]
+      // 是关系字段
+      if (AttCol?.relation) {
+        // 判断是主键表还是外键表
+        switch (AttCol.relation.kind) {
+          case 'primary':
+            // 查找主键表的所有满足条件记录的引用字段
+            if (AttCol.relation.toOne) {
+              Kx[whereLogic + 'In'](
+                AttCol.relation.references,
+                trxWhere(
+                  trx($Att[AttCol.type].dbName),
+                  AttCol.type,
+                  where[key]
+                ).select(AttCol.relation.keys)
+              )
+            } else {
+              for (const k in where[key])
+                Kx[`where${k === 'some' ? '' : 'Not'}In`](
+                  AttCol.relation.references,
+                  trxWhere(
+                    trx($Att[table].dbName)
+                      .select(AttCol.relation.references)
+                      .innerJoin(
+                        $Att[AttCol.type].dbName,
+                        function (this: any) {
+                          for (
+                            let i = 0,
+                              r = AttCol.relation.references,
+                              f = AttCol.relation.keys;
+                            i < r.length;
+                            i++
+                          ) {
+                            this.andOn(r[i], '=', f[i])
+                          }
+                        }
+                      ),
+                    AttCol.type,
+                    where[key][k],
+                    k === 'every' ? 'NOT' : undefined
+                  )
+                )
+            }
+            break
+          case 'foreign':
+            Kx[whereLogic + 'In'](
+              AttCol.relation.keys,
+              trxWhere(
+                trx($Att[AttCol.type].dbName),
+                AttCol.type,
+                where[key]
+              ).select(AttCol.relation.references)
+            )
+            break
+          case 'many':
+            for (const k in where[key]) {
+              Kx[`where${k === 'some' ? '' : 'Not'}In`](
+                $Att[table].id.map((v: string) => `${$Att[table].dbName}.${v}`),
+                trxWhere(
+                  trx(AttCol.relation.mapTable)
+                    .select(
+                      $Att[table].id.map(
+                        (v: string) =>
+                          `${AttCol.relation.mapTable}.${$Att[table].dbName}_${v}`
+                      )
+                    )
+                    .join($Att[AttCol.type].dbName, function (this) {
+                      for (const v of $Att[AttCol.type].id) {
+                        this.andOn(
+                          `${AttCol.relation.mapTable}.${
+                            $Att[AttCol.type].dbName
+                          }_${v}`,
+                          '=',
+                          `${$Att[AttCol.type].dbName}.${v}`
+                        )
+                      }
+                    }),
+                  AttCol.type,
+                  where[key][k],
+                  k === 'every' ? 'NOT' : undefined
+                )
+              )
+            }
+        }
+      } else if (['AND', 'OR', 'NOT'].includes(key)) {
+        if (Array.isArray(where[key])) {
+          for (const v of where[key]) {
+            trxWhere(Kx, table, v, <$WhereLogic>key)
+          }
+        } else if (where[key]) {
+          trxWhere(Kx, table, where[key])
+        }
+      } else {
+        let newKey = `${$Att[table].dbName}.${key}`
+        if (where[key] && typeof where[key] === 'object') {
+          const operators = Object.keys(where[key])
+          for (const op of operators) {
+            let newOp = op,
+              newWhere = where[key][op]
+            switch (op) {
+              case 'contains':
+              case 'startsWith':
+              case 'endsWith':
+                newWhere = `${op === 'startsWith' ? '' : '%'}${newWhere}${
+                  op === 'endsWith' ? '' : '%'
+                }`
+                newOp = 'like'
+              case 'eq':
+                if (newWhere === null) {
+                  Kx = Kx[whereLogic + 'Null'](newKey)
+                  break
+                }
+              case 'lt':
+              case 'gt':
+              case 'lte':
+              case 'gte':
+              case 'like':
+                Kx = Kx[whereLogic](newKey, operator[newOp], newWhere)
+                break
+              case 'in':
+                Kx = key.includes(',')
+                  ? Kx[whereLogic + 'In'](
+                      key.split(',').map((v) => `${$Att[table].dbName}.${v}`),
+                      newWhere
+                    )
+                  : Kx[whereLogic + 'In'](
+                      newKey,
+                      newWhere.map((v: any) => v)
+                    )
+                break
+              case 'between':
+                Kx = Kx[whereLogic + 'Between'](newKey, newWhere)
+                break
+              case 'not':
+                if (newWhere !== null && typeof newWhere === 'object')
+                  for (const key2 in newWhere) {
+                    switch (key2) {
+                      case 'eq':
+                        newWhere.eq === null
+                          ? (Kx =
+                              Kx[
+                                whereLogic === 'whereNot'
+                                  ? 'whereNull'
+                                  : whereLogic + 'NotNull'
+                              ](newKey))
+                          : (Kx = Kx[
+                              whereLogic === 'whereNot'
+                                ? 'where'
+                                : whereLogic + 'Not'
+                            ](newKey, newWhere.eq))
+
+                        break
+                      case 'like':
+                        Kx = Kx[
+                          whereLogic === 'whereNot'
+                            ? 'where'
+                            : whereLogic + 'Not'
+                        ](newKey, 'like', newWhere.like)
+                        break
+                      case 'in':
+                        Kx = key.includes(',')
+                          ? Kx[
+                              whereLogic === 'whereNot'
+                                ? 'whereIn'
+                                : whereLogic + 'NotIn'
+                            ](
+                              key
+                                .split(',')
+                                .map((v) => `${$Att[table].dbName}.${v}`),
+                              newWhere.in
+                            )
+                          : Kx[
+                              whereLogic === 'whereNot'
+                                ? 'whereIn'
+                                : whereLogic + 'NotIn'
+                            ](newKey, newWhere.in)
+
+                        break
+                      case 'between':
+                        Kx = Kx[
+                          whereLogic === 'whereNot'
+                            ? 'whereBetween'
+                            : whereLogic + 'NotBetween'
+                        ](newKey, newWhere.between)
+                    }
+                  }
+                else {
+                  newWhere === null
+                    ? (Kx =
+                        Kx[
+                          whereLogic === 'whereNot'
+                            ? 'whereNull'
+                            : whereLogic + 'NotNull'
+                        ](newKey))
+                    : (Kx = Kx[
+                        whereLogic === 'whereNot' ? 'where' : whereLogic + 'Not'
+                      ](newKey, newWhere))
+                }
+            }
+          }
+        } else {
+          Kx =
+            where[key] === null
+              ? Kx[whereLogic + 'Null'](newKey)
+              : Kx[whereLogic](newKey, where[key])
+        }
+      }
+    }
+
+    //  console.log('SQL: ', Kx.toString())
+    return Kx
+  }
+
+  // 分开关系字段到数组：[scalar,primary,foreign,many]
+  const splitCols = (table: keyof $TB, cols) =>
+    Object.keys(cols).reduce(
+      (_: any, k: any) => (
+        (_[
+          $Att[table].columns[k]?.relation
+            ? { primary: 1, foreign: 2, many: 3 }[
+                $Att[table].columns[k].relation.kind
+              ]
+            : 0
+        ][k] = cols[k]),
+        _
+      ),
+      [{}, {}, {}, {}]
+    )
+
+  // 将列转换为数据库列
+  const dbCols = (table: keyof $TB, cols) => {
+    if (Array.isArray(cols)) {
+      const rtn = []
+      for (const v of cols) rtn.push(dbCols(table, v))
+      return rtn
+    } else {
+      const rtn = {}
+      for (const k in cols) {
+        rtn[$Att[table].columns[k].dbName] = cols[k]
+      }
+      return rtn
+    }
+  }
+
+  // update算数运算符，只对标量字段做处理, 调用的时候需要加where条件
+  const updateOperator = (table, data) => {
+    const Kx = Object.keys(data || {}).reduce((_, v) => {
+      const col = $Att[table].columns[v]
+      if (col.jsType === 'number' && typeof data[v] === 'object') {
+        const [[oper, val]] = Object.entries(data[v])
+        _ = _[oper](col.dbName, val)
+        delete data[v]
+      }
+      return _
+    }, trx($Att[table].dbName))
+
+    return data ? Kx.update(dbCols(table, data)) : Kx
+  }
+
+  // 查找一条record的unique值
+  const recordUnique = (table, record) => {
+    let uniqueWhere = {}
+    for (const unique of $Att[table].uniques) {
+      if (Array.isArray(unique)) {
+        for (const item of unique) {
+          if (record[item]) {
+            uniqueWhere[item] = record[item]
+          } else {
+            break
+          }
+        }
+        return uniqueWhere
+      } else {
+        if (record[unique]) {
+          return { [unique]: record[unique] }
+        }
+      }
+    }
+  }
+
+  return {
+    async finder<X extends keyof $TB[Tb], S extends $RelationSign>(
+      table: Tb,
+      {
+        where = {},
+        distinct,
+        orderBy,
+        limit,
+        offset,
+        select = { '*': true },
+      }: {
+        where?: $Where<Tb, X, S>
+        distinct?: '*' | $Enumerable<$ScalarColumns<Tb>>
+        orderBy?: $Enumerable<{ [K in $ScalarColumns<Tb>]?: $Order }>
+        limit?: number
+        offset?: number
+        select?:
+          | $Select<Tb, X, S>
+          | $TableType<Tb>['selectScalar']
+          | { '*': true }
+      } = {}
+    ) {
+      // 处理where条件
+      let Kx = trx($Att[table].dbName)
+      if (typeof limit === 'number') Kx = Kx.limit(limit)
+      if (typeof offset === 'number') Kx = Kx.offset(offset)
+      if (typeof orderBy === 'object') {
+        orderBy = Array.isArray(orderBy) ? orderBy : [orderBy]
+        Kx = Kx.orderBy(
+          orderBy.map((obj) => {
+            const [[k, v]] = Object.entries(obj)
+            return { column: k, order: v }
+          })
+        )
+      }
+      if (distinct)
+        Kx = Kx.distinct(
+          Array.isArray(distinct) ? distinct.toString() : distinct
+        )
+
+      const wKnex = trxWhere(Kx, table, where)
+      const AttCols = $Att[table].columns
+      sql.push(wKnex.select('*').toString())
+      let result = await wKnex.select('*')
+      // 处理传入的参数
+      if (Object.keys(select).length) {
+        const [scalarCols, relationCols] = Object.keys(select).reduce(
+          (_: any, v: string) => {
+            if (typeof select[v] === 'object') _[1][v] = select[v]
+            else if (select[v] === true) _[0][v] = v
+            return _
+          },
+          [{}, {}]
+        )
+
+        for (const key in relationCols) {
+          const where = relationCols[key].where ?? {}
+          let pKeys, fKeys, relIds
+
+          switch (AttCols[key].relation.kind) {
+            case 'primary':
+              const rel =
+                $Att[AttCols[key].type].columns[AttCols[key].relation.relColumn]
+                  .relation
+              pKeys = rel.references
+              fKeys = rel.keys
+              where[fKeys] = {
+                in: result.map((v) => pKeys.map((v2) => v[v2])),
+              }
+              break
+            case 'foreign':
+              pKeys = AttCols[key].relation.references
+              fKeys = AttCols[key].relation.keys
+              where[pKeys] = {
+                in: result.map((v) => fKeys.map((v2) => v[v2])),
+              }
+              break
+            case 'many':
+              const id = $Att[$Att[table].columns[key].type].id
+              const tableId = $Att[table].id.map(
+                (v2) => `${$Att[table].dbName}_${v2}`
+              )
+              relIds = await trxQuery(
+                trx($Att[table].columns[key].relation.mapTable)
+                  .select()
+                  .whereIn(
+                    tableId,
+                    result.map((v) => $Att[table].id.map((v2) => v[v2]))
+                  )
+              )
+              where[id] = {
+                in: relIds.map((v) =>
+                  id
+                    .map((v2) =>
+                      Object.values({
+                        [v2]: v[
+                          `${$Att[$Att[table].columns[key].type].dbName}_${v2}`
+                        ],
+                      })
+                    )
+                    .flat()
+                ),
+              }
+              break
+          }
+          const relationResult = await this.finder(AttCols[key].type, {
+            where,
+          })
+          for (const v of result) {
+            switch (AttCols[key].relation.kind) {
+              case 'primary':
+              case 'foreign':
+                v[key] = relationResult.filter(
+                  (r) =>
+                    `${(AttCols[key].relation.kind === 'primary' ? fKeys : pKeys)
+                      .map((v2) => r[v2].trim())
+                      .join('_')
+                    }` ===
+                    `${(AttCols[key].relation.kind === 'primary' ? pKeys : fKeys)
+                      .map((v2) => v[v2].trim())
+                      .join('_')
+                    }`
+                )
+                if (
+                  AttCols[key].relation.toOne ||
+                  AttCols[key].relation.kind === 'foreign'
+                )
+                  v[key] = v[key][0]
+                break
+              case 'many':
+                const id = $Att[$Att[table].columns[key].type].id
+                const tableId = $Att[table].id.map(
+                  (v2) => `${$Att[table].dbName}_${v2}`
+                )
+                const mapTableData = relIds
+                  .filter(
+                    (r) =>
+                      tableId.map((v2) => r[v2].trim()).join('_') ==
+                      $Att[table].id.map((v2) => v[v2].trim()).join('_')
+                  )
+                  .map((v3) =>
+                    id
+                      .map((v2) =>
+                        v3[
+                          `${$Att[$Att[table].columns[key].type].dbName}_${v2}`
+                        ].trim()
+                      )
+                      .join('_')
+                  )
+                v[key] = relationResult.filter((r) =>
+                  mapTableData.includes(id.map((v2) => r[v2].trim()).join('_'))
+                )
+            }
+            v[key] = $RtnSelect(
+              AttCols[key].type,
+              v[key],
+              typeof relationCols[key].select === 'object'
+                ? relationCols[key].select
+                : relationCols[key]
+            )
+          }
+        }
+        result = $RtnSelect(table, result, select)
+      }
+
+      return result
+    },
+
+    async insert(table: Tb, args: $TableMutationType<Tb, 'insert'>) {
+      let scalarRtn: Array<Pick<$TB[Tb], $ScalarColumns<Tb>>>
+
+      if (Array.isArray(args.data)) {
+        // 是数组，将数组内的每条记录过滤，如果存在关系字段，则分离出来
+        const [scalarRecords, relationRecords] = args.data.reduce(
+          (_: any, v: any) => {
+            let truth = true
+            for (const col in v) {
+              if ($Att[table].columns[col]?.relation) {
+                _[1].push(v)
+                truth = false
+                break
+              }
+            }
+            if (truth) _[0].push(v)
+            return _
+          },
+          [[], []]
+        )
+        // 创建纯标量记录
+        if (scalarRecords.length) {
+          scalarRtn = await trxQuery(
+            trx($Att[table].dbName)
+              .insert(
+                argsValidate(table, dbCols(table, scalarRecords), 'insert')
+              )
+              .returning(args.select ? Object.keys(args.select) : '*')
+          )
+        } else {
+          scalarRtn = []
+        }
+
+        if (relationRecords.length) {
+          for (const record of relationRecords) {
+            scalarRtn = (<Array<Pick<$TB[Tb], $ScalarColumns<Tb>>>>(
+              scalarRtn
+            )).concat(
+              await this.insert(table, {
+                data: record,
+                select: args.select,
+              })
+            )
+          }
+        }
+
+        return scalarRtn
+      } else {
+        // 是单条记录，分离出标量字段、关系(主键表、外键表, 多对多表)字段
+        const [scalarCols, primaryCols, foreignCols, manyCols] = splitCols(
+          table,
+          args.data
+        )
+
+        // 有外键字段，创建其主键表，获取外键值
+        if (Object.keys(foreignCols).length) {
+          const relColumns: any = Object.entries(foreignCols)
+          // 如果存在外键字段，必须先创建主键表获取引用的字段值
+          for (const [k, v] of relColumns) {
+            const AttCol = $Att[table].columns[k]
+            const { references, keys } = AttCol.relation
+            if (v.connect && v.insert) {
+              // 查找连接是否存在
+              let pTable = await trxQuery(
+                trx($Att[AttCol.type].dbName)
+                  .where(dbCols(AttCol.type, v.connect))
+                  .select('*')
+              )
+
+              ;[pTable] = pTable.length
+                ? pTable
+                : await this.insert(AttCol.type, {
+                    data: v.insert,
+                  })
+
+              for (let i = 0; i < keys.length; i++)
+                scalarCols[keys[i]] = pTable[references[i]]
+            } else if (v.connect) {
+              // 查找连接
+              let [pTable] = await trxQuery(
+                trx($Att[AttCol.type].dbName)
+                  .where(dbCols(AttCol.type, v.connect))
+                  .select('*')
+              )
+              if (!pTable)
+                throw `查询的表 "${
+                  $Att[AttCol.type].dbName
+                }" 记录 "${JSON.stringify(v.connect)}" 不存在`
+
+              for (let i = 0; i < keys.length; i++)
+                scalarCols[keys[i]] = pTable[references[i]]
+            } else if (v.insert) {
+              let [pTable] = await this.insert(AttCol.type, {
+                data: v['insert'],
+              })
+
+              for (let i = 0; i < keys.length; i++)
+                scalarCols[keys[i]] = pTable[references[i]]
+            }
+          }
+        }
+        // 创建本表，获取unique字段，供外键表使用
+        scalarRtn = await trxQuery(
+          trx($Att[table].dbName)
+            .insert(
+              argsValidate(
+                table,
+                {
+                  ...argsValidate(table, dbCols(table, scalarCols), 'insert'),
+                },
+                'insert'
+              )
+            )
+            .returning(args.select ? Object.keys(args.select) : '*')
+        )
+        // 创建所有的外键表，将本表unique键传入相应的表
+        if (Object.keys(primaryCols).length) {
+          const relColumns: any = Object.entries(primaryCols)
+          for (const [k, v] of relColumns) {
+            const AttCol = $Att[table].columns[k]
+            const { references, keys } = AttCol.relation
+            const relationForeign: any = {}
+            for (let i = 0; i < keys.length; i++)
+              relationForeign[keys[i]] = scalarRtn[0][references[i]]
+            // 一对一关系
+            if (AttCol.relation?.toOne) {
+              if (v.connect && v.insert) {
+                let rTable = await trxQuery(
+                  trx($Att[AttCol.type].dbName)
+                    .where(dbCols(AttCol.type, v.connect))
+                    .update(relationForeign)
+                    .returning('*')
+                )
+                if (!rTable.length)
+                  await this.insert(AttCol.type, {
+                    ...v.insert,
+                    ...relationForeign,
+                  })
+              } else if (v.connect) {
+                await trxQuery(
+                  trx($Att[AttCol.type].dbName)
+                    .where(dbCols(AttCol.type, v.connect))
+                    .update(relationForeign)
+                    .returning('*')
+                )
+              } else if (v.insert) {
+                await this.insert(AttCol.type, {
+                  data: { ...v.insert, ...relationForeign },
+                })
+              }
+            } else {
+              // 一对多关系
+              if (v.connect) {
+                if (!Array.isArray(v.connect)) v.connect = [v.connect]
+                await trxQuery(
+                  trx.raw(
+                    v.connect
+                      .reduce(
+                        (_, v) => trxWhere(_, AttCol.type, v, 'OR'),
+                        trx($Att[AttCol.type].dbName).update(relationForeign)
+                      )
+                      .toString()
+                  )
+                )
+              }
+              if (v.insert) {
+                await this.insert(AttCol.type, {
+                  data: Array.isArray(v.insert)
+                    ? v.insert.map((val) => ({ ...val, ...relationForeign }))
+                    : { ...v.insert, ...relationForeign },
+                })
+              }
+            }
+          }
+        }
+        // 创建多对多的关系字段
+        if (Object.keys(manyCols).length) {
+          // 映射表id
+          const mapTabelId = $Att[table].id.reduce(
+            (_: any, v) => (
+              (_[`${$Att[table].dbName}_${v}`] = scalarRtn[0][v]), _
+            ),
+            {}
+          )
+          const relColumns: any = Object.entries(manyCols)
+          for (const [k, v] of relColumns) {
+            const AttCol = $Att[table].columns[k]
+            // 本表id
+            if (v.connect) {
+              const items = Array.isArray(v.connect) ? v.connect : [v.connect]
+              // 查询关系表每条记录的id
+              for (const item of items) {
+                let [relMapTableId] = await trxQuery(
+                  trx($Att[AttCol.type].dbName)
+                    .where(item)
+                    .select($Att[AttCol.type].id)
+                )
+
+                relMapTableId = Object.keys(relMapTableId).reduce(
+                  (_, v) => (
+                    (_[`${$Att[AttCol.type].dbName}_${v}`] = relMapTableId[v]),
+                    _
+                  ),
+                  {}
+                )
+                // upsert 数据到映射表
+                const mapRecord = { ...mapTabelId, ...relMapTableId }
+                await trxQuery(
+                  trx(AttCol.relation.mapTable)
+                    .insert(mapRecord)
+                    .onConflict(Object.keys(mapRecord))
+                    .ignore()
+                )
+              }
+            }
+            if (v.insert) {
+              const ret = await this.insert(AttCol.type, {
+                data: v.insert,
+                select: $ArrayTrue($Att[AttCol.type].id),
+              })
+              let relMapTableIds = ret.map((record) =>
+                Object.keys(record).reduce(
+                  (_, v) => (
+                    (_[`${$Att[AttCol.type].dbName}_${v}`] = record[v]), _
+                  ),
+                  {}
+                )
+              )
+
+              await trxQuery(
+                trx(AttCol.relation.mapTable).insert(
+                  relMapTableIds.map((v) => ({
+                    ...mapTabelId,
+                    ...v,
+                  }))
+                )
+              )
+            }
+          }
+        }
+
+        return scalarRtn
+      }
+    },
+
+    async upsert(table: Tb, args: $TableMutationType<Tb, 'upsert'>) {
+      const contained = await trxQuery(
+        trx($Att[table].dbName).where(args.where).select('*')
+      )
+
+      return contained.length
+        ? args.update
+          ? await this.update(table, {
+              where: args.where,
+              data: args.update,
+              select: args.select,
+            })
+          : await this.finder(table, {
+              where: args.where,
+              select: args.select,
+            })
+        : await this.insert(table, {
+            data: args.insert,
+            select: args.select,
+          })
+    },
+
+    async update(table: Tb, args: $TableMutationType<Tb, 'update'>) {
+      if (!args.where || !Object.keys(args.where).length) throw `where 不能为空`
+      // 查找该条记录，不存在就返回
+      if (!args.data) throw `修改表 "${table}" 没有传入data数据`
+      const trxTmp = await trxQuery(
+        trx($Att[table].dbName).where(args.where).select('*')
+      )
+      if (!trxTmp.length)
+        throw `表 "${$Att[table].dbName}" 没有该条件的记录: "${args.where}"`
+
+      const [scalarColumns, primaryColumns, foreignColumns, manyColumns] =
+        splitCols(table, args.data)
+
+      if (Object.keys(foreignColumns).length) {
+        const relColumns: any = Object.entries(foreignColumns)
+
+        for (const [k, v] of relColumns) {
+          const AttCol = $Att[table].columns[k]
+          const { references, keys } = AttCol.relation
+          // 将外键作为where条件
+          let foreignWhere: any = {},
+            currTable: any
+          for (let i = 0; i < references.length; i++) {
+            foreignWhere[references[i]] =
+              args.where[keys[i]] ||
+              (!currTable &&
+                ([currTable] = await trxQuery(
+                  trx($Att[table].dbName).where(args.where).select('*')
+                )),
+              currTable[keys[i]])
+          }
+          if (v.connect && v.insert) {
+            // 查找连接是否存在
+            let pTable = await trxQuery(
+              trx($Att[AttCol.type].dbName).where(v.connect).select('*')
+            )
+
+            ;[pTable] = pTable.length
+              ? pTable
+              : await this.insert(AttCol.type, {
+                  data: v.insert,
+                })
+
+            for (let i = 0; i < keys.length; i++)
+              scalarColumns[keys[i]] = pTable[references[i]]
+          } else if (v.connect) {
+            // 查找连接
+            let [pTable] = await trxQuery(
+              trx($Att[AttCol.type].dbName).where(v.connect).select('*')
+            )
+
+            if (!pTable)
+              throw `查询的表 "${
+                $Att[AttCol.type].dbName
+              }" 记录 "${JSON.stringify(v.connect)}" 不存在`
+            for (let i = 0; i < keys.length; i++)
+              scalarColumns[keys[i]] = pTable[references[i]]
+          } else if (v.insert) {
+            let [pTable] = await this.insert(AttCol.type, {
+              data: v['insert'],
+            })
+
+            for (let i = 0; i < keys.length; i++)
+              scalarColumns[keys[i]] = pTable[references[i]]
+          } else if (v.upsert) {
+            await this.upsert(AttCol.type, v.upsert)
+          } else if (v.update) {
+            await this.update(AttCol.type, {
+              where: foreignWhere,
+              data: v.update,
+            })
+          } else if (v.delete === true) {
+            await trxQuery(
+              trx($Att[AttCol.type].dbName).where(foreignWhere).del()
+            )
+          } else if (v.disconnect === true) {
+            await trxQuery(
+              trx($Att[table].dbName)
+                .where(args.where)
+                .update(
+                  keys.reduce((_: any, v: string) => ((_[v] = null), _), {})
+                )
+            )
+          }
+        }
+      }
+
+      // 修改本表
+      let tableRtn
+      if (Object.keys(scalarColumns).length) {
+        const trxTmp = await trxQuery(
+          trx.raw(
+            trxWhere(
+              updateOperator(table, scalarColumns).returning(
+                args.select ? Object.keys(args.select) : '*'
+              ),
+              table,
+              args?.where
+            ).toString()
+          )
+        )
+        tableRtn = trxTmp.rows
+      } else {
+        tableRtn = await trxWhere(
+          trx($Att[table].dbName).select(
+            args.select ? Object.keys(args.select) : '*'
+          ),
+          table,
+          args?.where
+        )
+      }
+
+      if (Object.keys(primaryColumns).length) {
+        const relColumns: any = Object.entries(primaryColumns)
+        for (const [k, v] of relColumns) {
+          const AttCol = $Att[table].columns[k]
+          const { references, keys } = AttCol.relation
+          const relationForeign: any = {}
+          for (let i = 0; i < keys.length; i++)
+            relationForeign[keys[i]] = tableRtn[0][references[i]]
+          if (AttCol.relation?.toOne) {
+            if (v.connect && v.insert) {
+              let rTable = await trxQuery(
+                trx($Att[AttCol.type].dbName)
+                  .where(v.connect)
+                  .update(relationForeign)
+                  .returning('*')
+              )
+
+              if (!rTable.length) await this.insert(AttCol.type, v)
+            } else if (v.connect) {
+              await trxQuery(
+                trx($Att[AttCol.type].dbName)
+                  .where(v.connect)
+                  .update(relationForeign)
+                  .returning('*')
+              )
+            } else if (v.insert) {
+              await this.insert(AttCol.type, { data: v.insert })
+            } else if (v.upsert) {
+              await this.upsert(AttCol.type, v.upsert)
+            } else if (v.update) {
+              await this.update(AttCol.type, {
+                where: relationForeign,
+                data: v.update,
+              })
+            } else if (v.delete) {
+              await trxQuery(
+                trx($Att[AttCol.type].dbName).where(relationForeign).del()
+              )
+            } else if (v.disconnect) {
+              await trxQuery(
+                trx($Att[AttCol.type].dbName)
+                  .where(relationForeign)
+                  .update(
+                    keys.reduce((_: any, v: any) => ((_[v] = null), _), {})
+                  )
+              )
+            }
+          } else {
+            // 一对多关系
+            if (v.set) {
+              await trxQuery(
+                trx($Att[AttCol.type].dbName).where(relationForeign).del()
+              )
+
+              const sets = Array.isArray(v.set) ? v.set : [v.set]
+              for (const record of sets) {
+                if (
+                  Object.keys(record).length === 1 &&
+                  $Att[AttCol.type].uniques.some(
+                    (v) => record[Array.isArray(v) ? v.join('_') : v]
+                  )
+                ) {
+                  const columns = $Att[AttCol.type].columns
+                  let requiredItem = []
+                  $Att[AttCol.type].uniques.some((v) => {
+                    const items = Array.isArray(v) ? v : [v]
+                    if (record[items.join('_')]) {
+                      requiredItem = Object.keys(columns).filter((v) =>
+                        items.includes(v)
+                          ? false
+                          : 'required' === columns[v].optional
+                      )
+                      return true
+                    } else return false
+                  })
+
+                  if (requiredItem.length) {
+                    await trxWhere(
+                      trx($Att[AttCol.type].dbName).update(relationForeign),
+                      AttCol.type,
+                      record
+                    )
+                  } else {
+                    await trxQuery(
+                      trx($Att[AttCol.type].dbName)
+                        .insert(
+                          argsValidate(
+                            AttCol.type,
+                            {
+                              ...record,
+                              ...relationForeign,
+                            },
+                            'insert'
+                          )
+                        )
+                        .onConflict(Object.keys(record))
+                        .merge(relationForeign)
+                        .returning($Att[AttCol.type].id)
+                    )
+                  }
+                }
+                // 是创建
+                else
+                  await this.insert(AttCol.type, {
+                    data: { ...record, ...relationForeign },
+                  })
+              }
+            } else {
+              if (v.connect) {
+                if (!Array.isArray(v.connect)) v.connect = [v.connect]
+                await trxQuery(
+                  trx.raw(
+                    v.connect
+                      .reduce(
+                        (_, v) => trxWhere(_, AttCol.type, v, 'OR'),
+                        trx($Att[AttCol.type].dbName).update(relationForeign)
+                      )
+                      .toString()
+                  )
+                )
+              }
+              if (v.insert) {
+                await this.insert(AttCol.type, {
+                  data: Array.isArray(v.insert)
+                    ? v.insert.map((val) => ({ ...val, ...relationForeign }))
+                    : { ...v.insert, ...relationForeign },
+                })
+              }
+              if (v.upsert) {
+                if (!Array.isArray(v.upsert)) v.upsert = [v.upsert]
+                for (const val of v.upsert) {
+                  await this.upsert(AttCol.type, {
+                    where: val.where,
+                    update: val.update,
+                    insert: { ...val.insert, ...relationForeign },
+                  })
+                }
+              }
+              if (v.update) {
+                if (!Array.isArray(v.update)) v.update = [v.update]
+                for (const val of v.update) {
+                  await this.update(AttCol.type, {
+                    where: {
+                      ...val.where,
+                      ...relationForeign,
+                    },
+                    data: val.data,
+                  })
+                }
+              }
+              if (v.updateMany) {
+                await trxWhere(
+                  trx($Att[AttCol.type].dbName).update(v.updateMany.data),
+                  AttCol.type,
+                  {
+                    ...v.updateMany.where,
+                    ...relationForeign,
+                  }
+                )
+              }
+              if (v.delete) {
+                if (!Array.isArray(v.delete)) v.delete = [v.delete]
+                for (const val of v.delete) {
+                  await trxQuery(
+                    trx.raw(
+                      trxWhere(
+                        trx($Att[AttCol.type].dbName).del(),
+                        AttCol.type,
+                        {
+                          ...val,
+                          ...relationForeign,
+                        }
+                      ).toString()
+                    )
+                  )
+                }
+              }
+              if (v.deleteMany) {
+                await trxWhere(
+                  trx($Att[AttCol.type].dbName).del(),
+                  AttCol.type,
+                  {
+                    ...v.deleteMany,
+                    ...relationForeign,
+                  }
+                )
+              }
+              if (v.disconnect) {
+                await trxQuery(
+                  trx.raw(
+                    trxWhere(
+                      v.disconnect.reduce(
+                        (_, v) => trxWhere(_, AttCol.type, v, 'OR'),
+                        trx($Att[AttCol.type].dbName).update(
+                          keys.reduce(
+                            (_: any, v: any) => ((_[v] = null), _),
+                            {}
+                          )
+                        )
+                      ),
+                      AttCol.type,
+                      relationForeign
+                    ).toString()
+                  )
+                )
+              }
+            }
+          }
+        }
+      }
+      // 多对多关系
+      if (Object.keys(manyColumns).length) {
+        const relColumns: any = Object.entries(manyColumns)
+        for (const [k, v] of relColumns) {
+          const AttCol = $Att[table].columns[k]
+          // 本表id
+          let tableId
+          if (args.where[$Att[table].id.join('_')]) {
+            tableId = args.where
+          } else {
+            tableId = (
+              await trxQuery(
+                trx($Att[table].dbName).where(args.where).select($Att[table].id)
+              )
+            )[0]
+          }
+          // 映射表id
+          let mapTableId: any = {}
+          for (const k in tableId) {
+            mapTableId[`${$Att[table].dbName}_${k}`] = tableId[k]
+          }
+          // 关系表的ids
+          const trxTmp = await trxQuery(
+            trx(AttCol.relation.mapTable).where(mapTableId).select('*')
+          )
+          const relTableIds = trxTmp.map((v) => {
+            $Att[AttCol.type].id.reduce(
+              (_, v2) => ((_[v2] = v[`${$Att[AttCol.type].dbName}_${v2}`]), _),
+              {}
+            )
+          })
+
+          if (v.set) {
+            const updateSet = async (record) => {
+              // 如果record只有1项，且是unique，且关系表还有其他的必选字段，则认为是connect
+              // 如果record只有1项，且是unique，且关系表没有其他的必选字段，则认为是upsert
+              if (
+                Object.keys(record).length === 1 &&
+                $Att[AttCol.type].uniques.some(
+                  (v) => record[Array.isArray(v) ? v.join('_') : v]
+                )
+              ) {
+                const columns = $Att[AttCol.type].columns
+                let requiredItem = []
+                $Att[AttCol.type].uniques.some((v) => {
+                  const items = Array.isArray(v) ? v : [v]
+                  if (record[items.join('_')]) {
+                    requiredItem = Object.keys(columns).filter((v) =>
+                      items.includes(v)
+                        ? false
+                        : 'required' === columns[v].optional
+                    )
+                    return true
+                  } else return false
+                })
+
+                return requiredItem.length
+                  ? await trxWhere(
+                      trx($Att[AttCol.type].dbName).select(
+                        $Att[AttCol.type].id
+                      ),
+                      AttCol.type,
+                      record
+                    )
+                  : // 没有必选字段，可能是连接，也可能是创建，需用upsert
+                    await trxQuery(
+                      trx($Att[AttCol.type].dbName)
+                        .insert(argsValidate(AttCol.type, record, 'insert'))
+                        .onConflict(Object.keys(record))
+                        .ignore()
+                        .returning($Att[AttCol.type].id)
+                    )
+              }
+              // 是创建
+              else
+                return await this.insert(AttCol.type, {
+                  data: record,
+                }).returning($ArrayTrue($Att[AttCol.type].id))
+            }
+
+            let relTableId = []
+            const items = Array.isArray(v.set) ? v.set : [v.set]
+            for (const item of items)
+              relTableId = relTableId.concat(await updateSet(item))
+
+            // 删除映射表中老的关系，存入新的关系
+            await trxQuery(
+              trx(AttCol.relation.mapTable).where(mapTableId).del()
+            )
+
+            await trxQuery(
+              trx(AttCol.relation.mapTable).insert(
+                relTableId.map((v2) =>
+                  Object.assign(
+                    Object.keys(v2).reduce(
+                      (_, v3) => ((_[`${AttCol.type}_${v3}`] = v2[v3]), _),
+                      {}
+                    ),
+                    mapTableId
+                  )
+                )
+              )
+            )
+          } else {
+            let ids = []
+            if (v.connect) {
+              const items = Array.isArray(v.connect) ? v.connect : [v.connect]
+              for (const v of items) {
+                let [relId] = await trxQuery(
+                  trx($Att[AttCol.type].dbName)
+                    .where(v)
+                    .select($Att[AttCol.type].id)
+                )
+                relId = Object.keys(relId).reduce(
+                  (_, v) => (
+                    (_[`${$Att[AttCol.type].dbName}_${v}`] = relId[v]), _
+                  ),
+                  {}
+                )
+                const mapRecord = { ...mapTableId, ...relId }
+                await trxQuery(
+                  trx(AttCol.relation.mapTable)
+                    .insert(mapRecord)
+                    .onConflict(Object.keys(mapRecord))
+                    .ignore()
+                )
+              }
+            }
+            if (v.insert) {
+              // 可能有问题---------------------------------------------------------------------------------
+              const updateInsert = async (record) =>
+                await this.upsert(AttCol.type, {
+                  where: recordUnique(AttCol.type, record),
+                  insert: record,
+                }).returning($ArrayTrue($Att[AttCol.type].id))
+
+              if (Array.isArray(v.insert)) {
+                for (const record of v.insert)
+                  ids = ids.concat(await updateInsert(record))
+              } else ids = await updateInsert(v.insert)
+
+              await trxQuery(
+                trx(AttCol.relation.mapTable).insert(
+                  ids.map((v2) =>
+                    Object.keys(v2).reduce(
+                      (_, v3) => ((_[`${k}_${v3}`] = v2[v3]), _),
+                      mapTableId
+                    )
+                  )
+                )
+              )
+            }
+            if (v.upsert) {
+              const items = Array.isArray(v.upsert) ? v.upsert : [v.upsert]
+              for (const item of items) {
+                await this.upsert(AttCol.type, item)
+              }
+            }
+            if (v.update) {
+              const items = Array.isArray(v.update) ? v.update : [v.update]
+              for (const item of items) {
+                await this.update(AttCol.type, item)
+              }
+            }
+            if (v.updateMany) {
+              const where = trxWhere(
+                trx($Att[AttCol.type].dbName).update(v.updateMany.data),
+                AttCol.type,
+                v.updateMany.where
+              )
+
+              await trxWhere(where, AttCol.type, {
+                [$Att[AttCol.type].id]: '',
+              })
+            }
+            if (v.delete) {
+              const items = Array.isArray(v.delete) ? v.delete : [v.delete]
+              await items.reduce(
+                (_, v) => trxWhere(_, AttCol.type, v.where, 'OR'),
+                trx($Att[AttCol.type].dbName).del()
+              )
+              // 删除映射表中对应的记录(后续完善)
+            }
+            if (v.deleteMany) {
+              const where = trxWhere(
+                trx($Att[AttCol.type].dbName).del(),
+                AttCol.type,
+                v.deleteMany.where
+              )
+
+              await trxWhere(where, AttCol.type, {
+                [$Att[AttCol.type].id]: {
+                  in: relTableIds.map((v: any) => Object.values(v)),
+                },
+              })
+            }
+            if (v.disconnect) {
+              const items = Array.isArray(v.disconnect)
+                ? v.disconnect
+                : [v.disconnect]
+              const relMapIds = []
+              for (const v2 of items) {
+                const [relRecId] = await trxQuery(
+                  trx($Att[AttCol.type].dbName).where(
+                    v2.select($Att[AttCol.type].id)
+                  )
+                )
+
+                relMapIds.push(
+                  Object.keys(relRecId).reduce(
+                    (_, v3) => (
+                      (_[`${$Att[AttCol.type].dbName}_${v3}`] = relRecId[v3]), _
+                    ),
+                    {}
+                  )
+                )
+              }
+
+              await relMapIds.reduce(
+                (_, v4) =>
+                  trxWhere(_, AttCol.type, { ...mapTableId, ...v4 }, 'OR'),
+                trx($Att[AttCol.type].dbName).del()
+              )
+            }
+          }
+        }
+      }
+
+      return tableRtn
+    },
+
+    async updateMany(table: Tb, args: $TableMutationType<Tb, 'updateMany'>) {
+      return (
+        await trx.raw(
+          trxWhere(
+            updateOperator(table, args.data).returning(
+              args.select ? Object.keys(args.select) : '*'
+            ),
+            table,
+            args?.where
+          ).toString()
+        )
+      ).rows
+    },
+
+    async delete(table: Tb, args: $TableMutationType<Tb, 'delete'>) {
+      if (!args.where || !Object.keys(args.where).length) throw `where 不能为空`
+      return await trxWhere(
+        trx($Att[table].dbName)
+          .del()
+          .returning(args.select ? Object.keys(args.select) : '*'),
+        table,
+        args.where
+      )
+    },
+
+    async deleteMany(table: Tb, args: $TableMutationType<Tb, 'deleteMany'>) {
+      return await trxWhere(
+        trx($Att[table].dbName)
+          .del()
+          .returning(args?.select ? Object.keys(args.select) : '*'),
+        table,
+        args?.where
+      )
+    },
+
+    async aggregate(
+      table: Tb,
+      query: $AggregateQuery,
+      args: $TableQuery<Tb>['aggregate']
+    ) {
+      if (!args?.select || args.select === '*')
+        (<any>args).select = { count: '*' }
+
+      return await trxWhere(
+        trx($Att[table].dbName)[query](args.select),
+        table,
+        args?.where
+      )
+    },
+  }
+}

@@ -1,0 +1,8 @@
+import { $ApiBridge } from './aca.server'
+
+export const main_handler = async (event, context) => {
+    context.callbackWaitsForEmptyEventLoop = false
+    const acaReq = await $ApiBridge(context, JSON.parse(event.body))
+
+  return acaReq
+}

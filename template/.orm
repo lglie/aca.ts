@@ -1,0 +1,69 @@
+type DriverEnum = 'pg' | 'mssql' | 'mysql' | 'sqlite3' | 'mongodb'
+type OnPrimaryMutation = 'cascade' | 'set null' | 'restrict' | 'no action'
+interface DbConfig {
+  driver: DriverEnum
+  envConnection?: string
+  connection?:
+    | string
+    | {
+        host: string
+        port: number
+        user: string
+        password: string
+        database: string
+      }
+  idDefaultType?: 'cuid' | 'uuid' | 'autoincrement' | 'string' | 'int'
+  autoAddPrimaryField?: boolean
+  autoAddManyToManyField?: boolean
+  foreignKeyConstraint?: boolean
+  onUpdate?: OnPrimaryMutation
+  onDelete?: OnPrimaryMutation
+}
+
+export type $db = `$${string}` | DbConfig
+export type int = number
+export type float = number
+export type id = {
+  cuid: string
+  uuid: string
+  string: string
+  int: number
+  autoincrement: number
+}
+
+const dTable = (target: object) => {}
+const dColumn = (target: object, name?: string, descriptor?: object) => {}
+
+export const $ = {
+  map: (name: string) => dTable,
+  id: (names?: string[]) => dTable,
+  unique: (names?: string[]) => dTable,
+  index: (names?: string[]) => dTable,
+  check: (partten: string) => dTable,
+  view: dTable,
+  distinct: dTable,
+  select: (value: string) => dTable,
+  deprecated: (suggest?: string) => dTable,
+}
+
+export const $_ = {
+  map: (name: string) => dColumn,
+  dbType: (typeName: string) => dColumn,
+  createdAt: dColumn,
+  updatedAt: dColumn,
+  unique: dColumn,
+  index: dColumn,
+  check: (partten: string) => dColumn,
+  foreign: (
+    args:
+      | string
+      | string[]
+      | {
+          keys: string | string[]
+          references: string | string[]
+          onUpdate?: OnPrimaryMutation
+          onDelete?: OnPrimaryMutation
+        }
+  ) => dColumn,
+  deprecated: (suggest?: string) => dColumn,
+}
