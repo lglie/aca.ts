@@ -67,8 +67,6 @@ $ cd <dirname>
 
 <img with="80px" hight="180px" src="https://www.ts.center/static/config.jpg">
 
-> > > > > > > gh-pages
-
 3. Use the following method to create aca.ts apps:
 
 Create a backend app:

@@ -149,7 +149,7 @@ const keywords = {
     },
   },
   betterSqlite3: {
-    fullName: 'betterSqlite3',
+    fullName: 'better-sqlite3',
     quote: { prefix: '"', name: '"', value: "'" },
     idDefaultType: 'cuid',
     idType: {

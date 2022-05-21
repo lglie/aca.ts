@@ -16,13 +16,13 @@ import * as parser from './ts-parser'
 import {
   transaction,
   transactionClient,
-  clientClassHead,
+  classHeadClient,
   apiBridge,
   tableQuery,
-  classClientFooter,
+  classFooterClient,
   sqlRawServer,
   constructor,
-  clientApiIndex,
+  apiIndexClient,
 } from './template'
 
 const templatePath = `../../template`
@@ -125,13 +125,13 @@ const classServer = (db: Db, dbVar: string) => {
 }
 
 const classClient = (db: Db, dbVar: string) => {
-  return `${clientClassHead(dbVar)}
+  return `${classHeadClient(dbVar)}
   /*
    * 此前端的事务api，仅仅是为了仿照后端写法，便于以后迁移代码到后端减少改动
    */
   ${transactionClient(tblQueries(db.tables, dbVar, 'transaction_client'))}
   ${tblQueries(db.tables, dbVar, 'client')}
-  ${classClientFooter(dbVar)}
+  ${classFooterClient(dbVar)}
   `
 }
 
@@ -515,7 +515,7 @@ ${fnTpl(RPCApis)}
       MkdirsSync(path.join(resolveAcaDir, apiDir))
     fs.writeFileSync(api, clientApi)
     if (!fs.existsSync(apiIndex)) {
-      fs.writeFileSync(apiIndex, clientApiIndex(Object.keys(ast.dbs), RPCs))
+      fs.writeFileSync(apiIndex, apiIndexClient(Object.keys(ast.dbs), RPCs))
     }
   }
 }

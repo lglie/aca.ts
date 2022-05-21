@@ -10,7 +10,7 @@ export * from './index-express'
 export * from './api-placeholder'
 export * from './react-page'
 
-export const clientClassHead = (dbVar: string) => `\n
+export const classHeadClient = (dbVar: string) => `\n
 export const ${dbVar} =new (class {
 `
 
@@ -43,7 +43,7 @@ export const transactionClient = (queries: string) => `async transaction() {
 }
 `
 
-export const serverPkg = (
+export const pkgServer = (
   name: string,
   drivers: string[],
   framework: 'koa' | 'express' | 'faas'
@@ -116,7 +116,7 @@ export const tableQuery = (query, tblName) => `{
 } `
 
 //  前端尾部模板
-export const classClientFooter = (dbVar: string) => `\n$ = {
+export const classFooterClient = (dbVar: string) => `\n$ = {
     raw: async (args: string): Promise<{ data?: unknown; error?: string }> =>
     await $.${dbVar}.req({
       kind: 'raw',
@@ -243,7 +243,7 @@ const Faas = {
     const acaReq = await $ApiBridge(context, JSON.parse(event.body))`,
 }
 
-export const serverIndex = (
+export const indexServer = (
   faas: keyof typeof Faas
 ) => `import { $ApiBridge } from './api'
 
@@ -269,11 +269,11 @@ $ aca up
 以后在orm发生变化时使用该命令更新数据库架构及api
 `
 
-export const serverCreatedEcho = () => `
+export const createdEchoServer = () => `
 运行：aca up，或：aca rollback 回滚
 `
 
-export function clientApiIndex(dbs: string[], RPCs: string[]) {
+export function apiIndexClient(dbs: string[], RPCs: string[]) {
   const apiStr = (arr: string[]) =>
     arr
       .map(

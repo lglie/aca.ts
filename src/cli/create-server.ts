@@ -3,8 +3,8 @@ import path from 'path'
 import * as Cst from '../libs/constant'
 import { addAppConfig, currentDir, MkdirsSync } from '../libs/common'
 import {
-  serverPkg,
-  serverCreatedEcho,
+  pkgServer,
+  createdEchoServer,
   dft,
   faas,
   faasProvider,
@@ -29,7 +29,7 @@ async function pkg(
 
   fs.writeFileSync(
     `${acaDir}/${dir}/${Cst.ServerPackage}`,
-    serverPkg(dir, <string[]>[...drivers], framework),
+    pkgServer(dir, <string[]>[...drivers], framework),
     'utf-8'
   )
 }
@@ -110,5 +110,5 @@ export async function server(yargs: any) {
   )
   console.log(`正在装载node_modules，请稍等。。。`)
   execSync(`cd ${acaDir}/${name} & npm install`)
-  console.log(serverCreatedEcho())
+  console.log(createdEchoServer())
 }
