@@ -41,7 +41,7 @@ const keywords = {
       float: ['decimal', 'float4', 'float8'],
       int: ['int2', 'int4', 'int8', 'money'],
       autoincrement: ['serial2', 'serial4', 'serial8'],
-      Date: ['timestamp', 'date', 'time ', 'interval'],
+      Date: ['timestamp', 'date', 'time', 'interval'],
       string: [],
     },
     timestamp: {
@@ -86,7 +86,7 @@ const keywords = {
       float: ['decimal', 'float4', 'float8'],
       int: ['int2', 'int4', 'int8', 'money'],
       autoincrement: ['serial2', 'serial4', 'serial8'],
-      Date: ['timestamp', 'date', 'time ', 'interval'],
+      Date: ['timestamp', 'date', 'time', 'interval'],
       string: [],
     },
     timestamp: {
@@ -134,7 +134,7 @@ const keywords = {
       float: ['decimal', 'float4', 'float8'],
       int: ['int2', 'int4', 'int8', 'money'],
       autoincrement: ['int'],
-      Date: ['timestamp', 'date', 'time ', 'interval'],
+      Date: ['timestamp', 'date', 'time', 'interval'],
       string: [],
     },
     timestamp: {
@@ -149,7 +149,7 @@ const keywords = {
     },
   },
   betterSqlite3: {
-    fullName: 'better-sqlite3',
+    fullName: 'betterSqlite3',
     quote: { prefix: '"', name: '"', value: "'" },
     idDefaultType: 'cuid',
     idType: {
@@ -168,7 +168,7 @@ const keywords = {
       float: { jsType: 'number', dbType: 'real' },
       bigint: { jsType: 'bigint', dbType: 'integer' },
       string: { jsType: 'string', dbType: stringType },
-      boolean: { jsType: 'boolean', dbType: 'char(1)' },
+      boolean: { jsType: 'boolean', dbType: 'integer' },
       Date: { jsType: 'Date', dbType: 'timestamp' },
     },
     dbType: {
@@ -177,12 +177,12 @@ const keywords = {
       uuid: 'char(36)',
     },
     dbTypes: {
-      boolean: ['char(1)'],
+      boolean: ['integer'],
       object: ['text'],
       float: ['float', 'double', 'real'],
       int: ['integer', 'smallint'],
       autoincrement: ['integer'],
-      Date: ['timestamp', 'date', 'time '],
+      Date: ['timestamp', 'date', 'time'],
       string: [],
     },
     timestamp: {

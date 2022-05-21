@@ -37,7 +37,6 @@ export async function RPCProxy(serverName: string, RPCDir: string) {
   function createIndex(root: string) {
     const index: string[] = []
     const rootIdx = path.join(root, 'index.ts')
-    if (fs.existsSync(rootIdx)) fs.rmSync(rootIdx)
     const Iter = (d: string) => {
       if (fs.statSync(d).isDirectory()) {
         fs.readdirSync(d, 'utf-8').forEach((v) => Iter(path.join(d, v)))
@@ -46,11 +45,7 @@ export async function RPCProxy(serverName: string, RPCDir: string) {
       }
     }
     Iter(root)
-    fs.writeFileSync(
-      rootIdx,
-      index.length ? index.join('\n') : 'export {}',
-      'utf-8'
-    )
+    if (index.length) fs.writeFileSync(rootIdx, index.join('\n'), 'utf-8')
   }
 
   function generate(dtsFile: string) {

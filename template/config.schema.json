@@ -5,7 +5,7 @@
       "type": "string",
       "description": "orm文件名（可以是文件夹名），如果有多个，则使用数组表示"
     },
-    "database": {
+    "databases": {
       "type": "object",
       "description": "数据库相关配置，默认使用(.), 如果有多个数据库，在此自行添加",
       "properties": {
@@ -26,10 +26,6 @@
           "apiDir": {
             "type": "string",
             "description": "存放自动生成的api的目录名称，默认；为：src/aca.server"
-          },
-          "allowRPCClientApi": {
-            "type": "boolean",
-            "description": "是否允许生成前端访问的api"
           }
         }
       }

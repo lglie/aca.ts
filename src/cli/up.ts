@@ -289,7 +289,7 @@ export async function up(yargs: any) {
   const config: Config = require(path.join(rlvAcaDir, Cst.AcaConfig))
   const isRollback = yargs.argv['_'][0] === 'rollback' ? true : false
   const timestamp = Date.now()
-  let logs = <Remark[]>require(path.join(rlvAcaDir, Cst.AcaChangelogsRemark))
+  let logs = <Remark[]>require(path.join(rlvAcaDir, Cst.AcaMiscRemark))
   let changed: string[] = [],
     rollOrm,
     ast: Ast
@@ -333,14 +333,14 @@ export async function up(yargs: any) {
     const [lastLog] = isRollback ? logs.slice(-2, -1) : logs.slice(-1)
     if (!lastLog) return
     const logName = lastLog.id
-    const logPath = `${acaDir}/${Cst.AcaChangelogsRecordsDir}/${logName}/orm.md`
+    const logPath = `${acaDir}/${Cst.AcaMiscRecordsDir}/${logName}/orm.md`
     return fs.readFileSync(logPath, 'utf-8')
   }
 
   function WriteLog(changed: string, isRollback: boolean) {
     if (isRollback) {
       const rmk: Remark = logs.slice(-1)[0]
-      fs.rmSync(`${acaDir}/${Cst.AcaChangelogsRecordsDir}/${rmk.id}`, {
+      fs.rmSync(`${acaDir}/${Cst.AcaMiscRecordsDir}/${rmk.id}`, {
         recursive: true,
       })
       logs = logs.slice(0, -1)
@@ -350,7 +350,7 @@ export async function up(yargs: any) {
         'utf-8'
       )
     } else {
-      const changedDir = `${acaDir}/${Cst.AcaChangelogsRecordsDir}/${timestamp}`
+      const changedDir = `${acaDir}/${Cst.AcaMiscRecordsDir}/${timestamp}`
       fs.mkdirSync(changedDir)
       fs.copyFileSync(
         `${acaDir}/${Cst.AcaDir}/${config.orm}`,
@@ -360,7 +360,7 @@ export async function up(yargs: any) {
       logs.push(remark(timestamp, ''))
     }
     fs.writeFileSync(
-      path.join(acaDir, Cst.AcaChangelogsRemark),
+      path.join(acaDir, Cst.AcaMiscRemark),
       JSON.stringify(logs, null, 2),
       'utf-8'
     )

@@ -32,6 +32,16 @@ async transaction() {
 }
 }
 `
+export const transactionClient = (queries: string) => `async transaction() {
+
+  return {
+    async commit() {},
+    async rollback() {},
+    isCompleted() {},
+    ${queries}
+}
+}
+`
 
 export const serverPkg = (
   name: string,
@@ -41,7 +51,7 @@ export const serverPkg = (
   const Drivers = {
     pg: `"pg": "",`,
     mysql: `"mysql": "",`,
-    betterSqlite3: `"better-sqlite3": "7.5.1",`,
+    betterSqlite3: `"better-sqlite3": "",`,
   }
 
   const Framework = {
@@ -284,7 +294,7 @@ import { $, $Request, $ApiBridge } from './aca'
 
 // 填写后端服务器的地址，注意：部署到生产环境时，一定要改成生产环境的地址
 /*******************************下面这些根据需要自行填写************************ */
-const url = ''
+const url = 'http://localhost:8080'
 
 const headers = {
   'Content-Type': 'application/json',

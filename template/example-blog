@@ -8,7 +8,7 @@ import {
   $db, // 数据库连接配置类型
   $, // 类装饰器,
   $_, // 成员装饰器
-} from './.orm'
+} from './.misc/.orm'
 
 enum Gender {
   A,
@@ -19,7 +19,7 @@ enum Gender {
 // 数据库类
 namespace Blog {
   // 每个数据库类只有一个const，并且类型为：$
-  const dbConfig: $db = `$default`
+  const dbConfig: $db = `default`
 
   @$.unique(['firstName', 'lastName'])
   class user {

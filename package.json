@@ -17,6 +17,10 @@
     "email": "liaoguolie@gmail.com"
   },
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lglie/aca.ts"
+  },
   "bin": {
     "aca": "dist/index.js"
   },

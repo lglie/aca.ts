@@ -108,7 +108,7 @@ export async function server(yargs: any) {
     expArr,
     path.join(Cst.DefaultTsDir, Cst.DefaultServerApiDir)
   )
-  console.log(`正在装载npm，请稍等。。。`)
+  console.log(`正在装载node_modules，请稍等。。。`)
   execSync(`cd ${acaDir}/${name} & npm install`)
   console.log(serverCreatedEcho())
 }

@@ -7,11 +7,10 @@ import { MkdirsSync } from '../libs/common'
 export async function create(yargs: any) {
   const files = {
     [Cst.AcaConfig]: 'config.json',
-    [Cst.AcaConfigSchema]: 'config.schema.json',
     [Cst.AcaExample]: 'example-blog',
     [Cst.AcaOrmPropetty]: '.orm',
     [Cst.AcaTsconfig]: 'tsconfig.aca',
-    [Cst.AcaChangelogsRemark]: 'remark',
+    [Cst.AcaMiscRemark]: 'remark',
   }
 
   const name = yargs.argv._[1]
@@ -22,7 +21,7 @@ export async function create(yargs: any) {
   }
 
   // 递归创建目录
-  MkdirsSync(path.join(name, Cst.AcaChangelogsRecordsDir))
+  MkdirsSync(path.join(name, Cst.AcaMiscRecordsDir))
   const tplDir = path.join(__dirname, '../../template')
 
   for (const k in files) {

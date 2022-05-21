@@ -65,7 +65,12 @@ $ cd <dirname>
 
 2. Open .aca directory, copy your custom ORM file into that directory, add this file name to config.json/orm field.
 
-   <img with="100px" hight="200px" src="https://yunplus-1257983906.cos.ap-shanghai.myqcloud.com/aca-config.jpg">
+<<<<<<< HEAD
+<img with="100px" hight="200px" src="https://yunplus-1257983906.cos.ap-shanghai.myqcloud.com/aca-config.jpg">
+=======
+<img with="100px" hight="200px" src="https://www.ts.center/config.jpg">
+
+> > > > > > > gh-pages
 
 3. Use the following method to create aca.ts apps:
 
@@ -99,11 +104,11 @@ Then the database, frontend, and backend are all set up, you can start your appl
 
 #
 
-> <font color=red>The generated backend APIs usage example are as follows:</font> <img with="80px" hight="180px" src="https://yunplus-1257983906.cos.ap-shanghai.myqcloud.com/aca-6.jpg">
+> <font color=red>The generated backend APIs usage example are as follows:</font> <img with="80px" hight="180px" src="https://www.ts.center/server-koa-index.jpg">
 
 #
 
-> <font color=red>The generated frontend APIs usage example are as follows:</font> <img with="80px" hight="180px" src="https://yunplus-1257983906.cos.ap-shanghai.myqcloud.com/aca-5.jpg">
+> <font color=red>The generated frontend APIs usage example are as follows:</font> <img with="80px" hight="180px" src="https://www.ts.center/client-react-app.jpg">
 
 #
 

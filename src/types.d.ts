@@ -5,13 +5,12 @@
 type AcaDir = '.' | '..'
 type Config = {
   orm: string
-  database?: { default: DbConfig } & { [K: string]: DbConfig }
+  databases?: { default: DbConfig } & { [K: string]: DbConfig }
   serverApps: {
     kind: 'server'
   } & {
     [k: string]: {
       apiDir?: string
-      allowRPCClientApi: boolean
     }
   }
   clientApps: {
@@ -34,8 +33,7 @@ interface DbConfig {
   onDelete: OnPrimaryMutation
 }
 
-type Driver = 'pg' | 'mysql' | 'betterSqlite3'
-
+type Driver = 'pg' | 'mssql' | 'oracle' | 'mysql' | 'betterSqlite3'
 type Id = 'autoincrement' | 'cuid' | 'uuid' | 'string' | 'int'
 
 type RelConn = {
@@ -54,7 +52,7 @@ type ConnectOption = {
   envConnect: string
 } & (
   | {
-      driver: 'pg' | 'mysql'
+      driver: 'pg' | 'mssql' | 'oracle' | 'mysql'
       connect: RelConn
     }
   | {

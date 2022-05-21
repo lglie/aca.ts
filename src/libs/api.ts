@@ -15,6 +15,7 @@ import {
 import * as parser from './ts-parser'
 import {
   transaction,
+  transactionClient,
   clientClassHead,
   apiBridge,
   tableQuery,
@@ -49,7 +50,7 @@ const EnumConst = (enums: Enums) => {
 const tblQueries = (
   tables: Tables,
   dbVar: string,
-  api: 'server' | 'transaction' | 'client'
+  api: 'server' | 'transaction' | 'client' | 'transaction_client'
 ) => {
   const TblQuery = (tbl: Table) => {
     const tblName = tbl.jsName
@@ -65,11 +66,11 @@ const tblQueries = (
       }>> => ${
         'server' === api
           ? tableQuery(Q, tblName)
-          : `await ${api === 'client' ? `$.${dbVar}.req` : '$Handle'}${
+          : `await ${api.endsWith('client') ? `$.${dbVar}.req` : '$Handle'}${
               'transaction' === api ? '( trx )' : ''
             }({
             query: '${Q}', args, ${
-              'client' === api
+              api.endsWith('client')
                 ? `kind: 'orm', dbVar: '${dbVar}', method: [${AddQuote(
                     [...tbl.namespace, tbl.name],
                     "'"
@@ -102,12 +103,14 @@ const tblQueries = (
   return Object.keys(tables)
     .reduce(
       (_, v) => (
-        _.push(tblApi(<Table>tables[v], v, 'transaction' === api ? ':' : '=')),
+        _.push(
+          tblApi(<Table>tables[v], v, api.startsWith('transaction') ? ':' : '=')
+        ),
         _
       ),
       <string[]>[]
     )
-    .join(`${'transaction' === api ? ',' : ''}\n\n`)
+    .join(`${api.startsWith('transaction') ? ',' : ''}\n\n`)
 }
 
 // 生成前后端的构造函数
@@ -123,6 +126,10 @@ const classServer = (db: Db, dbVar: string) => {
 
 const classClient = (db: Db, dbVar: string) => {
   return `${clientClassHead(dbVar)}
+  /*
+   * 此前端的事务api，仅仅是为了仿照后端写法，便于以后迁移代码到后端减少改动
+   */
+  ${transactionClient(tblQueries(db.tables, dbVar, 'transaction_client'))}
   ${tblQueries(db.tables, dbVar, 'client')}
   ${classClientFooter(dbVar)}
   `
@@ -474,10 +481,7 @@ export default async function (acaDir: AcaDir, config: Config, ast: Ast) {
     const RPCDir = path.join(resolveApiDir, Cst.ServerRPCDir)
     fs.writeFileSync(apiIndex, dbApi.serverApi)
     // 写远程函数的index.ts及前端代理
-
-    if (serverConfig.allowRPCClientApi) {
-      clientRPCApis[k] = await parser.RPCProxy(k, RPCDir)
-    }
+    clientRPCApis[k] = await parser.RPCProxy(k, RPCDir)
   }
 
   for (const k in clientApps) {

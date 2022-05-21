@@ -7,7 +7,6 @@ BigInt.prototype['toJSON'] = function () {
   return this.toString()
 }
 
-export const Dbs = ['pg', 'mysql', 'betterSqlite3'] // 当前支持的数据库
 export const ScalarTypes = [
   'id',
   'boolean',
@@ -237,7 +236,6 @@ export function addAppConfig(
 
       config.serverApps[name] = {
         apiDir,
-        allowRPCClientApi: true,
       }
       break
     case 'client':
