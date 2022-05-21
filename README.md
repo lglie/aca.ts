@@ -1,6 +1,6 @@
 # Aca.ts
 
-Aca.ts is a node.js CLI based on Typescript and Knex.js. It could automatically syncs database schema according to a custom ORM. It could also automatically generates APIs for accessing the database. More importantly, it automatically creates frontend APIs through backend functions and the generated database APIs (like RPC), so frontend developers can easily access the backend without defining routing.
+Aca.ts is a node.js CLI based on Typescript and Knex.js. It could automatically syncs database schema according to a custom ORM. It could also automatically generates APIs for accessing the database. More importantly, it automatically creates frontend APIs through backend functions and the generated database APIs (like RPC), so frontend developers can easily access the backend without defining routing. The APIs is typescript, tips are very friendly when coding.
 
 Use the class syntax of Typescript to define ORM:
 
@@ -65,10 +65,7 @@ $ cd <dirname>
 
 2. Open .aca directory, copy your custom ORM file into that directory, add this file name to config.json/orm field.
 
-<<<<<<< HEAD
-<img with="100px" hight="200px" src="https://yunplus-1257983906.cos.ap-shanghai.myqcloud.com/aca-config.jpg">
-=======
-<img with="100px" hight="200px" src="https://www.ts.center/config.jpg">
+<img with="80px" hight="180px" src="https://www.ts.center/static/config.jpg">
 
 > > > > > > > gh-pages
 
@@ -104,11 +101,11 @@ Then the database, frontend, and backend are all set up, you can start your appl
 
 #
 
-> <font color=red>The generated backend APIs usage example are as follows:</font> <img with="80px" hight="180px" src="https://www.ts.center/server-koa-index.jpg">
+> <font color=red>The generated backend APIs usage example are as follows:</font> <img with="80px" hight="180px" src="https://www.ts.center/static/server-koa-index.jpg">
 
 #
 
-> <font color=red>The generated frontend APIs usage example are as follows:</font> <img with="80px" hight="180px" src="https://www.ts.center/client-react-app.jpg">
+> <font color=red>The generated frontend APIs usage example are as follows:</font> <img with="80px" hight="180px" src="https://www.ts.center/static/client-react-app.jpg">
 
 #
 
