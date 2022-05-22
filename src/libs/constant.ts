@@ -1,13 +1,10 @@
 export const Delimiter = `__` // 数据库表名的命名空间分隔符
-export const ServerFramework = [
-  'koa',
-  'express',
-  'amazon',
-  'azure',
-  'google',
-  'ali',
-  'tencent',
-]
+export const Drivers = {
+  pg: `"pg": "",`,
+  mssql: `"mssql": "",`,
+  mariadb: `mariadb: "",`,
+  betterSqlite3: `"better-sqlite3": "",`,
+}
 export const ClientApiExport = ['$RPC', '$EnumType', '$TB', '$TableType']
 export const ServerApiExport = [...ClientApiExport, '$ApiBridge']
 export const FrameworkClient = ['vue', 'react', 'gatsby']

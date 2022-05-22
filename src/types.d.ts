@@ -33,7 +33,7 @@ interface DbConfig {
   onDelete: OnPrimaryMutation
 }
 
-type Driver = 'pg' | 'mssql' | 'oracle' | 'mysql' | 'betterSqlite3'
+type Driver = 'pg' | 'mssql' | 'mariadb' | 'mysql' | 'betterSqlite3'
 type Id = 'autoincrement' | 'cuid' | 'uuid' | 'string' | 'int'
 
 type RelConn = {
@@ -52,7 +52,7 @@ type ConnectOption = {
   envConnect: string
 } & (
   | {
-      driver: 'pg' | 'mssql' | 'oracle' | 'mysql'
+      driver: 'pg' | 'mssql' | 'mariadb' | 'mysql'
       connect: RelConn
     }
   | {

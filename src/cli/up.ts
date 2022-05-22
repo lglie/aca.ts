@@ -16,15 +16,19 @@ const msg = (acaDir: AcaDir, config: Config) => {
   const serverApps = Object.keys(config.serverApps)
   console.log(`\n生成的后端文件存放于：`)
   for (const v of serverApps) {
-    const tsDir = config.serverApps[v].apiDir
-    console.log(path.join(resolveAcaDir, v, tsDir, Cst.ApiIndex))
+    const apiDir =
+      config.serverApps[v].apiDir ??
+      path.join(Cst.DefaultTsDir, Cst.DefaultServerApiDir)
+    console.log(path.join(resolveAcaDir, v, apiDir, Cst.ApiIndex))
   }
   const clientApps = Object.keys(config.clientApps)
   if (clientApps.length) {
     console.log(`\n打开下面的文件配置前端请求的url、headers：`)
     for (const v of clientApps) {
-      const tsDir = config.clientApps[v].apiDir
-      console.log(path.join(resolveAcaDir, v, tsDir, Cst.ClientApiIndex))
+      const apiDir =
+        config.clientApps[v].apiDir ??
+        path.join(Cst.DefaultTsDir, Cst.DefaultClientApiDir)
+      console.log(path.join(resolveAcaDir, v, apiDir, Cst.ClientApiIndex))
     }
   }
 }

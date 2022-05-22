@@ -23,9 +23,13 @@ import {
   sqlRawServer,
   constructor,
   apiIndexClient,
+  aggregateCount,
+  fnTpl,
+  reqInstTpl,
+  reqInitValueTpl,
 } from './template'
 
-const templatePath = `../../template`
+const templatePath = `../../templates`
 
 // 生成枚举类型
 const EnumType = (enums: Enums) => {
@@ -57,7 +61,7 @@ const tblQueries = (
     const query = (Q: string) =>
       `async (args${Cst.argOpts.includes(Q) ? '?' : ''}: ${
         ['count', 'countDistinct'].includes(Q)
-          ? AggregateCount(tblName, Q)
+          ? aggregateCount(tblName, Q)
           : `$TableQuery<'${tblName}'>['${
               Cst.aggregates.includes(Q) ? 'aggregate' : Q
             }']`
@@ -134,14 +138,6 @@ const classClient = (db: Db, dbVar: string) => {
   ${classFooterClient(dbVar)}
   `
 }
-
-const AggregateCount = (table: string, query: string) => `{
-  select: ${
-    query == 'count' ? `'*' | ` : ''
-  }{ [K in $ScalarColumns<'${table}'>]: K }[$ScalarColumns<'${table}'>]
-  where?: NonNullable<$TableQuery<'${table}'>['aggregate']>['where']
-  sql?: NonNullable<$TableQuery<'${table}'>['aggregate']>['sql']
-}`
 
 // 生成表的标注及需要的类型
 const Orm = (tables: { [k: string]: Table | View }) => {
@@ -434,30 +430,6 @@ async function DbApi(config: Config, ast: Ast) {
   return { serverApi, clientApi }
 }
 
-const reqInitValueTpl = `{
-  req(args: any) {
-    return <any>{}
-  },
-  requestInit: {},
-  reqIntercept(args: $ApiBridge) {},
-  resIntercept(rtn: any) {},
-}`
-
-const reqInstTpl = (fnStr: string, dbStr: string) => `export const $ = {
-  $RPC: {
-      ${fnStr}
-    },
-      ${dbStr}
-  }
-  `
-
-const fnTpl = (fnApis: string) =>
-  fnApis.trim()
-    ? `export namespace $RPC {
-    ${fnApis}
-  }`
-    : `export const $RPC = '当前没有远程函数被生成'`
-
 export default async function (acaDir: AcaDir, config: Config, ast: Ast) {
   const resolveAcaDir = path.resolve(acaDir)
   const serverApps = config.serverApps
@@ -476,7 +448,12 @@ export default async function (acaDir: AcaDir, config: Config, ast: Ast) {
 
   for (const k in serverApps) {
     const serverConfig = config.serverApps[k]
-    const resolveApiDir = path.join(resolveAcaDir, k, serverConfig.apiDir)
+    const resolveApiDir = path.join(
+      resolveAcaDir,
+      k,
+      serverConfig.apiDir ??
+        path.join(Cst.DefaultTsDir, Cst.DefaultServerApiDir)
+    )
     const apiIndex = path.join(resolveApiDir, Cst.ApiIndex)
     const RPCDir = path.join(resolveApiDir, Cst.ServerRPCDir)
     fs.writeFileSync(apiIndex, dbApi.serverApi)
@@ -485,9 +462,8 @@ export default async function (acaDir: AcaDir, config: Config, ast: Ast) {
   }
 
   for (const k in clientApps) {
-    // 判断客户端是否已被删除
     const clientConfig = config.clientApps[k]
-    const RPCs = clientApps[k].allowRPCs.filter((v) =>
+    const RPCs = (clientApps[k].allowRPCs || []).filter((v) =>
       clientRPCApis[v] !== undefined ? true : false
     )
 
@@ -507,7 +483,11 @@ export default async function (acaDir: AcaDir, config: Config, ast: Ast) {
 ${reqInstance()}
 ${fnTpl(RPCApis)}
 `
-    const apiDir = path.join(k, clientConfig.apiDir)
+    const apiDir = path.join(
+      k,
+      clientConfig.apiDir ??
+        path.join(Cst.DefaultTsDir, Cst.DefaultClientApiDir)
+    )
     const api = path.join(resolveAcaDir, apiDir, Cst.ClientApi)
     const apiIndex = path.join(resolveAcaDir, apiDir, Cst.ClientApiIndex)
 

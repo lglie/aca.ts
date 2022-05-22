@@ -47,7 +47,7 @@ namespace Blog {
       keys: ['firstNameId', 'lastNameId'],
       references: ['firstName', 'lastName'],
       onUpdate: 'cascade',
-      onDelete: 'set null',
+      onDelete: 'cascade',
     })
     user: user
   }

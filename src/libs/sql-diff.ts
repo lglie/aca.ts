@@ -100,7 +100,7 @@ const keywords = {
       index: '',
     },
   },
-  mysql: {
+  mariadb: {
     fullName: 'mysql',
     quote: { prefix: '`', name: '`', value: "'" },
     idDefaultType: 'cuid',

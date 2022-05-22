@@ -1,7 +1,6 @@
 import fs from 'fs'
 import path from 'path'
 import ts from 'typescript'
-import * as Cst from './constant'
 
 import {
   Extractor,

@@ -111,5 +111,5 @@ Then the database, frontend, and backend are all set up, you can start your appl
 
 - PostgreSQL
 - MSSQL
-- Oracle
+- MariaDB
 - Better-Sqlite3

@@ -22,7 +22,7 @@ export async function create(yargs: any) {
 
   // 递归创建目录
   MkdirsSync(path.join(name, Cst.AcaMiscRecordsDir))
-  const tplDir = path.join(__dirname, '../../template')
+  const tplDir = path.join(__dirname, '../../templates')
 
   for (const k in files) {
     const file = path.join(tplDir, files[k])

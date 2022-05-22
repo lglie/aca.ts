@@ -210,7 +210,7 @@ export function addAppConfig(
 ) {
   const resolveAcaDir = path.resolve(acaDir)
   const config: Config = require(path.join(resolveAcaDir, Cst.AcaConfig))
-  const templatePath = path.join(__dirname, '../../template')
+  const templatePath = path.join(__dirname, '../../templates')
   const resolveApiDir = path.join(resolveAcaDir, name, apiDir)
 
   const serverFiles = {
