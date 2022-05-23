@@ -379,8 +379,7 @@ const keywords = {
       autoincrement: ' autoincrement',
       unique: ' unique',
       index: '',
-      constraintPre: (table: string, action: 'ADD' | 'DROP') =>
-        `ALTER TABLE ${keywords.betterSqlite3.quote.prefix}${table}${keywords.betterSqlite3.quote.name} ${action} `,
+      constraintPre: (table: string, action: 'ADD' | 'DROP') => ``,
       additionalConnectOpts: `useNullAsDefault: false,`,
       connectionOpts: `connection,`,
       async connect(
