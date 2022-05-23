@@ -2,7 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import * as Cst from '../libs/constant'
 import { addAppConfig, currentDir, MkdirsSync } from '../libs/common'
-import { pkgServer, createdEchoServer, indexKoa } from '../libs/template'
+import { pkgServer, createdEchoServer, indexKoa } from '../libs/templates'
 import { execSync } from 'child_process'
 import orm from '../orm'
 

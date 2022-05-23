@@ -1,7 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import * as Cst from './constant'
-import { apiPlaceholder } from '../libs/template'
+import { apiPlaceholder } from './templates'
 
 BigInt.prototype['toJSON'] = function () {
   return this.toString()

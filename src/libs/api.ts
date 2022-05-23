@@ -27,7 +27,7 @@ import {
   fnTpl,
   reqInstTpl,
   reqInitValueTpl,
-} from './template'
+} from './templates'
 
 const templatePath = `../../templates`
 

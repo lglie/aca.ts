@@ -1,7 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import * as Cst from '../libs/constant'
-import { createdEcho } from '../libs/template'
+import { createdEcho } from '../libs/templates'
 import { MkdirsSync } from '../libs/common'
 
 export async function create(yargs: any) {

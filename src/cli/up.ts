@@ -9,7 +9,7 @@ import SqlDiff from '../libs/sql-diff'
 import Api from '../libs/api'
 import orm from '../orm'
 import { promisify } from 'util'
-import { remark } from '../libs/template'
+import { remark } from '../libs/templates'
 
 const msg = (acaDir: AcaDir, config: Config) => {
   const resolveAcaDir = path.resolve(acaDir)
@@ -54,7 +54,7 @@ async function pg(
       : connConf)
   )
 
-  let db = await sqlDiff.db.connection(acaDir, config, connOption)
+  let db = await sqlDiff.keyword.stmt.connect(acaDir, config, connOption)
 
   const CreateDb = async () => {
     if (db.database !== 'postgres')
@@ -70,7 +70,7 @@ async function pg(
       // 新建数据库
       await db.query(sqlDiff.db.create(connOption.database))
       await db.end()
-      db = await sqlDiff.db.connection(acaDir, config, connOption)
+      db = await sqlDiff.keyword.stmt.connect(acaDir, config, connOption)
       await db.query(allSql.sqls)
       await db.end()
       console.log(`总共：${allSql.total}张表创建成功！`)
@@ -78,7 +78,7 @@ async function pg(
       // 不成功，删除此新建的数据库
       await db.end()
 
-      db = await sqlDiff.db.connection(acaDir, config, {
+      db = await sqlDiff.keyword.stmt.connect(acaDir, config, {
         ...connOption,
         database: 'postgres',
       })
@@ -119,24 +119,100 @@ async function pg(
   return await (prevDb ? AlterDb() : CreateDb())
 }
 
-async function mysql(
+async function mssql(
   acaDir: AcaDir,
   config: Config,
   timestamp,
   currdb: Db,
   prevDb?: Db
 ) {
-  const sqlDiff = SqlDiff('mysql')
+  const sqlDiff = SqlDiff('mssql')
+
   // 判断数据库是否存在
-  let conn = <RelConn>(
+  const connConf =
+    process.env[currdb.config.connectOption.envConnect || ''] ||
+    currdb.config.connectOption.connect
+  const connOption = <RelConn>connConf
+  let db = await sqlDiff.keyword.stmt.connect(acaDir, config, connOption)
+  const CreateDb = async () => {
+    if (db.config.database !== 'master')
+      throw new Error(
+        `已经存在数据库：${connOption.database}, 如需重新创建则需先删除该数据库`
+      )
+    console.log(`正在创建数据库表...`)
+    const allSql = CreateAllTblSqls(currdb.config, currdb.tables)
+    allSql.sqls =
+      sqlDiff.aca.create + sqlDiff.aca.insert(timestamp) + '\n' + allSql.sqls
+    console.log(allSql.sqls)
+    try {
+      // 新建数据库
+      await db.query(sqlDiff.db.create(connOption.database))
+      await db.close()
+      db = await sqlDiff.keyword.stmt.connect(acaDir, config, connOption)
+      await db.query(allSql.sqls)
+      await db.close()
+      console.log(`总共：${allSql.total}张表创建成功！`)
+    } catch (e) {
+      // 不成功，删除此新建的数据库
+      db = await sqlDiff.keyword.stmt.connect(acaDir, config, {
+        ...connOption,
+        database: 'master',
+      })
+      await db.query(`DROP DATABASE "${connOption.database}"`)
+      await db.close()
+      throw e
+    }
+    return allSql.sqls
+  }
+
+  const AlterDb = async () => {
+    try {
+      // 判断是不是aca建立的数据库（通过aca专有的系统表："___ACA"）
+      await db.query(sqlDiff.aca.select)
+    } catch (e) {
+      await db.close()
+      throw `存在数据库"${(<any>connOption).database}", 请先备份删除`
+    }
+
+    const allSqls = DbDiffSqls(currdb, prevDb)
+
+    if (allSqls) {
+      console.log(allSqls)
+      try {
+        await db.query(allSqls)
+      } catch (e) {
+        throw e
+      } finally {
+        await db.close()
+      }
+      console.log(`数据库(${connOption})更新成功！`)
+      return allSqls
+    } else {
+      await db.close()
+    }
+  }
+
+  return await (prevDb ? AlterDb() : CreateDb())
+}
+
+async function mysql2(
+  acaDir: AcaDir,
+  config: Config,
+  timestamp,
+  currdb: Db,
+  prevDb?: Db
+) {
+  const sqlDiff = SqlDiff('mysql2')
+  // 判断数据库是否存在
+  const conn = <RelConn>(
     (process.env[currdb.config.connectOption.envConnect || ''] ||
       currdb.config.connectOption.connect)
   )
 
-  let db = await sqlDiff.db.connection(acaDir, config, conn)
+  let db = await sqlDiff.keyword.stmt.connect(acaDir, config, conn)
 
   const CreateDb = async () => {
-    if (db.database === (<RelConn>conn).database)
+    if (db.connection.database === (<RelConn>conn).database)
       throw new Error(
         `已经存在数据库：${
           (<RelConn>conn).database
@@ -147,27 +223,22 @@ async function mysql(
     allSql.sqls =
       sqlDiff.aca.create + sqlDiff.aca.insert(timestamp) + '\n' + allSql.sqls
     console.log(allSql.sqls)
-    let query = promisify((sql, cb) => db.query(sql, cb))
-    let end = promisify((cb) => db.end(cb))
+
     try {
       // 新建数据库
-      await query(sqlDiff.db.create((<RelConn>conn).database))
-      await end()
-      db = await sqlDiff.db.connection(acaDir, config, conn)
-      query = promisify((sql, cb) => db.query(sql, cb))
-      await query(allSql.sqls)
-      end = promisify((cb) => db.end(cb))
-      await end()
+      await db.query(sqlDiff.db.create((<RelConn>conn).database))
+      await db.end()
+      db = await sqlDiff.keyword.stmt.connect(acaDir, config, conn)
+      await db.query(allSql.sqls)
+      await db.end()
       console.log(`总共：${allSql.total}张表创建成功！`)
     } catch (e) {
-      db = await sqlDiff.db.connection(acaDir, config, {
+      db = await sqlDiff.keyword.stmt.connect(acaDir, config, {
         ...(<RelConn>conn),
         database: undefined,
       })
-      query = promisify((sql, cb) => db.query(sql, cb))
-      end = promisify((cb) => db.end(cb))
-      await query(sqlDiff.db.drop((<RelConn>conn).database))
-      await end()
+      await db.query(sqlDiff.db.drop((<RelConn>conn).database))
+      await db.end()
       throw e
     }
     return allSql.sqls
@@ -176,8 +247,7 @@ async function mysql(
   const AlterDb = async () => {
     try {
       // 判断是不是aca建立的数据库（通过aca专有的系统表："___ACA"）
-      const query = promisify((sql, cb) => db.query(sql, cb))
-      await query(sqlDiff.aca.select)
+      await db.query(sqlDiff.aca.select)
     } catch (e) {
       await db.end()
       throw `存在数据库"${(<RelConn>conn).database}", 请先备份删除`
@@ -251,7 +321,11 @@ async function betterSqlite3(
   }
 
   const AlterDb = async () => {
-    const db: any = await sqlDiff.db.connection(acaDir, config, connOption)
+    const db: any = await sqlDiff.keyword.stmt.connect(
+      acaDir,
+      config,
+      connOption
+    )
     try {
       // 判断是不是aca建立的数据库（通过aca专有的系统表："___ACA"）
       let upedSchs = db.prepare(sqlDiff.aca.select).all()
@@ -314,7 +388,8 @@ export async function up(yargs: any) {
     if (!dbs[k].config.onlyApi) {
       const rtn = await {
         pg,
-        mysql,
+        mssql,
+        mysql2,
         betterSqlite3,
       }[dbs[k].config.connectOption.driver](
         acaDir,
@@ -440,3 +515,75 @@ CREATE INDEX "INDEX_content__category_name" ON "content__category" ("name");
 ALTER TABLE "content__category" ADD CONSTRAINT "FOREIGN_content__category_categoriesId" FOREIGN KEY ("categoriesId") REFERENCES "content__category" ("id") on update cascade on delete set null;
 
 ALTER TABLE "comment" ADD CONSTRAINT "FOREIGN_comment_postsId" FOREIGN KEY ("postsId") REFERENCES "content__post" ("serial")`
+
+const mssql1 = `
+CREATE TABLE "___ACA" ("version" varchar(18) PRIMARY KEY, "preverison" varchar(18), "status" boolean DEFAULT true, "orm" text, "createdAt" timestamp DEFAULT CURRENT_TIMESTAMP);       
+
+INSERT INTO "___ACA" ("version", "orm") VALUES ('1653286591208', '');
+
+CREATE TABLE "user" (
+"id" CHAR(25) PRIMARY KEY,
+"firstName" VARCHAR(16) NOT NULL,
+"lastName" VARCHAR(25) NOT NULL,
+"gender" VARCHAR(20) DEFAULT 'A',
+"age" INT DEFAULT 25,
+"bigint" BIGINT DEFAULT '120',
+"married" BOOLEAN DEFAULT true,
+"description" VARCHAR(768),
+"detail" JSON,
+"created_at" TIMESTAMP default current_timestamp,
+"updated_at" TIMESTAMP default current_timestamp on update current_timestamp);
+
+CREATE TABLE "PROF" (
+"id" VARCHAR(8) PRIMARY KEY NOT NULL,
+"password" CHAR(8) NOT NULL,
+"firstNameId" VARCHAR(16) NOT NULL,
+"lastNameId" VARCHAR(25) NOT NULL);
+
+CREATE TABLE "ns__post" (
+"serial" INT PRIMARY KEY IDENTITY,
+"isPublished" BOOLEAN NOT NULL,
+"enum" VARCHAR(20),
+"score" REAL NOT NULL,
+"firstNameId" VARCHAR(16) NOT NULL,
+"lastNameId" VARCHAR(25) NOT NULL);
+
+CREATE TABLE "ns__category" (
+"id" VARCHAR(768) PRIMARY KEY NOT NULL,
+"name" VARCHAR(768) NOT NULL,
+"categoriesId" VARCHAR(768));
+
+CREATE TABLE "comment" (
+"id" CHAR(25) PRIMARY KEY,
+"topEnum" VARCHAR(20) DEFAULT 'C',
+"content" VARCHAR(768) NOT NULL,
+"createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+"postsId" INT NOT NULL);
+
+CREATE TABLE "_comment_commenter_$_user_comments" (
+"user_id" CHAR(25) NOT NULL,
+"comment_id" CHAR(25) NOT NULL, UNIQUE ("user_id","comment_id"));
+
+CREATE TABLE "_ns__category_posts_$_ns__post_categories" (   
+"ns__post_serial" INT NOT NULL,
+"ns__category_id" VARCHAR(768) NOT NULL, UNIQUE ("ns__post_serial","ns__category_id"));
+
+CREATE TABLE "_comment_category_$_ns__category_comments" (   
+"ns__category_id" VARCHAR(768) NOT NULL,
+"comment_id" CHAR(25) NOT NULL, UNIQUE ("ns__category_id","comment_id"));
+
+ALTER TABLE "user" ADD CONSTRAINT "UNIQUE_user_firstName_lastName" UNIQUE ("firstName","lastName");
+
+ALTER TABLE "PROF" ADD CONSTRAINT "UNIQUE_PROF_firstNameId_lastNameId" UNIQUE ("firstNameId","lastNameId");
+
+ALTER TABLE "PROF" ADD CONSTRAINT "FOREIGN_PROF_firstNameId_lastNameId" FOREIGN KEY ("firstNameId","lastNameId") REFERENCES "user" ("firstName","lastName") on update cascade on delete cascade;
+
+ALTER TABLE "ns__post" ADD CONSTRAINT "FOREIGN_ns__post_firstNameId_lastNameId" FOREIGN KEY ("firstNameId","lastNameId") REFERENCES "user" ("firstName","lastName");
+
+CREATE INDEX "INDEX_ns__category_name" ON "ns__category" ("name");
+
+ALTER TABLE "ns__category" ADD CONSTRAINT "UNIQUE_ns__category_name" UNIQUE ("name");
+
+ALTER TABLE "ns__category" ADD CONSTRAINT "FOREIGN_ns__category_categoriesId" FOREIGN KEY ("categoriesId") REFERENCES "ns__category" ("id");
+
+ALTER TABLE "comment" ADD CONSTRAINT "FOREIGN_comment_postsId" FOREIGN KEY ("postsId") REFERENCES "ns__post" ("serial") `

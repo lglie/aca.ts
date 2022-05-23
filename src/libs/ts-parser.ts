@@ -1,14 +1,13 @@
 import fs from 'fs'
 import path from 'path'
 import ts from 'typescript'
-
 import {
   Extractor,
   ExtractorConfig,
   ExtractorResult,
 } from '@microsoft/api-extractor'
 
-import { RPCApi, RPCNsApi } from './template'
+import { RPCApi, RPCNsApi } from './templates'
 
 export const tsParse = async (args: {
   baseDir: string

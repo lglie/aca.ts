@@ -52,7 +52,7 @@ export const pkgServer = (name: string, drivers: string[]) => {
     "koa": "",
     "koa-body": "",
     "koa-cors": "",
-    ${drivers.map((v) => `${Cst.Drivers[v]}`).join('\n')}
+    ${drivers.map((v) => `${SqlDiff(<any>v).keyword.npm}`).join('\n')}
     "cuid": "",
     "uuid": "",
     "knex": ""
@@ -129,22 +129,8 @@ try {
 
 this.knex = knex({
   client: driver,
-  ${
-    driver === 'pg'
-      ? `pool: {
-    min: 2,
-    max: 6,
-    propagateCreateError: false,
-  },`
-      : ''
-  }
-  connection: ${
-    {
-      pg: `typeof connection == 'string' ? require('pg-connection-string').parse(connection) : connection`,
-      mysql: `connection`,
-      betterSqlite3: `connection`,
-    }[driver]
-  }${driver === 'betterSqlite3' ? ',\nuseNullAsDefault: false,' : ''}
+  ${sqlDiff.keyword.stmt.additionalConnectOpts}
+  connection: ${sqlDiff.keyword.stmt.connectionOpts}
 })
 }
 `
