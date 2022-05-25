@@ -77,7 +77,7 @@ const $Queries = function <Tb extends keyof $TB>(trx: any, sql: string[] = []) {
     for (let i = 0; i < records.length; i++) {
       for (const AttCol in AttCols) {
         if (AttCols[AttCol].relation) continue
-        if (records[i][AttCol] !== undefined) {
+        if (records[i][AttCol] !== undefined && records[i][AttCol] !== null) {
           // 判断jsType
           if (
             AttCols[AttCol].type === 'enum'
@@ -740,32 +740,32 @@ const $Queries = function <Tb extends keyof $TB>(trx: any, sql: string[] = []) {
         )
 
         for (const key in relationCols) {
-          const where = relationCols[key].where ?? {}
-          let pKeys, fKeys, relIds
+          const where = relationCols[key].where ?? {};
+          let pKeys, fKeys, relIds;
 
           switch (AttCols[key].relation.kind) {
-            case 'primary':
+            case "primary":
               const rel =
                 $Att[AttCols[key].type].columns[AttCols[key].relation.relColumn]
-                  .relation
-              pKeys = rel.references
-              fKeys = rel.keys
+                  .relation;
+              pKeys = rel.references;
+              fKeys = rel.keys;
               where[fKeys] = {
                 in: result.map((v) => pKeys.map((v2) => v[v2])),
-              }
-              break
-            case 'foreign':
-              pKeys = AttCols[key].relation.references
-              fKeys = AttCols[key].relation.keys
+              };
+              break;
+            case "foreign":
+              pKeys = AttCols[key].relation.references;
+              fKeys = AttCols[key].relation.keys;
               where[pKeys] = {
                 in: result.map((v) => fKeys.map((v2) => v[v2])),
-              }
-              break
-            case 'many':
-              const id = $Att[$Att[table].columns[key].type].id
+              };
+              break;
+            case "many":
+              const id = $Att[$Att[table].columns[key].type].id;
               const tableId = $Att[table].id.map(
                 (v2) => `${$Att[table].dbName}_${v2}`
-              )
+              );
               relIds = await trxQuery(
                 trx($Att[table].columns[key].relation.mapTable)
                   .select()
@@ -773,7 +773,7 @@ const $Queries = function <Tb extends keyof $TB>(trx: any, sql: string[] = []) {
                     tableId,
                     result.map((v) => $Att[table].id.map((v2) => v[v2]))
                   )
-              )
+              );
               where[id] = {
                 in: relIds.map((v) =>
                   id
@@ -786,64 +786,83 @@ const $Queries = function <Tb extends keyof $TB>(trx: any, sql: string[] = []) {
                     )
                     .flat()
                 ),
-              }
-              break
+              };
+              break;
           }
           const relationResult = await this.finder(AttCols[key].type, {
             where,
-          })
+          });
+
           for (const v of result) {
             switch (AttCols[key].relation.kind) {
-              case 'primary':
-              case 'foreign':
+              case "primary":
+              case "foreign":
                 v[key] = relationResult.filter(
                   (r) =>
-                    `${(AttCols[key].relation.kind === 'primary' ? fKeys : pKeys)
-                      .map((v2) => r[v2].trim())
-                      .join('_')
-                    }` ===
-                    `${(AttCols[key].relation.kind === 'primary' ? pKeys : fKeys)
-                      .map((v2) => v[v2].trim())
-                      .join('_')
-                    }`
-                )
+                    `${(AttCols[key].relation.kind === "primary"
+                      ? fKeys
+                      : pKeys
+                    )
+                      .map((v2) => (r[v2] ? r[v2].trim() : null))
+                      .join("_")}` ===
+                    `${(AttCols[key].relation.kind === "primary"
+                      ? pKeys
+                      : fKeys
+                    )
+                      .map((v2) => (v[v2] ? v[v2].trim() : null))
+                      .join("_")}`
+                );
                 if (
                   AttCols[key].relation.toOne ||
-                  AttCols[key].relation.kind === 'foreign'
+                  AttCols[key].relation.kind === "foreign"
                 )
-                  v[key] = v[key][0]
-                break
-              case 'many':
-                const id = $Att[$Att[table].columns[key].type].id
+                  v[key] = v[key][0] || null;
+                break;
+              case "many":
+                const id = $Att[$Att[table].columns[key].type].id;
                 const tableId = $Att[table].id.map(
                   (v2) => `${$Att[table].dbName}_${v2}`
-                )
+                );
                 const mapTableData = relIds
                   .filter(
                     (r) =>
-                      tableId.map((v2) => r[v2].trim()).join('_') ==
-                      $Att[table].id.map((v2) => v[v2].trim()).join('_')
+                      tableId
+                        .map((v2) => (r[v2] ? r[v2].trim() : null))
+                        .join("_") ==
+                      $Att[table].id
+                        .map((v2) => (v[v2] ? v[v2].trim() : null))
+                        .join("_")
                   )
                   .map((v3) =>
                     id
                       .map((v2) =>
                         v3[
                           `${$Att[$Att[table].columns[key].type].dbName}_${v2}`
-                        ].trim()
+                        ]
+                          ? v3[
+                              `${
+                                $Att[$Att[table].columns[key].type].dbName
+                              }_${v2}`
+                            ].trim()
+                          : null
                       )
-                      .join('_')
-                  )
+                      .join("_")
+                  );
                 v[key] = relationResult.filter((r) =>
-                  mapTableData.includes(id.map((v2) => r[v2].trim()).join('_'))
-                )
+                  mapTableData.includes(
+                    id.map((v2) => (r[v2] ? r[v2].trim() : null)).join("_")
+                  )
+                );
             }
-            v[key] = $RtnSelect(
-              AttCols[key].type,
-              v[key],
-              typeof relationCols[key].select === 'object'
-                ? relationCols[key].select
-                : relationCols[key]
-            )
+            v[key] =
+              v[key] &&
+              $RtnSelect(
+                AttCols[key].type,
+                v[key],
+                typeof relationCols[key].select === "object"
+                  ? relationCols[key].select
+                  : relationCols[key]
+              );
           }
         }
         result = $RtnSelect(table, result, select)
