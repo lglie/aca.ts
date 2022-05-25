@@ -77,7 +77,7 @@ const $Queries = function <Tb extends keyof $TB>(trx: any, sql: string[] = []) {
     for (let i = 0; i < records.length; i++) {
       for (const AttCol in AttCols) {
         if (AttCols[AttCol].relation) continue
-        if (records[i][AttCol] !== undefined) {
+        if (records[i][AttCol] !== undefined && records[i][AttCol] !== null) {
           // 判断jsType
           if (
             AttCols[AttCol].type === 'enum'
@@ -792,26 +792,31 @@ const $Queries = function <Tb extends keyof $TB>(trx: any, sql: string[] = []) {
           const relationResult = await this.finder(AttCols[key].type, {
             where,
           })
+
           for (const v of result) {
             switch (AttCols[key].relation.kind) {
               case 'primary':
               case 'foreign':
                 v[key] = relationResult.filter(
                   (r) =>
-                    `${(AttCols[key].relation.kind === 'primary' ? fKeys : pKeys)
-                      .map((v2) => r[v2].trim())
-                      .join('_')
-                    }` ===
-                    `${(AttCols[key].relation.kind === 'primary' ? pKeys : fKeys)
-                      .map((v2) => v[v2].trim())
-                      .join('_')
-                    }`
+                    `${(AttCols[key].relation.kind === 'primary'
+                      ? fKeys
+                      : pKeys
+                    )
+                      .map((v2) => (r[v2] ? r[v2].trim() : null))
+                      .join('_')}` ===
+                    `${(AttCols[key].relation.kind === 'primary'
+                      ? pKeys
+                      : fKeys
+                    )
+                      .map((v2) => (v[v2] ? v[v2].trim() : null))
+                      .join('_')}`
                 )
                 if (
                   AttCols[key].relation.toOne ||
                   AttCols[key].relation.kind === 'foreign'
                 )
-                  v[key] = v[key][0]
+                  v[key] = v[key][0] || null
                 break
               case 'many':
                 const id = $Att[$Att[table].columns[key].type].id
@@ -821,29 +826,43 @@ const $Queries = function <Tb extends keyof $TB>(trx: any, sql: string[] = []) {
                 const mapTableData = relIds
                   .filter(
                     (r) =>
-                      tableId.map((v2) => r[v2].trim()).join('_') ==
-                      $Att[table].id.map((v2) => v[v2].trim()).join('_')
+                      tableId
+                        .map((v2) => (r[v2] ? r[v2].trim() : null))
+                        .join('_') ==
+                      $Att[table].id
+                        .map((v2) => (v[v2] ? v[v2].trim() : null))
+                        .join('_')
                   )
                   .map((v3) =>
                     id
                       .map((v2) =>
                         v3[
                           `${$Att[$Att[table].columns[key].type].dbName}_${v2}`
-                        ].trim()
+                        ]
+                          ? v3[
+                              `${
+                                $Att[$Att[table].columns[key].type].dbName
+                              }_${v2}`
+                            ].trim()
+                          : null
                       )
                       .join('_')
                   )
                 v[key] = relationResult.filter((r) =>
-                  mapTableData.includes(id.map((v2) => r[v2].trim()).join('_'))
+                  mapTableData.includes(
+                    id.map((v2) => (r[v2] ? r[v2].trim() : null)).join('_')
+                  )
                 )
             }
-            v[key] = $RtnSelect(
-              AttCols[key].type,
-              v[key],
-              typeof relationCols[key].select === 'object'
-                ? relationCols[key].select
-                : relationCols[key]
-            )
+            v[key] =
+              v[key] &&
+              $RtnSelect(
+                AttCols[key].type,
+                v[key],
+                typeof relationCols[key].select === 'object'
+                  ? relationCols[key].select
+                  : relationCols[key]
+              )
           }
         }
         result = $RtnSelect(table, result, select)
