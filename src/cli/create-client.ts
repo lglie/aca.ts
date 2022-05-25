@@ -2,7 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import * as Cst from '../libs/constant'
 import { addAppConfig, currentDir } from '../libs/common'
-import { reactPage } from '../libs/template'
+import { reactPage } from '../libs/templates'
 import { execSync } from 'child_process'
 import orm from '../orm'
 

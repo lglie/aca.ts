@@ -11,7 +11,7 @@ const comment = {
   create: 'Init a new aca project [dirname]',
   server: 'Create a server [dirname] application, [dirname] default: server.',
   client: 'Create a client [dirname] application, [dirname] default: client.',
-  add: 'create a app config. -s(--server) or -c(--client): server app or client app, -a [name]: apiDir name, default src/aca.server or src/aca.client',
+  add: 'Add a app config. -s(--server) or -c(--client): server app or client app, -a [name]: apiDir name, default src/aca.server or src/aca.client',
   up: 'Alter database schema and generate api',
   rollback: 'Rollback to previous release',
 }

@@ -69,17 +69,16 @@ $ cd <dirname>
 
 3. Use the following method to create aca.ts apps:
 
-Create a backend app:
+Create a backend app (a simple koa framework):
 
 ```bash
-$ aca server <dirname> --framework <framework or faas>
-  framework: koa, express, faas: amazon, azure, ali, google, tencent
+$ aca server <dirname>
 ```
 
-Create a frontend app(react app by create-react-app):
+Create a frontend app (a react app with create-react-app):
 
 ```bash
-$ aca client
+$ aca client <dirname>
 ```
 
 Add self app to the project:
@@ -111,5 +110,4 @@ Then the database, frontend, and backend are all set up, you can start your appl
 
 - PostgreSQL
 - MSSQL
-- MariaDB
 - Better-Sqlite3
