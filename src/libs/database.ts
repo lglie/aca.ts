@@ -2,7 +2,7 @@
 
 import SqlDiff from './sql-diff'
 import { MapTblName, AddQuote, FlatTables, notEmpty } from './common'
-import ormDiff from '../orm/table-diff'
+import ormDiff from '../orm/diff'
 
 // 创建表的sql
 function CreateTblSql(config: DbConfig, tbls: FlatTables, jsName: string) {
