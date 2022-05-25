@@ -1,4 +1,4 @@
-type DriverEnum = 'pg' | 'mssql' | 'mysql' | 'sqlite3' | 'mongodb'
+type DriverEnum = 'pg' | 'mssql' | 'mysql2' | 'betterSqlite3'
 type OnPrimaryMutation = 'cascade' | 'set null' | 'restrict' | 'no action'
 interface DbConfig {
   driver: DriverEnum
@@ -20,7 +20,7 @@ interface DbConfig {
   onDelete?: OnPrimaryMutation
 }
 
-export type $db = `$${string}` | DbConfig
+export type $db = `${string}` | DbConfig
 export type int = number
 export type float = number
 export type id = {

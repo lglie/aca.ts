@@ -264,7 +264,7 @@ async function PickModel(acaDir: '.' | '..', ast: ts.SourceFile) {
     subAst: ts.SourceFile | ts.ModuleBlock,
     namespace: string[] = []
   ) => {
-    let qualified = config.database['default'].tableNameWithNamespace
+    let qualified = config.databases['default'].tableNameWithNamespace
       ? namespace
       : []
 
@@ -441,17 +441,18 @@ async function PickModel(acaDir: '.' | '..', ast: ts.SourceFile) {
   const DbConfig = (db: DbVar) => {
     // 默认使用config里database字段(.)作为实例化参数
     if (!db.models['$']) {
-      if (config.database) {
-        db.models['$'] = <DbConfig>config.database['default']
+      if (config.databases) {
+        db.models['$'] = <DbConfig>config.databases['default']
       } else throw `config文件里没有配置数据库实例化参数`
     } // 指向config/database里的某一个字段路径
-    else if (
-      typeof db.models['$']['$'] === 'string' &&
-      db.models['$']['$'].startsWith(`$`)
-    ) {
-      db.models['$'] = config.database[db.models['$']['$'].slice(1)]
-    } else if (typeof db['$'] === 'object') {
-    } else `数据库初始化参数配置错误！`
+    else {
+      if (typeof db.models['$']['$'] === 'string') {
+        db.models['$'] =
+          config?.databases[db.models['$']['$']] || db.models['$']['$']
+      } else if (typeof db.models['$']['$'] === 'object') {
+        db.models['$'] = db.models['$']['$']
+      } else `数据库初始化参数配置错误！`
+    }
   }
 
   // 完善表

@@ -1,17 +1,16 @@
 import fs from 'fs'
 import path from 'path'
 import * as Cst from '../libs/constant'
-import { createdEcho } from '../libs/template'
+import { createdEcho } from '../libs/templates'
 import { MkdirsSync } from '../libs/common'
 
 export async function create(yargs: any) {
   const files = {
     [Cst.AcaConfig]: 'config.json',
-    [Cst.AcaConfigSchema]: 'config.schema.json',
     [Cst.AcaExample]: 'example-blog',
     [Cst.AcaOrmPropetty]: '.orm',
     [Cst.AcaTsconfig]: 'tsconfig.aca',
-    [Cst.AcaChangelogsRemark]: 'remark',
+    [Cst.AcaMiscRemark]: 'remark',
   }
 
   const name = yargs.argv._[1]
@@ -22,8 +21,8 @@ export async function create(yargs: any) {
   }
 
   // 递归创建目录
-  MkdirsSync(path.join(name, Cst.AcaChangelogsRecordsDir))
-  const tplDir = path.join(__dirname, '../../template')
+  MkdirsSync(path.join(name, Cst.AcaMiscRecordsDir))
+  const tplDir = path.join(__dirname, '../../templates')
 
   for (const k in files) {
     const file = path.join(tplDir, files[k])

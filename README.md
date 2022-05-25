@@ -1,6 +1,6 @@
 # Aca.ts
 
-Aca.ts is a node.js CLI based on Typescript and Knex.js. It could automatically syncs database schema according to a custom ORM. It could also automatically generates APIs for accessing the database. More importantly, it automatically creates frontend APIs through backend functions and the generated database APIs (like RPC), so frontend developers can easily access the backend without defining routing.
+Aca.ts is a node.js CLI based on Typescript and Knex.js. It could automatically syncs database schema according to a custom ORM. It could also automatically generates APIs for accessing the database. More importantly, it automatically creates frontend APIs through backend functions and the generated database APIs (like RPC), so frontend developers can easily access the backend without defining routing. The APIs is typescript, tips are very friendly when coding.
 
 Use the class syntax of Typescript to define ORM:
 
@@ -65,21 +65,20 @@ $ cd <dirname>
 
 2. Open .aca directory, copy your custom ORM file into that directory, add this file name to config.json/orm field.
 
-   <img with="100px" hight="200px" src="https://yunplus-1257983906.cos.ap-shanghai.myqcloud.com/aca-config.jpg">
+<img with="80px" hight="180px" src="https://www.ts.center/static/config.jpg">
 
 3. Use the following method to create aca.ts apps:
 
-Create a backend app:
+Create a backend app (a simple koa framework):
 
 ```bash
-$ aca server <dirname> --framework <framework or faas>
-  framework: koa, express, faas: amazon, azure, ali, google, tencent
+$ aca server <dirname>
 ```
 
-Create a frontend app(react app by create-react-app):
+Create a frontend app (a react app with create-react-app):
 
 ```bash
-$ aca client
+$ aca client <dirname>
 ```
 
 Add self app to the project:
@@ -99,11 +98,11 @@ Then the database, frontend, and backend are all set up, you can start your appl
 
 #
 
-> <font color=red>The generated backend APIs usage example are as follows:</font> <img with="80px" hight="180px" src="https://yunplus-1257983906.cos.ap-shanghai.myqcloud.com/aca-6.jpg">
+> <font color=red>The generated backend APIs usage example are as follows:</font> <img with="80px" hight="180px" src="https://www.ts.center/static/server-koa-index.jpg">
 
 #
 
-> <font color=red>The generated frontend APIs usage example are as follows:</font> <img with="80px" hight="180px" src="https://yunplus-1257983906.cos.ap-shanghai.myqcloud.com/aca-5.jpg">
+> <font color=red>The generated frontend APIs usage example are as follows:</font> <img with="80px" hight="180px" src="https://www.ts.center/static/client-react-app.jpg">
 
 #
 
@@ -111,5 +110,4 @@ Then the database, frontend, and backend are all set up, you can start your appl
 
 - PostgreSQL
 - MSSQL
-- Oracle
 - Better-Sqlite3

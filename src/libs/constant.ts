@@ -1,13 +1,4 @@
 export const Delimiter = `__` // 数据库表名的命名空间分隔符
-export const ServerFramework = [
-  'koa',
-  'express',
-  'amazon',
-  'azure',
-  'google',
-  'ali',
-  'tencent',
-]
 export const ClientApiExport = ['$RPC', '$EnumType', '$TB', '$TableType']
 export const ServerApiExport = [...ClientApiExport, '$ApiBridge']
 export const FrameworkClient = ['vue', 'react', 'gatsby']
@@ -16,11 +7,11 @@ export const AcaDir = `.aca`
 export const AcaConfig = `${AcaDir}/config.json`
 export const AcaConfigSchema = `${AcaDir}/config.schema.json`
 export const AcaExample = `${AcaDir}/example-blog.ts`
-export const AcaOrmPropetty = `${AcaDir}/.orm.ts`
 export const AcaTsconfig = `${AcaDir}/tsconfig.json`
-export const AcaChangelogsDir = `${AcaDir}/changelogs`
-export const AcaChangelogsRecordsDir = `${AcaChangelogsDir}/records`
-export const AcaChangelogsRemark = `${AcaChangelogsDir}/remark.json`
+export const AcaMiscDir = `${AcaDir}/.misc`
+export const AcaMiscRecordsDir = `${AcaMiscDir}/records`
+export const AcaMiscRemark = `${AcaMiscDir}/remark.json`
+export const AcaOrmPropetty = `${AcaMiscDir}/.orm.ts`
 
 export const DefaultServerName = `server`
 export const DefaultClientName = `client`

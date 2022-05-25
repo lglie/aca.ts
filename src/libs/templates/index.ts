@@ -2,15 +2,11 @@
 import path from 'path'
 import * as Cst from '../constant'
 import SqlDiff from '../sql-diff'
-export * from './faas'
-export * from './faas-provider'
-export * from './default'
 export * from './index-koa'
-export * from './index-express'
 export * from './api-placeholder'
 export * from './react-page'
 
-export const clientClassHead = (dbVar: string) => `\n
+export const classHeadClient = (dbVar: string) => `\n
 export const ${dbVar} =new (class {
 `
 
@@ -32,60 +28,36 @@ async transaction() {
 }
 }
 `
+export const transactionClient = (queries: string) => `async transaction() {
 
-export const serverPkg = (
-  name: string,
-  drivers: string[],
-  framework: 'koa' | 'express' | 'faas'
-) => {
-  const Drivers = {
-    pg: `"pg": "",`,
-    mysql: `"mysql": "",`,
-    betterSqlite3: `"better-sqlite3": "7.5.1",`,
-  }
+  return {
+    async commit() {},
+    async rollback() {},
+    isCompleted() {},
+    ${queries}
+}
+}
+`
 
-  const Framework = {
-    koa: {
-      script: `"start": "node dist/index.js",`,
-      dep: `"koa": "",
-    "koa-body": "",
-    "koa-cors": "",`,
-      dev: ``,
-      run: 'index',
-    },
-    express: {
-      script: `"start": "node dist/index.js",`,
-      dep: `"express": "",`,
-      dev: ``,
-      run: `index`,
-    },
-    faas: {
-      script: ``,
-      dep: ``,
-      dev: `"koa": "",
-    "koa-body": "",
-    "koa-cors": "",`,
-    },
-    run: `.dev-serve`,
-  }[framework]
-
+export const pkgServer = (name: string, drivers: string[]) => {
   return `
 {
   "name": "${name}",
   "description": "",
   "scripts": {
-    ${Framework.script}
-    "dev": "ts-node src/${Framework.run}"
+    "start": "node dist/index.js",
+    "dev": "ts-node src/index"
   },
   "dependencies": {
-    ${Framework.dep}
-    ${drivers.map((v) => `${Drivers[v]}`).join('\n')}
+    "koa": "",
+    "koa-body": "",
+    "koa-cors": "",
+    ${drivers.map((v) => `${SqlDiff(<any>v).keyword.npm}`).join('\n')}
     "cuid": "",
     "uuid": "",
     "knex": ""
   },
   "devDependencies": {
-    ${Framework.dev}
     "@types/node": ""
   }
 }
@@ -106,7 +78,7 @@ export const tableQuery = (query, tblName) => `{
 } `
 
 //  前端尾部模板
-export const classClientFooter = (dbVar: string) => `\n$ = {
+export const classFooterClient = (dbVar: string) => `\n$ = {
     raw: async (args: string): Promise<{ data?: unknown; error?: string }> =>
     await $.${dbVar}.req({
       kind: 'raw',
@@ -157,22 +129,8 @@ try {
 
 this.knex = knex({
   client: driver,
-  ${
-    driver === 'pg'
-      ? `pool: {
-    min: 2,
-    max: 6,
-    propagateCreateError: false,
-  },`
-      : ''
-  }
-  connection: ${
-    {
-      pg: `typeof connection == 'string' ? require('pg-connection-string').parse(connection) : connection`,
-      mysql: `connection`,
-      betterSqlite3: `connection`,
-    }[driver]
-  }${driver === 'betterSqlite3' ? ',\nuseNullAsDefault: false,' : ''}
+  ${sqlDiff.keyword.stmt.additionalConnectOpts}
+  connection: ${sqlDiff.keyword.stmt.connectionOpts}
 })
 }
 `
@@ -227,43 +185,31 @@ export const remark = (date, comment) => ({
   comment,
 })
 
-const Faas = {
-  lambda: `main_handler = async (event, context) => {
-    context.callbackWaitsForEmptyEventLoop = false
-    const acaReq = await $ApiBridge(context, JSON.parse(event.body))`,
-}
-
-export const serverIndex = (
-  faas: keyof typeof Faas
-) => `import { $ApiBridge } from './api'
-
-export const ${Faas[faas]}
-
-  return acaReq
-}
-`
-
 export const createdEcho = (name: string) => `
 $ cd ${name}
 1. 打开.aca/config.json文件进行配置:
 ${path.resolve(name, Cst.AcaConfig)}
   
 2. 在当前目录下创建服务器端应用(至少需要创建一个)、客户端应用：
-创建服务器端应用使用命令：
-$ aca server [dirname] --framework <framework or faas> (framework：koa, express, faas:amazon, azure, ali, tencent)
-创建客户端应用使用命令, 内部调用create-react-app创建一个react应用：
+  创建服务器端koa应用：
+$ aca server [dirname]
+
+  创建客户端react应用(调用create-react-app创建)：
 $ aca client [dirname]
 
-3. 生成数据库及api：
+  添加自建应用(自建应用的目录必须在aca项目目录下，需先创建好)：
+$ aca add [dirname]
+
+3. 生成数据库架构及api：
 $ aca up
 以后在orm发生变化时使用该命令更新数据库架构及api
 `
 
-export const serverCreatedEcho = () => `
+export const createdEchoServer = () => `
 运行：aca up，或：aca rollback 回滚
 `
 
-export function clientApiIndex(dbs: string[], RPCs: string[]) {
+export function apiIndexClient(dbs: string[], RPCs: string[]) {
   const apiStr = (arr: string[]) =>
     arr
       .map(
@@ -284,7 +230,7 @@ import { $, $Request, $ApiBridge } from './aca'
 
 // 填写后端服务器的地址，注意：部署到生产环境时，一定要改成生产环境的地址
 /*******************************下面这些根据需要自行填写************************ */
-const url = ''
+const url = 'http://localhost:8080'
 
 const headers = {
   'Content-Type': 'application/json',
@@ -303,3 +249,35 @@ export type { $EnumType, $TableType, $TB } from './aca'
 export { $RPC, ${dbs.join(', ')} } from './aca'
 `
 }
+
+export const aggregateCount = (table: string, query: string) => `{
+  select: ${
+    query == 'count' ? `'*' | ` : ''
+  }{ [K in $ScalarColumns<'${table}'>]: K }[$ScalarColumns<'${table}'>]
+  where?: NonNullable<$TableQuery<'${table}'>['aggregate']>['where']
+  sql?: NonNullable<$TableQuery<'${table}'>['aggregate']>['sql']
+}`
+
+export const reqInstTpl = (fnStr: string, dbStr: string) => `export const $ = {
+  $RPC: {
+      ${fnStr}
+    },
+      ${dbStr}
+  }
+  `
+
+export const fnTpl = (fnApis: string) =>
+  fnApis.trim()
+    ? `export namespace $RPC {
+    ${fnApis}
+  }`
+    : `export const $RPC = '当前没有远程函数被生成'`
+
+export const reqInitValueTpl = `{
+  req(args: any) {
+    return <any>{}
+  },
+  requestInit: {},
+  reqIntercept(args: $ApiBridge) {},
+  resIntercept(rtn: any) {},
+}`

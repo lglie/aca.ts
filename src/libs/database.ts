@@ -326,7 +326,8 @@ function createColSql(
   const qPrefix = typ.quote.prefix
   const qName = typ.quote.name
   const props = colObj.props
-  const tblName = tbls[jsName].dbName
+  const tblObj = tbls[jsName]
+  const tblName = tblObj.dbName
   const colName = colObj.dbName
   const rtn = {
     create: <string[]>[],
@@ -368,9 +369,9 @@ function createColSql(
     // 添加属性：unique、default、check、createdAt、updatedAt
     if (props.default !== undefined) {
       let dft = props.default
-      // 需要添加引号的类型
-      // if (!['boolean', 'int', 'float', 'datetime'].includes(colObj.type))
-      //   dft = `'${dft}'`
+      if (colObj.type === 'boolean' && ['bit'].includes(props.dbType)) {
+        dft = { true: 1, false: 0 }[dft]
+      }
       columnSql += ` DEFAULT ${dft}`
     }
     if (props.unique)
@@ -394,13 +395,8 @@ function createColSql(
     if (!colObj.props.foreign && colObj.type.endsWith(']')) {
       // 查找关系表的id
       rtn.mapTable[
-        MapTblName(
-          relTbl.dbName,
-          relCol.dbName,
-          tbls[jsName].dbName,
-          colObj.dbName
-        )
-      ] = [tbls[spt[0]], tbls[jsName]]
+        MapTblName(relTbl.dbName, relCol.dbName, tblObj.dbName, colObj.dbName)
+      ] = [tbls[spt[0]], tblObj]
     } // 是外键，根据配置是否设置外键约束
     else if (props.foreign) {
       if (config.foreignKeyConstraint) {

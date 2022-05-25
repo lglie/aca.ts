@@ -2,7 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import * as Cst from '../libs/constant'
 import { addAppConfig, currentDir } from '../libs/common'
-import { reactPage } from '../libs/template'
+import { reactPage } from '../libs/templates'
 import { execSync } from 'child_process'
 import orm from '../orm'
 
@@ -15,39 +15,10 @@ export async function client(yargs: any) {
   const acaDir = workDir === Cst.AcaDir ? '.' : '..'
   const argv = yargs.argv
   const rlvAcaDir = path.resolve(acaDir)
-  let name = argv._[1] || Cst.DefaultClientName
+  const name = argv._[1] || Cst.DefaultClientName
   if (fs.existsSync(path.join(rlvAcaDir, name)))
     throw new Error(`该应用已经存在：${name}, 不能再创建`)
-  let command = `npx create-react-app ${name} --template typescript`
-  // let framework = ''
-  // const frameworks = {
-  //   vue: 'vue',
-  //   v: 'vue',
-  //   react: 'react',
-  //   r: 'react',
-  //   gatsby: 'gatsby',
-  //   g: 'gatsby',
-  // }
-
-  // Object.keys(frameworks).some((v) => {
-  //   if (argv[v]) {
-  //     framework = frameworks[v]
-  //     if (typeof argv[v] === 'string') name = argv[v]
-  //     return true
-  //   } else return false
-  // })
-
-  // if (!framework) throw new Error(`缺少参数：--vue, --react, --gatsby`)
-  // switch (framework) {
-  //   case 'vue':
-  //     return console.log(`目前还不支持创建vue项目`)
-  //   case 'react':
-  //     command = `npx create-react-app ${name} --template typescript`
-  //     break
-  //   case 'gatsby':
-  //     return console.log(`目前还不支持创建gatsby项目`)
-  // }
-
+  const command = `npx create-react-app ${name} --template typescript`
   console.log(`正在使用create-react-app创建应用：${name}, 可能需要几分钟...`)
   execSync(`${acaDir === '..' ? 'cd .. & ' : ''}${command}`)
   const dbs = (await orm(acaDir)).dbs

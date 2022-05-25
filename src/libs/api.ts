@@ -15,16 +15,21 @@ import {
 import * as parser from './ts-parser'
 import {
   transaction,
-  clientClassHead,
+  transactionClient,
+  classHeadClient,
   apiBridge,
   tableQuery,
-  classClientFooter,
+  classFooterClient,
   sqlRawServer,
   constructor,
-  clientApiIndex,
-} from './template'
+  apiIndexClient,
+  aggregateCount,
+  fnTpl,
+  reqInstTpl,
+  reqInitValueTpl,
+} from './templates'
 
-const templatePath = `../../template`
+const templatePath = `../../templates`
 
 // 生成枚举类型
 const EnumType = (enums: Enums) => {
@@ -49,14 +54,14 @@ const EnumConst = (enums: Enums) => {
 const tblQueries = (
   tables: Tables,
   dbVar: string,
-  api: 'server' | 'transaction' | 'client'
+  api: 'server' | 'transaction' | 'client' | 'transaction_client'
 ) => {
   const TblQuery = (tbl: Table) => {
     const tblName = tbl.jsName
     const query = (Q: string) =>
       `async (args${Cst.argOpts.includes(Q) ? '?' : ''}: ${
         ['count', 'countDistinct'].includes(Q)
-          ? AggregateCount(tblName, Q)
+          ? aggregateCount(tblName, Q)
           : `$TableQuery<'${tblName}'>['${
               Cst.aggregates.includes(Q) ? 'aggregate' : Q
             }']`
@@ -65,11 +70,11 @@ const tblQueries = (
       }>> => ${
         'server' === api
           ? tableQuery(Q, tblName)
-          : `await ${api === 'client' ? `$.${dbVar}.req` : '$Handle'}${
+          : `await ${api.endsWith('client') ? `$.${dbVar}.req` : '$Handle'}${
               'transaction' === api ? '( trx )' : ''
             }({
             query: '${Q}', args, ${
-              'client' === api
+              api.endsWith('client')
                 ? `kind: 'orm', dbVar: '${dbVar}', method: [${AddQuote(
                     [...tbl.namespace, tbl.name],
                     "'"
@@ -102,12 +107,14 @@ const tblQueries = (
   return Object.keys(tables)
     .reduce(
       (_, v) => (
-        _.push(tblApi(<Table>tables[v], v, 'transaction' === api ? ':' : '=')),
+        _.push(
+          tblApi(<Table>tables[v], v, api.startsWith('transaction') ? ':' : '=')
+        ),
         _
       ),
       <string[]>[]
     )
-    .join(`${'transaction' === api ? ',' : ''}\n\n`)
+    .join(`${api.startsWith('transaction') ? ',' : ''}\n\n`)
 }
 
 // 生成前后端的构造函数
@@ -122,19 +129,15 @@ const classServer = (db: Db, dbVar: string) => {
 }
 
 const classClient = (db: Db, dbVar: string) => {
-  return `${clientClassHead(dbVar)}
+  return `${classHeadClient(dbVar)}
+  /*
+   * 此前端的事务api，仅仅是为了仿照后端写法，便于以后迁移代码到后端减少改动
+   */
+  ${transactionClient(tblQueries(db.tables, dbVar, 'transaction_client'))}
   ${tblQueries(db.tables, dbVar, 'client')}
-  ${classClientFooter(dbVar)}
+  ${classFooterClient(dbVar)}
   `
 }
-
-const AggregateCount = (table: string, query: string) => `{
-  select: ${
-    query == 'count' ? `'*' | ` : ''
-  }{ [K in $ScalarColumns<'${table}'>]: K }[$ScalarColumns<'${table}'>]
-  where?: NonNullable<$TableQuery<'${table}'>['aggregate']>['where']
-  sql?: NonNullable<$TableQuery<'${table}'>['aggregate']>['sql']
-}`
 
 // 生成表的标注及需要的类型
 const Orm = (tables: { [k: string]: Table | View }) => {
@@ -427,30 +430,6 @@ async function DbApi(config: Config, ast: Ast) {
   return { serverApi, clientApi }
 }
 
-const reqInitValueTpl = `{
-  req(args: any) {
-    return <any>{}
-  },
-  requestInit: {},
-  reqIntercept(args: $ApiBridge) {},
-  resIntercept(rtn: any) {},
-}`
-
-const reqInstTpl = (fnStr: string, dbStr: string) => `export const $ = {
-  $RPC: {
-      ${fnStr}
-    },
-      ${dbStr}
-  }
-  `
-
-const fnTpl = (fnApis: string) =>
-  fnApis.trim()
-    ? `export namespace $RPC {
-    ${fnApis}
-  }`
-    : `export const $RPC = '当前没有远程函数被生成'`
-
 export default async function (acaDir: AcaDir, config: Config, ast: Ast) {
   const resolveAcaDir = path.resolve(acaDir)
   const serverApps = config.serverApps
@@ -469,21 +448,22 @@ export default async function (acaDir: AcaDir, config: Config, ast: Ast) {
 
   for (const k in serverApps) {
     const serverConfig = config.serverApps[k]
-    const resolveApiDir = path.join(resolveAcaDir, k, serverConfig.apiDir)
+    const resolveApiDir = path.join(
+      resolveAcaDir,
+      k,
+      serverConfig.apiDir ??
+        path.join(Cst.DefaultTsDir, Cst.DefaultServerApiDir)
+    )
     const apiIndex = path.join(resolveApiDir, Cst.ApiIndex)
     const RPCDir = path.join(resolveApiDir, Cst.ServerRPCDir)
     fs.writeFileSync(apiIndex, dbApi.serverApi)
     // 写远程函数的index.ts及前端代理
-
-    if (serverConfig.allowRPCClientApi) {
-      clientRPCApis[k] = await parser.RPCProxy(k, RPCDir)
-    }
+    clientRPCApis[k] = await parser.RPCProxy(k, RPCDir)
   }
 
   for (const k in clientApps) {
-    // 判断客户端是否已被删除
     const clientConfig = config.clientApps[k]
-    const RPCs = clientApps[k].allowRPCs.filter((v) =>
+    const RPCs = (clientApps[k].allowRPCs || []).filter((v) =>
       clientRPCApis[v] !== undefined ? true : false
     )
 
@@ -503,7 +483,11 @@ export default async function (acaDir: AcaDir, config: Config, ast: Ast) {
 ${reqInstance()}
 ${fnTpl(RPCApis)}
 `
-    const apiDir = path.join(k, clientConfig.apiDir)
+    const apiDir = path.join(
+      k,
+      clientConfig.apiDir ??
+        path.join(Cst.DefaultTsDir, Cst.DefaultClientApiDir)
+    )
     const api = path.join(resolveAcaDir, apiDir, Cst.ClientApi)
     const apiIndex = path.join(resolveAcaDir, apiDir, Cst.ClientApiIndex)
 
@@ -511,7 +495,7 @@ ${fnTpl(RPCApis)}
       MkdirsSync(path.join(resolveAcaDir, apiDir))
     fs.writeFileSync(api, clientApi)
     if (!fs.existsSync(apiIndex)) {
-      fs.writeFileSync(apiIndex, clientApiIndex(Object.keys(ast.dbs), RPCs))
+      fs.writeFileSync(apiIndex, apiIndexClient(Object.keys(ast.dbs), RPCs))
     }
   }
 }

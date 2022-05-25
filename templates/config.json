@@ -1,7 +1,7 @@
 {
-  "$schema": "config.schema.json",
+  "$schema": "https://www.ts.center/static/config.schema.json",
   "orm": "example-blog.ts",
-  "database": {
+  "databases": {
     "default": {
       "tableNameWithNamespace": true,
       "onlyApi": false,

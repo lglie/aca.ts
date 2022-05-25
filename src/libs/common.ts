@@ -1,13 +1,12 @@
 import fs from 'fs'
 import path from 'path'
 import * as Cst from './constant'
-import { apiPlaceholder } from '../libs/template'
+import { apiPlaceholder } from './templates'
 
 BigInt.prototype['toJSON'] = function () {
   return this.toString()
 }
 
-export const Dbs = ['pg', 'mysql', 'betterSqlite3'] // 当前支持的数据库
 export const ScalarTypes = [
   'id',
   'boolean',
@@ -211,7 +210,7 @@ export function addAppConfig(
 ) {
   const resolveAcaDir = path.resolve(acaDir)
   const config: Config = require(path.join(resolveAcaDir, Cst.AcaConfig))
-  const templatePath = path.join(__dirname, '../../template')
+  const templatePath = path.join(__dirname, '../../templates')
   const resolveApiDir = path.join(resolveAcaDir, name, apiDir)
 
   const serverFiles = {
@@ -237,7 +236,6 @@ export function addAppConfig(
 
       config.serverApps[name] = {
         apiDir,
-        allowRPCClientApi: true,
       }
       break
     case 'client':

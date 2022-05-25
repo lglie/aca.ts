@@ -1,15 +1,13 @@
 import fs from 'fs'
 import path from 'path'
 import ts from 'typescript'
-import * as Cst from './constant'
-
 import {
   Extractor,
   ExtractorConfig,
   ExtractorResult,
 } from '@microsoft/api-extractor'
 
-import { RPCApi, RPCNsApi } from './template'
+import { RPCApi, RPCNsApi } from './templates'
 
 export const tsParse = async (args: {
   baseDir: string
@@ -37,7 +35,11 @@ export async function RPCProxy(serverName: string, RPCDir: string) {
   function createIndex(root: string) {
     const index: string[] = []
     const rootIdx = path.join(root, 'index.ts')
-    if (fs.existsSync(rootIdx)) fs.rmSync(rootIdx)
+    let tmpIdx = ''
+    if (fs.existsSync(rootIdx)) {
+      tmpIdx = fs.readFileSync(rootIdx, 'utf-8')
+      fs.rmSync(rootIdx)
+    }
     const Iter = (d: string) => {
       if (fs.statSync(d).isDirectory()) {
         fs.readdirSync(d, 'utf-8').forEach((v) => Iter(path.join(d, v)))
@@ -46,11 +48,8 @@ export async function RPCProxy(serverName: string, RPCDir: string) {
       }
     }
     Iter(root)
-    fs.writeFileSync(
-      rootIdx,
-      index.length ? index.join('\n') : 'export {}',
-      'utf-8'
-    )
+    const content = index.length ? index.join('\n') : tmpIdx
+    fs.writeFileSync(rootIdx, content, 'utf-8')
   }
 
   function generate(dtsFile: string) {

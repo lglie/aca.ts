@@ -1,5 +1,9 @@
 {
+   "include": [
+      "src",
+   ],
    "compilerOptions": {
+      "outDir": "dist",
       "module": "CommonJS",
       "target": "ESNext",
       "moduleResolution": "Node",
