@@ -84,8 +84,8 @@ $ aca client <dirname>
 Add self app to the project:
 
 ```bash
-$ aca add <dirname> <--server or --client> --apiDir <path>
-  path default: src/aca.api
+$ aca add <dirname> --server --client --apiDir <path>
+  path default: src/aca.server  src/aca.client
 ```
 
 4. Generate api

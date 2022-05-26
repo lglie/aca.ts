@@ -11,74 +11,76 @@ import {
 } from './.misc/.orm'
 
 enum Gender {
-  A,
-  B,
-  C,
+  Male,
+  Fomale,
+  Unkown,
 }
 
 // 数据库类
 namespace Blog {
-  // 每个数据库类只有一个const，并且类型为：$
-  const dbConfig: $db = `default`
+  // 每个数据库类最多只有一个const，并且类型为：$db
+  // 其值指向config.json/database中的同名字段，默认为: default
+  const dbConfig: $db = 'default'
 
   @$.unique(['firstName', 'lastName'])
   class user {
     id: id
-    @$_.dbType('varchar(16)') firstName: string
-    @$_.dbType('varchar(25)') lastName: string
-    gender = Gender.A
+    firstName: string
+    lastName: string
+    gender = Gender.Male
     age: int = 25
-    bigint: bigint = BigInt('120')
     married: boolean = true
-    description?: string
-    detail?: object
+    detail?: object // json
+    // 时间戳
     @$_.createdAt created_at?: Date
-    @$_.updatedAt updated_at: Date
-    profile?: profile
-    posts: ns.post[]
-    comments: comment[]
+    // @$_.updatedAt updated_at: Date // 暂不支持
+    profile?: profile // 一对一
+    posts: ns.post[] // 一对多
+    comments: comment[] // 多对多
   }
 
-  @$.map('PROF')
+  @$.map('PROF') // 映射数据库表名
   class profile {
-    @$_.dbType('varchar(8)') id: id
+    id: id
+    // 数据库支持的类型
     @$_.dbType('char(8)') password: string
-    @$_.foreign({
-      keys: ['firstNameId', 'lastNameId'],
-      references: ['firstName', 'lastName'],
-      onUpdate: 'cascade',
-      onDelete: 'cascade',
-    })
+    // 外键
+    @$_.foreign('userId')
     user: user
   }
 
   // 支持多级命名空间
   namespace ns {
-    enum gtEnum {
-      tk,
-      fl,
+    enum KindEnum {
+      Political,
+      Economy,
     }
 
     export class post {
-      serial: id['autoincrement']
-      isPublished: boolean
-      enum?: gtEnum
+      serial: id
+      enum?: KindEnum
+      content: string
       score: float
       @$_.foreign({
         keys: ['firstNameId', 'lastNameId'],
         references: ['firstName', 'lastName'],
+        onUpdate: 'cascade',
+        onDelete: 'cascade',
       })
       author: user
-      comments: comment[]
+      // 如果两个表之间存在一个以上的关系，则其余关系必须指明关系字段
+      //像下面这样：
       // @ts-ignore
-      categories: category['posts'][]
+      comments: comment['post'][]
+      categories: category[]
     }
 
     export class category {
-      id: id['string']
+      id: id
+      // unique, index 约束
       @$_.unique @$_.index name: string
-      //@ts-ignore
-      posts: post['categories'][]
+      posts: post[]
+      // 自关系
       @$_.foreign('categoriesId') parent?: category
       children: category[]
       comments: comment[]
@@ -86,12 +88,14 @@ namespace Blog {
   }
 
   export class comment {
-    id: id['cuid']
-    topEnum = Gender.C
-    content: string
+    // 可以指定5种id类型
+    id: id['autoincrement']
+    topEnum = Gender.Fomale
+    rating: string
     category: ns.category[]
     commenter: user[]
-    @$_.foreign('postsId') post: ns.post
-    createdAt: Date = new Date()
+    //@ts-ignore
+    @$_.foreign('postsId') post: ns.post['comments']
+    date: Date = new Date()
   }
 }

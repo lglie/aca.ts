@@ -1,6 +1,11 @@
-// 本文件为自动生成，各个远程函数的导出
-// 只支持具名的异步函数写法，第一个参数为上下文（ctx）
-// 如：
-// export async function fn(ctx:any){...}
+// 所有RPC函数都需要放在该目录下
+// 不能写在该index.ts页面中，除非该目录下只有这个页面
+// RPC函数第一个参数必须为上下文（context），生成的前端同名函数没有这个参数
+// 参照下面的写法：
 
-export {}
+export async function example(
+  ctx: any,
+  data: string
+): Promise<{ data?: string; error?: string }> {
+  return { data }
+}
