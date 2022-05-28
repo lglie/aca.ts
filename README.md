@@ -1,13 +1,13 @@
 # Aca.ts
 
-Aca.ts is a node.js CLI based on Typescript and Knex.js. It could automatically syncs database schema according to a custom ORM. It could also automatically generates APIs for accessing the database. More importantly, it automatically creates frontend APIs through backend functions and the generated database APIs (like RPC), so frontend developers can easily access the backend without defining routing. The APIs is typescript, tips are very friendly when coding.
+> Aca.ts is a node.js CLI based on Typescript and Knex.js. It can automatically sync database schema according to a custom ORM. It can also automatically generate APIs for accessing the database. More importantly, it can automatically create frontend APIs through backend functions and the generated database APIs (like RPC) and can run on node.js runtime by intalling fetch package, so frontend developers can easily access the backend without defining routing. The APIs are typescript, and therefore the tips are very friendly when coding.
 
 Use the class syntax of Typescript to define ORM:
 
 - Define a root namespace to represent your database
-- Define table with class (class name as table name)
-- Define column and relationship with class property (property name as column name)
-- Add constraints to table and column with decorators
+- Define a table with a class (class name as table name)
+- Define a column or a relationship with a class property (property name as column name)
+- Add constraints to a table or a column with decorators
 
 # An example could be found below:
 
@@ -63,7 +63,7 @@ $ aca create <dirname>
 $ cd <dirname>
 ```
 
-2. Open .aca directory, copy your custom ORM file into that directory, add this file name to config.json/orm field.
+2. Open .aca directory, copy your custom ORM file into the directory, and add this file name to config.json/orm field.
 
 <img with="80px" hight="180px" src="https://www.ts.center/static/config.jpg">
 
@@ -81,7 +81,7 @@ Create a frontend app (a react app with create-react-app):
 $ aca client <dirname>
 ```
 
-Add self app to the project:
+Add self built app to the project:
 
 ```bash
 $ aca add <dirname> --server --client --apiDir <path>

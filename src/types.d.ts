@@ -18,7 +18,7 @@ type Config = {
   } & {
     [k: string]: {
       apiDir?: string
-      allowRPCs: string[]
+      allowRPCs?: string[]
     }
   }
 }
