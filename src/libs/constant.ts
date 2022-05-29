@@ -1,5 +1,5 @@
 export const Delimiter = `__` // 数据库表名的命名空间分隔符
-export const ClientApiExport = ['$RPC', '$EnumType', '$TB', '$TableType']
+export const ClientApiExport = ['$RPC', '$EnumType', '$TB', '$TbOper']
 export const ServerApiExport = [...ClientApiExport, '$ApiBridge']
 export const FrameworkClient = ['vue', 'react', 'gatsby']
 export const Pkg = `package.json`

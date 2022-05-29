@@ -59,8 +59,8 @@ npm install -g aca.ts
 1. Create a aca project:
 
 ```bash
-$ aca create <dirname>
-$ cd <dirname>
+$ aca create <projectName>
+$ cd <projectName>
 ```
 
 2. Open .aca directory, copy your custom ORM file into the directory, and add this file name to config.json/orm field.
@@ -72,19 +72,19 @@ $ cd <dirname>
 Create a backend app (a simple koa framework):
 
 ```bash
-$ aca server <dirname>
+$ aca server <appName>
 ```
 
 Create a frontend app (a react app with create-react-app):
 
 ```bash
-$ aca client <dirname>
+$ aca client <appName>
 ```
 
 Add self built app to the project:
 
 ```bash
-$ aca add <dirname> --server --client --apiDir <path>
+$ aca add <appName> --server --client --apiDir <path>
   path default: src/aca.server  src/aca.client
 ```
 

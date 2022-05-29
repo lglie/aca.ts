@@ -830,21 +830,21 @@ export default async function (acaDir: '.' | '..', content?: string) {
   )
   const pickModel = await PickModel(acaDir, ast)
 
-  fs.writeFileSync(
-    'ast.ts',
-    'var a = ' +
-      JSON.stringify(
-        pickModel,
-        (k, v) => {
-          if (typeof v === 'bigint') v = v + 'n'
-          else if (Array.isArray(v)) {
-          }
-          return v
-        },
-        2
-      ),
-    'utf-8'
-  )
+  // fs.writeFileSync(
+  //   'ast.ts',
+  //   'var a = ' +
+  //     JSON.stringify(
+  //       pickModel,
+  //       (k, v) => {
+  //         if (typeof v === 'bigint') v = v + 'n'
+  //         else if (Array.isArray(v)) {
+  //         }
+  //         return v
+  //       },
+  //       2
+  //     ),
+  //   'utf-8'
+  // )
 
   return pickModel
 }

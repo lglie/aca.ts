@@ -3,9 +3,8 @@
 // RPC函数第一个参数必须为上下文（context），生成的前端同名函数没有这个参数
 // 参照下面的写法：
 
-export async function example(
-  ctx: any,
-  data: string
-): Promise<{ data?: string; error?: string }> {
-  return { data }
+import { $TbOper, Blog } from '..'
+
+export async function example(ctx: any, name: $TbOper<'Blog__user'>['unique']) {
+  return await Blog.user.findOne({ where: name, select: { id: true } })
 }

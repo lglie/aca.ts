@@ -245,7 +245,7 @@ const requestInit: RequestInit = {
 // 可以对请求头进行及入参：args进行改写
 ${apiStr(dbs)}
 ${apiStr(RPCs.map((v) => `$RPC.${v}`))}
-export type { $EnumType, $TableType, $TB } from './aca'
+export type { $EnumType, $TbOper, $TB } from './aca'
 export { $RPC, ${dbs.join(', ')} } from './aca'
 `
 }

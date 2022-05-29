@@ -1,20 +1,24 @@
 import * as Cst from '../constant'
 
 export const reactPage = (consts: string) =>
-  `import React, { useState } from 'react'
+`import React, { useState } from 'react'
 import logo from './logo.svg'
 import './App.css'
 import { ${consts} } from './${Cst.DefaultClientApiDir}'
 
 function App() {
-  const [state, setState] = useState('init')
+  const [state, setState] = useState(
+    'The data obtained from the backend will be displayed here'
+  )
   async function click() {
-    const rtn = await Blog.user.insert({
+    await Blog.user.insert({
       data: {
-        firstName: 'aa',
-        lastName: 'bb',
+        firstName: 'foo',
+        lastName: 'bar',
       },
     })
+    //Return id by Using RPC example:
+    const rtn = await $RPC.server.example({ firstName: 'foo', lastName: 'bar' })
     setState(JSON.stringify(rtn))
   }
 
@@ -33,12 +37,14 @@ function App() {
         >
           Learn React
         </a>
-        <p>{state}</p>
-        <button onClick={click}>点击</button>
+        <div>
+          {state}
+          <button onClick={click}>Click here to test</button>
+        </div>
       </header>
     </div>
   )
 }
 
-export default App
+export default App  
 `

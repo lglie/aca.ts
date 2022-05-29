@@ -333,7 +333,7 @@ const Orm = (tables: { [k: string]: Table | View }) => {
 }
 
 // 生成前后端的api
-async function DbApi(config: Config, ast: Ast) {
+async function DbApi(ast: Ast) {
   // 需要引入的包
   let serverApi = fs.readFileSync(
     path.join(__dirname, `${templatePath}/import`),
@@ -435,7 +435,7 @@ export default async function (acaDir: AcaDir, config: Config, ast: Ast) {
   const resolveAcaDir = path.resolve(acaDir)
   const serverApps = config.serverApps
   const clientApps = config.clientApps
-  const dbApi = await DbApi(config, ast)
+  const dbApi = await DbApi(ast)
   const clientRPCApis = {}
 
   const nsRPCTpl = (name: string) => `export namespace ${name} {
