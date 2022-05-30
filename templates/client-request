@@ -20,9 +20,11 @@ export class $Request {
 
     if (!fetch) {
       try {
-        fetch = require('fetch')
+        fetch = await import('node-fetch')
       } catch (e) {
-        throw new Error(`没有安装fetch, 请在该应用下安装：npm install fetch`)
+        throw new Error(
+          `没有安装fetch, 请在该应用下安装：npm install node-fetch`
+        )
       }
     }
 

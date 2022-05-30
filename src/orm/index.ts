@@ -760,21 +760,21 @@ async function PickModel(acaDir: '.' | '..', ast: ts.SourceFile) {
     // 处理关系字段,将关系表对应到字段
     IterRelate(db)
   }
-  fs.writeFileSync(
-    'ast.ts',
-    'var a = ' +
-      JSON.stringify(
-        dbs.erp,
-        (k, v) => {
-          if (typeof v === 'bigint') v = v + 'n'
-          else if (Array.isArray(v)) {
-          }
-          return v
-        },
-        2
-      ),
-    'utf-8'
-  )
+  // fs.writeFileSync(
+  //   'ast.ts',
+  //   'var a = ' +
+  //     JSON.stringify(
+  //       dbs.erp,
+  //       (k, v) => {
+  //         if (typeof v === 'bigint') v = v + 'n'
+  //         else if (Array.isArray(v)) {
+  //         }
+  //         return v
+  //       },
+  //       2
+  //     ),
+  //   'utf-8'
+  // )
 
   for (const k in dbs) {
     if (dbs[k].kind === 'namespace') {
