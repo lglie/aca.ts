@@ -213,7 +213,7 @@ export function apiIndexClient(dbs: string[], RPCs: string[]) {
   const apiStr = (arr: string[]) =>
     arr
       .map(
-        (v) => `$.${v} = new $Request(url, requestInit)
+        (v) => `$.${v} = new $Request(fetch, url, requestInit)
 $.${v}.reqIntercept = (args: $ApiBridge) => {
   // $.${v}.requestInit = requestInit
 }
@@ -231,6 +231,11 @@ import { $, $Request, $ApiBridge } from './aca'
 // 填写后端服务器的地址，注意：部署到生产环境时，一定要改成生产环境的地址
 /*******************************下面这些根据需要自行填写************************ */
 const url = 'http://localhost:8080'
+
+// In the following two lines, select one of the comments according to the runtime.
+// The node.js runtime needs to install the node-fetch package itself
+const fetch = window.fetch
+// const fetch = await import('node-fetch')
 
 const headers = {
   'Content-Type': 'application/json',
