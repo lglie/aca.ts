@@ -371,6 +371,8 @@ function createColSql(
       let dft = props.default
       if (colObj.type === 'boolean' && ['bit'].includes(props.dbType)) {
         dft = { true: 1, false: 0 }[dft]
+      } else if (['string'].includes(colObj.type)) {
+        dft = `${sqlDiff.keyword.quote.value}${dft}${sqlDiff.keyword.quote.value}`
       }
       columnSql += ` DEFAULT ${dft}`
     }
