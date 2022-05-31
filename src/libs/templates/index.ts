@@ -228,8 +228,8 @@ $.${v}.resIntercept = (rtn: any) => {
 // 本文件只生成一次，只有删除该文件会重新生成
 import { $, $Request, $ApiBridge } from './aca'
 
-// 填写后端服务器的地址，注意：部署到生产环境时，一定要改成生产环境的地址
 /*******************************下面这些根据需要自行填写************************ */
+// 填写后端服务器的地址，注意：部署到生产环境时，一定要改成生产环境的地址
 const url = 'http://localhost:8080'
 
 // In the following two lines, select one of the comments according to the runtime.
