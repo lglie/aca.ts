@@ -518,7 +518,7 @@ export default function (driver: Driver) {
                 return `ALTER TABLE ${qPrefix}${table}${qName} RENAME ${qName}${column}${qName} TO ${qName}${newCol}${qName}`
               },
               type(dbName: string) {
-                return `ALTER TABLE ${qPrefix}${table}${qName} ALTER COLUMN ${qName}${column}${qName} TYPE ${qName}${dbName}${qName}`
+                return `ALTER TABLE ${qPrefix}${table}${qName} ALTER COLUMN ${qName}${column}${qName} TYPE ${dbName}`
               },
               notNull(action: 'SET' | 'DROP') {
                 return `ALTER TABLE ${qPrefix}${table}${qName} ALTER COLUMN ${qName}${column}${qName} ${action} NOT NULL`
