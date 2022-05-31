@@ -233,8 +233,9 @@ import { $, $Request, $ApiBridge } from './aca'
 // Note: when deploying to the production environment, it must be changed to the address of the production environment
 const url = 'http://localhost:8080'
 
-// If the runtime is node.js
-// cancel the following comment line and install the node-fetch package by yourself
+// Depending on the runtime environment, comment on one of the lines. 
+const fetch = window.fetch.bind(window)
+// Node.js environment requires you to install node-fetch yourself
 // const fetch = require('node-fetch')
 
 const headers = {
