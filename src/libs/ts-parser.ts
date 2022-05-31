@@ -6,14 +6,14 @@ import {
   ExtractorConfig,
   ExtractorResult,
 } from '@microsoft/api-extractor'
-
 import { RPCApi, RPCNsApi } from './templates'
+import generator from 'dts-generator'
 
 export const tsParse = async (args: {
   baseDir: string
   out: string // 输出路径（含文件名）
   files: string[] //
-}) => await require('dts-generator').default(args)
+}) => await generator(args)
 
 // 生成远程函数前端代理
 // RPCDir: 远程函数根目录绝对路径
@@ -33,7 +33,7 @@ export async function RPCProxy(serverName: string, RPCDir: string) {
   return api
 
   function createIndex(root: string) {
-    const index: string[] = []
+    const exps: string[] = []
     const rootIdx = path.join(root, 'index.ts')
     let tmpIdx = ''
     if (fs.existsSync(rootIdx)) {
@@ -44,11 +44,11 @@ export async function RPCProxy(serverName: string, RPCDir: string) {
       if (fs.statSync(d).isDirectory()) {
         fs.readdirSync(d, 'utf-8').forEach((v) => Iter(path.join(d, v)))
       } else {
-        index.push(`export * from './${d.slice(root.length + 1, -3)}'`)
+        exps.push(`export * from './${d.slice(root.length + 1, -3)}'`)
       }
     }
     Iter(root)
-    const content = index.length ? index.join('\n') : tmpIdx
+    const content = exps.length ? exps.join('\n') : tmpIdx
     fs.writeFileSync(rootIdx, content, 'utf-8')
   }
 
@@ -60,7 +60,6 @@ export async function RPCProxy(serverName: string, RPCDir: string) {
       tsContent,
       ts.ScriptTarget.Latest
     )
-
     const moduleParse = (
       sub: ts.ModuleBlock | ts.ModuleBody,
       ns = <string[]>[]
@@ -114,6 +113,8 @@ export async function RPCProxy(serverName: string, RPCDir: string) {
               [...ns, `'${name}'`].toString()
             )
             break
+          case ts.SyntaxKind.ImportDeclaration:
+            break
           default:
             console.log(
               '没有被解析的节点：',
@@ -129,8 +130,7 @@ export async function RPCProxy(serverName: string, RPCDir: string) {
       // 解析每一个模块声明
       if (ts.SyntaxKind.ModuleDeclaration === node.kind) {
         const Nd = <ts.ModuleDeclaration>node
-        // 剔除根目录的index文件
-        if ('index' !== Nd.name.text && Nd.body) rtn += moduleParse(Nd.body)
+        rtn += moduleParse(Nd.body)
       }
     })
 

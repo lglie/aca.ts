@@ -115,7 +115,7 @@ const NodeParse = {
       case ts.SyntaxKind.StringLiteral: // 是字符串字面量
         rtn = {
           type: 'string',
-          initializer: `'${(<ts.StringLiteral>exp).text}'`,
+          initializer: `${(<ts.StringLiteral>exp).text}`,
         }
         break
       case ts.SyntaxKind.PropertyAccessExpression: // 是枚举值
@@ -324,9 +324,9 @@ async function PickModel(acaDir: '.' | '..', ast: ts.SourceFile) {
             _2.push(namesRtn)
             return _2
           }, <{ name: string; type: string; initializer: string }[]>[])
-          if (1 === names.length && '$' === names[0].name)
+          if (1 === names.length && '$' === names[0].name) {
             _['$'] = { kind: 'dbConfig', $: names[0].initializer }
-          else schm.vars.push({ kind: 'const', names })
+          } else schm.vars.push({ kind: 'const', names })
           break
         case ts.SyntaxKind.ModuleDeclaration: // 模块声明(module)
           const moduleV = <ts.ModuleDeclaration>v
@@ -446,11 +446,11 @@ async function PickModel(acaDir: '.' | '..', ast: ts.SourceFile) {
       } else throw `config文件里没有配置数据库实例化参数`
     } // 指向config/database里的某一个字段路径
     else {
-      if (typeof db.models['$']['$'] === 'string') {
-        db.models['$'] =
-          config?.databases[db.models['$']['$']] || db.models['$']['$']
-      } else if (typeof db.models['$']['$'] === 'object') {
-        db.models['$'] = db.models['$']['$']
+      const confName = db.models['$']['$']
+      if (typeof confName === 'string') {
+        db.models['$'] = config?.databases[confName] || confName
+      } else if (typeof confName === 'object') {
+        db.models['$'] = confName
       } else `数据库初始化参数配置错误！`
     }
   }

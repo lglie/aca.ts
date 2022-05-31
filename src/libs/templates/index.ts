@@ -213,7 +213,7 @@ export function apiIndexClient(dbs: string[], RPCs: string[]) {
   const apiStr = (arr: string[]) =>
     arr
       .map(
-        (v) => `$.${v} = new $Request(url, requestInit)
+        (v) => `$.${v} = new $Request(fetch, url, requestInit)
 $.${v}.reqIntercept = (args: $ApiBridge) => {
   // $.${v}.requestInit = requestInit
 }
@@ -232,6 +232,11 @@ import { $, $Request, $ApiBridge } from './aca'
 /*******************************下面这些根据需要自行填写************************ */
 const url = 'http://localhost:8080'
 
+// In the following two lines, select one of the comments according to the runtime.
+// The node.js runtime needs to install the node-fetch package itself
+const fetch = window.fetch
+// const fetch = await import('node-fetch')
+
 const headers = {
   'Content-Type': 'application/json',
 }
@@ -245,7 +250,7 @@ const requestInit: RequestInit = {
 // 可以对请求头进行及入参：args进行改写
 ${apiStr(dbs)}
 ${apiStr(RPCs.map((v) => `$RPC.${v}`))}
-export type { $EnumType, $TableType, $TB } from './aca'
+export type { $EnumType, $TbOper, $TB } from './aca'
 export { $RPC, ${dbs.join(', ')} } from './aca'
 `
 }

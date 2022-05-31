@@ -2,7 +2,7 @@
 
 import SqlDiff from './sql-diff'
 import { MapTblName, AddQuote, FlatTables, notEmpty } from './common'
-import ormDiff from '../orm/table-diff'
+import ormDiff from '../orm/diff'
 
 // 创建表的sql
 function CreateTblSql(config: DbConfig, tbls: FlatTables, jsName: string) {
@@ -371,6 +371,8 @@ function createColSql(
       let dft = props.default
       if (colObj.type === 'boolean' && ['bit'].includes(props.dbType)) {
         dft = { true: 1, false: 0 }[dft]
+      } else if (['string'].includes(colObj.type)) {
+        dft = `${sqlDiff.keyword.quote.value}${dft}${sqlDiff.keyword.quote.value}`
       }
       columnSql += ` DEFAULT ${dft}`
     }

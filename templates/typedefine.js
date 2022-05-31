@@ -339,7 +339,7 @@ type $UpdateMany<
   data: ${UpdateMany('Tb')}
 }
 
-export type $TableType<Tb extends keyof $TB> = {
+export type $TbOper<Tb extends keyof $TB> = {
   unique: $UN[Tb]
   where: $Where<Tb, never, never>
   insert: ${Insert('Tb', 'never')}
@@ -366,24 +366,24 @@ export type $TableType<Tb extends keyof $TB> = {
   }
   updateMany: ${UpdateMany('Tb')}
   select: ${Select('Tb', 'never', 'never')}
-  selectScalar: Pick<$TableType<Tb>['select'], $ScalarColumns<Tb>>
+  selectScalar: Pick<$TbOper<Tb>['select'], $ScalarColumns<Tb>>
 }
 
 type $TableQuery<Tb extends keyof $TB> = {
   findOne: {
-    where: $TableType<Tb>['unique']
-    select?: $TableType<Tb>['select']
+    where: $TbOper<Tb>['unique']
+    select?: $TbOper<Tb>['select']
     sql?: true
   }
   findFirst?: {
-    where?: $TableType<Tb>['where']
-    select?: $TableType<Tb>['select']
+    where?: $TbOper<Tb>['where']
+    select?: $TbOper<Tb>['select']
     sql?: true
     orderBy?: $Enumerable<{ [K in $ScalarColumns<Tb>]?: $Order }>
   }
   findMany?: {
-    where?: $TableType<Tb>['where']
-    select?: $TableType<Tb>['select']
+    where?: $TbOper<Tb>['where']
+    select?: $TbOper<Tb>['select']
     distinct?: '*' | $Enumerable<$ScalarColumns<Tb>>
     limit?: number
     offset?: number
@@ -391,37 +391,37 @@ type $TableQuery<Tb extends keyof $TB> = {
     orderBy?: $Enumerable<{ [K in $ScalarColumns<Tb>]?: $Order }>
   }
   insert: {
-    data: $TableType<Tb>['insert'] | $TableType<Tb>['insert'][]
-    select?: $TableType<Tb>['select']
+    data: $TbOper<Tb>['insert'] | $TbOper<Tb>['insert'][]
+    select?: $TbOper<Tb>['select']
     sql?: true
   }
   upsert: {
     where: $UN[Tb]
-    insert: $TableType<Tb>['insert']
-    update?: $TableType<Tb>['update']
-    select?: $TableType<Tb>['select']
+    insert: $TbOper<Tb>['insert']
+    update?: $TbOper<Tb>['update']
+    select?: $TbOper<Tb>['select']
     sql?: true
   }
   update: {
     where: $UN[Tb]
-    data: $TableType<Tb>['update']
-    select?: $TableType<Tb>['select']
+    data: $TbOper<Tb>['update']
+    select?: $TbOper<Tb>['select']
     sql?: true
   }
   updateMany?: {
-    where?: $TableType<Tb>['where']
-    data: $TableType<Tb>['updateMany']
-    select?: $TableType<Tb>['selectScalar']
+    where?: $TbOper<Tb>['where']
+    data: $TbOper<Tb>['updateMany']
+    select?: $TbOper<Tb>['selectScalar']
     sql?: true
   }
   delete: {
     where: $UN[Tb]
-    select?: $TableType<Tb>['selectScalar']
+    select?: $TbOper<Tb>['selectScalar']
     sql?: true
   }
   deleteMany?: {
-    where: $TableType<Tb>['where']
-    select?: $TableType<Tb>['selectScalar']
+    where: $TbOper<Tb>['where']
+    select?: $TbOper<Tb>['selectScalar']
     sql?: true
   }
   groupBy?: {
@@ -431,8 +431,8 @@ type $TableQuery<Tb extends keyof $TB> = {
       column: $ScalarColumns<Tb>
       function: $AggregateQuery
     }[]
-    where?: $TableType<Tb>['where']
-    having?: $TableType<Tb>['where']
+    where?: $TbOper<Tb>['where']
+    having?: $TbOper<Tb>['where']
   }
   join?: {
     table: keyof $TB
@@ -441,14 +441,14 @@ type $TableQuery<Tb extends keyof $TB> = {
       columns: $ScalarColumns<Tb>
       tableColumns: $ScalarColumns<Tb>
     }
-    select: $TableType<Tb>['select']
-    tableSelect: $TableType<Tb>['where']
+    select: $TbOper<Tb>['select']
+    tableSelect: $TbOper<Tb>['where']
   }
   aggregate?: {
     select: {
       [K in keyof Required<$TB[Tb]>]?: number extends $TB[Tb][K] ? K : never
     }[keyof $TB[Tb]]
-    where?: $TableType<Tb>['where']
+    where?: $TbOper<Tb>['where']
     sql?: true
   }
 }
@@ -457,7 +457,7 @@ type $TableMutationType<
   Tb extends keyof $TB,
   query extends $MutationQuery
 > = Omit<$TableQuery<Tb>[query], 'select'> & {
-  select?: $TableType<Tb>['selectScalar']
+  select?: $TbOper<Tb>['selectScalar']
 }
 
 type $RelationSelect<

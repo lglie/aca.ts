@@ -47,7 +47,7 @@ export const $ = {
 }
 
 export const $_ = {
-  map: (name: string) => dColumn,
+  // map: (name: string) => dColumn,
   dbType: (typeName: string) => dColumn,
   createdAt: dColumn,
   updatedAt: dColumn,

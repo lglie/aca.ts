@@ -12,7 +12,7 @@ function $RtnSelect<
 >(
   table: Tb,
   rtnCols: any,
-  select?: $Select<Tb, X, S> | $TableType<Tb>['selectScalar'] | { '*': true }
+  select?: $Select<Tb, X, S> | $TbOper<Tb>['selectScalar'] | { '*': true }
 ) {
   if (Array.isArray(rtnCols)) {
     const rtn = []
@@ -702,7 +702,7 @@ const $Queries = function <Tb extends keyof $TB>(trx: any, sql: string[] = []) {
         offset?: number
         select?:
           | $Select<Tb, X, S>
-          | $TableType<Tb>['selectScalar']
+          | $TbOper<Tb>['selectScalar']
           | { '*': true }
       } = {}
     ) {

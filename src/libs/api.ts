@@ -333,7 +333,7 @@ const Orm = (tables: { [k: string]: Table | View }) => {
 }
 
 // 生成前后端的api
-async function DbApi(config: Config, ast: Ast) {
+async function DbApi(ast: Ast) {
   // 需要引入的包
   let serverApi = fs.readFileSync(
     path.join(__dirname, `${templatePath}/import`),
@@ -431,11 +431,11 @@ async function DbApi(config: Config, ast: Ast) {
 }
 
 export default async function (acaDir: AcaDir, config: Config, ast: Ast) {
+  checkApps(acaDir, config)
   const resolveAcaDir = path.resolve(acaDir)
   const serverApps = config.serverApps
   const clientApps = config.clientApps
-  const dbApi = await DbApi(config, ast)
-  checkApps(acaDir, config)
+  const dbApi = await DbApi(ast)
   const clientRPCApis = {}
 
   const nsRPCTpl = (name: string) => `export namespace ${name} {
@@ -463,10 +463,10 @@ export default async function (acaDir: AcaDir, config: Config, ast: Ast) {
 
   for (const k in clientApps) {
     const clientConfig = config.clientApps[k]
-    const RPCs = (clientApps[k].allowRPCs || []).filter((v) =>
+    const allowRPCs = clientApps[k]?.allowRPCs || Object.keys(serverApps)
+    const RPCs = allowRPCs.filter((v) =>
       clientRPCApis[v] !== undefined ? true : false
     )
-
     const RPCApis = RPCs.map((v) => (clientRPCApis[v] ? nsRPCTpl(v) : '')).join(
       '\n\n'
     )
