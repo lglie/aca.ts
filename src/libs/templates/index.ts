@@ -218,24 +218,24 @@ $.${v}.reqIntercept = (args: $ApiBridge) => {
   // $.${v}.requestInit = requestInit
 }
 $.${v}.resIntercept = (rtn: any) => {
-  // 根据需要对返回值：rtn 进行处理
+  // Process the return value rtn as required
 }
 `
       )
       .join('\n\n')
 
-  return `// 此文件为模板文件，实际根据需要编写，在其他页面中引入这个文件即可使用
-// 本文件只生成一次，只有删除该文件会重新生成
+  return `// This file can be modified as needed, and can be used by importing this file in other pages
+// This file is generated only once. Deleting this file will regenerate it
 import { $, $Request, $ApiBridge } from './aca'
 
-/*******************************下面这些根据需要自行填写************************ */
-// 填写后端服务器的地址，注意：部署到生产环境时，一定要改成生产环境的地址
+/***************************************************************** */
+// Fill in the address of the back-end server.
+// Note: when deploying to the production environment, it must be changed to the address of the production environment
 const url = 'http://localhost:8080'
 
-// In the following two lines, select one of the comments according to the runtime.
-// The node.js runtime needs to install the node-fetch package itself
-const fetch = window.fetch
-// const fetch = await import('node-fetch')
+// If the runtime is node.js
+// cancel the following comment line and install the node-fetch package by yourself
+// const fetch = require('node-fetch')
 
 const headers = {
   'Content-Type': 'application/json',
@@ -247,7 +247,7 @@ const requestInit: RequestInit = {
   headers: headers,
 }
 
-// 可以对请求头进行及入参：args进行改写
+// The request header and input parameter args can be overwritten
 ${apiStr(dbs)}
 ${apiStr(RPCs.map((v) => `$RPC.${v}`))}
 export type { $EnumType, $TbOper, $TB } from './aca'
