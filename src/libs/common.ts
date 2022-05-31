@@ -2,6 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import * as Cst from './constant'
 import { apiPlaceholder } from './templates'
+import { execSync } from 'child_process'
 
 BigInt.prototype['toJSON'] = function () {
   return this.toString()
@@ -253,6 +254,9 @@ export function addAppConfig(
     JSON.stringify(config, null, 2),
     'utf-8'
   )
+
+  // 装载axios
+  execSync(`cd ${path.join(resolveAcaDir, name)} & npm install axios`)
 }
 // 如果当前工作目录是project目录返回".aca"，如果是应用程序目录，返回应用程序目录名称，否则返回undefined
 export function currentDir() {

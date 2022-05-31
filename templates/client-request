@@ -1,33 +1,21 @@
 export class $Request {
-  constructor(fetch: any, url: string, requestInit?: RequestInit) {
+  constructor(fetch: any, url: string) {
     if (!url) throw `没有url参数，请在生成的api目录的index.ts中填写`
     this.fetch = fetch
     this.url = url
-    if (requestInit) Object.assign(this.requestInit, requestInit)
   }
 
   private fetch
   private url = ''
-  public requestInit: RequestInit = {
+  private requestInit = {
     method: 'post',
-    mode: 'cors',
-    headers: {
-      'Content-Type': 'application/json',
-    },
   }
 
   public async req(args: any) {
-    if (typeof this.reqIntercept === 'function') this.reqIntercept(args)
-
-    const rtn = await this.fetch(this.url, {
+    const res = await this.fetch(this.url, {
       ...this.requestInit,
-      body: JSON.stringify(args),
+      data: args,
     })
-    const rtnJson = await rtn.json()
-    if (typeof this.resIntercept === 'function') this.resIntercept(rtnJson)
-    return rtnJson
+    return res.data
   }
-
-  reqIntercept = <(args: $ApiBridge) => void>((args: $ApiBridge) => {})
-  resIntercept = <(rtn: any) => void>((rtn: any) => {})
 }

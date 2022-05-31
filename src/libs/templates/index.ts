@@ -213,42 +213,21 @@ export function apiIndexClient(dbs: string[], RPCs: string[]) {
   const apiStr = (arr: string[]) =>
     arr
       .map(
-        (v) => `$.${v} = new $Request(fetch, url, requestInit)
-$.${v}.reqIntercept = (args: $ApiBridge) => {
-  // $.${v}.requestInit = requestInit
-}
-$.${v}.resIntercept = (rtn: any) => {
-  // Process the return value rtn as required
-}
+        (v) => `$.${v} = new $Request(fetch, url)
 `
       )
       .join('\n\n')
 
   return `// This file can be modified as needed, and can be used by importing this file in other pages
 // This file is generated only once. Deleting this file will regenerate it
-import { $, $Request, $ApiBridge } from './aca'
+import fetch from 'axios'
+import { $, $Request } from './aca'
 
 /***************************************************************** */
 // Fill in the address of the back-end server.
 // Note: when deploying to the production environment, it must be changed to the address of the production environment
 const url = 'http://localhost:8080'
 
-// Depending on the runtime environment, comment on one of the lines. 
-const fetch = window.fetch.bind(window)
-// Node.js environment requires you to install node-fetch yourself
-// const fetch = require('node-fetch')
-
-const headers = {
-  'Content-Type': 'application/json',
-}
-
-const requestInit: RequestInit = {
-  method: 'post',
-  mode: 'cors',
-  headers: headers,
-}
-
-// The request header and input parameter args can be overwritten
 ${apiStr(dbs)}
 ${apiStr(RPCs.map((v) => `$RPC.${v}`))}
 export type { $EnumType, $TbOper, $TB } from './aca'
@@ -283,7 +262,4 @@ export const reqInitValueTpl = `{
   req(args: any) {
     return <any>{}
   },
-  requestInit: {},
-  reqIntercept(args: $ApiBridge) {},
-  resIntercept(rtn: any) {},
 }`
