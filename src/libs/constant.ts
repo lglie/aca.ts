@@ -1,4 +1,4 @@
-export const Delimiter = `__` // 数据库表名的命名空间分隔符
+export const Delimiter = `__` // Namespace seperator for database table names
 export const ServerFramework = [
   'koa',
   'express',

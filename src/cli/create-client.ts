@@ -10,14 +10,14 @@ export async function client(yargs: any) {
   const workDir = currentDir()
   if (!workDir)
     throw new Error(
-      `当前目录不是aca项目目录，请转到项目目录或项目下的应用程序目录下运行该命令`
+      `Current directory is not an aca project directory. Please move to the project directory or the app directory under the project to run the command`
     )
   const acaDir = workDir === Cst.AcaDir ? '.' : '..'
   const argv = yargs.argv
   const rlvAcaDir = path.resolve(acaDir)
   let name = argv._[1] || Cst.DefaultClientName
   if (fs.existsSync(path.join(rlvAcaDir, name)))
-    throw new Error(`该应用已经存在：${name}, 不能再创建`)
+    throw new Error(`The app '${name}' already exists and cannot be created`)
   let command = `npx create-react-app ${name} --template typescript`
   // let framework = ''
   // const frameworks = {
@@ -37,18 +37,18 @@ export async function client(yargs: any) {
   //   } else return false
   // })
 
-  // if (!framework) throw new Error(`缺少参数：--vue, --react, --gatsby`)
+  // if (!framework) throw new Error(`缺少参数missing parameters：--vue, --react, --gatsby`)
   // switch (framework) {
   //   case 'vue':
-  //     return console.log(`目前还不支持创建vue项目`)
+  //     return console.log(`Creating vue projects is not supported yet目前还不支持创建vue项目`)
   //   case 'react':
   //     command = `npx create-react-app ${name} --template typescript`
   //     break
   //   case 'gatsby':
-  //     return console.log(`目前还不支持创建gatsby项目`)
+  //     return console.log(`Creating gatsby projects is not supported yet目前还不支持创建gatsby项目`)
   // }
 
-  console.log(`正在使用create-react-app创建应用：${name}, 可能需要几分钟...`)
+  console.log(`Creating app '${name}' using create-react-app, may take a few munites...`)
   execSync(`${acaDir === '..' ? 'cd .. & ' : ''}${command}`)
   const dbs = (await orm(acaDir)).dbs
   const expArr = Object.keys(dbs).concat(Cst.ClientApiExport)

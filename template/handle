@@ -1,10 +1,10 @@
 
 
-// 将数组列表的项转化为boolean形式的returning格式
+// Convert the items of the array list to the boolean form of returning format
 const $ArrayTrue = (arrayItem: string[]) =>
   arrayItem.reduce((_, v) => ((_[v] = true), _), {})
 
-// 处理返回的数据库记录
+// Process the returned database record
 function $RtnSelect<
   Tb extends keyof $TB,
   X extends keyof $TB[Tb],
@@ -51,7 +51,7 @@ function $RtnSelect<
         if (Object.keys(select).includes('*'))
           scalarRtn([...scalarCols, ...Object.keys(select)])
         else scalarRtn(select)
-      } // 返回该表的所有标量字段
+      } // Return all scalar fields of the scalar
       else scalarRtn(scalarCols)
 
       return rtn
@@ -72,13 +72,13 @@ const $Queries = function <Tb extends keyof $TB>(trx: any, sql: string[] = []) {
   ): $Enumerable<Partial<$TB[Tb]>> {
     const records = Array.isArray(args) ? args : [args]
     const AttCols = $Att[table].columns
-    // 用于存放添加或修改的列
+    // Used to store added or modified columns
     const addedColumns = <any>records.map((v) => ({}))
     for (let i = 0; i < records.length; i++) {
       for (const AttCol in AttCols) {
         if (AttCols[AttCol].relation) continue
         if (records[i][AttCol] !== undefined) {
-          // 判断jsType
+          // Determine jsType
           if (
             AttCols[AttCol].type === 'enum'
               ? !$EnumType[<keyof $EnumType>AttCols[AttCol].jsType].includes(
@@ -88,13 +88,13 @@ const $Queries = function <Tb extends keyof $TB>(trx: any, sql: string[] = []) {
           ) {
             throw `表 "${$Att[table].dbName}" 字段 "${AttCol}" 数据类型不符`
           }
-          // 如果是number类型，且是整型
+          // If it is a number type and an int type
           if (
             AttCols[AttCol].type === 'int' &&
             typeof records[i][AttCol] === 'number'
           ) {
             records[i][AttCol] = <any>Math.round(Number(records[i][AttCol]))
-            // 判断数据是否超限(check约束)
+            // Determine if the data exceeds the limit(check constraint)
           } else if (
             AttCols[AttCol].type === 'object' &&
             typeof records[i][AttCol] === 'object'
@@ -102,7 +102,7 @@ const $Queries = function <Tb extends keyof $TB>(trx: any, sql: string[] = []) {
             records[i][AttCol] = <any>JSON.stringify(records[i][AttCol])
           }
         } else {
-          // insert时，如果是可空外键，值设为nulll
+          // When inserting, if it ia a nullable foreign key, the value is set to null
           if (query === 'insert') {
             if (
               AttCols[AttCol].type === 'id' &&
@@ -117,7 +117,7 @@ const $Queries = function <Tb extends keyof $TB>(trx: any, sql: string[] = []) {
               if ($Att[table].foreignKeys.includes(AttCol))
                 addedColumns[i][AttCol] = null
             } else {
-              throw `"${$Att[table].dbName}" 缺少必输字段："${AttCol}"`
+              throw `"${$Att[table].dbName}" 缺少必输字段missing required field："${AttCol}"`
             }
           }
         }
@@ -159,12 +159,12 @@ const $Queries = function <Tb extends keyof $TB>(trx: any, sql: string[] = []) {
 
     for (const key in where) {
       const AttCol = $Att[table].columns[key]
-      // 是关系字段
+      // is relational field
       if (AttCol?.relation) {
-        // 判断是主键表还是外键表
+        // Determine if it is a primary key table or a foreign key table
         switch (AttCol.relation.kind) {
           case 'primary':
-            // 查找主键表的所有满足条件记录的引用字段
+            // Find the reference field of all records of primary key table that meet the conditions
             if (AttCol.relation.toOne) {
               Kx[whereLogic + 'In'](
                 AttCol.relation.references,
@@ -376,7 +376,7 @@ const $Queries = function <Tb extends keyof $TB>(trx: any, sql: string[] = []) {
     return Kx
   }
 
-  // 将where、having、on封装为knex格式
+  // Wrap where, having, and on into knex format
   const trxCondition = <
     Tb extends keyof $TB,
     X extends keyof $TB[Tb],
@@ -405,12 +405,12 @@ const $Queries = function <Tb extends keyof $TB>(trx: any, sql: string[] = []) {
 
     for (const key in where) {
       const AttCol = $Att[table].columns[key]
-      // 是关系字段
+      // is relational field
       if (AttCol?.relation) {
-        // 判断是主键表还是外键表
+        // Determine if it is a primary key table or a foreign key table
         switch (AttCol.relation.kind) {
           case 'primary':
-            // 查找主键表的所有满足条件记录的引用字段
+            // Find the reference field of all records of primary key table that meet the conditions
             if (AttCol.relation.toOne) {
               Kx[whereLogic + 'In'](
                 AttCol.relation.references,
@@ -617,7 +617,7 @@ const $Queries = function <Tb extends keyof $TB>(trx: any, sql: string[] = []) {
     return Kx
   }
 
-  // 分开关系字段到数组：[scalar,primary,foreign,many]
+  // Seperate relation fields into arrays：[scalar,primary,foreign,many]
   const splitCols = (table: keyof $TB, cols) =>
     Object.keys(cols).reduce(
       (_: any, k: any) => (
@@ -633,7 +633,7 @@ const $Queries = function <Tb extends keyof $TB>(trx: any, sql: string[] = []) {
       [{}, {}, {}, {}]
     )
 
-  // 将列转换为数据库列
+  // Convert columns into database columns
   const dbCols = (table: keyof $TB, cols) => {
     if (Array.isArray(cols)) {
       const rtn = []
@@ -648,7 +648,7 @@ const $Queries = function <Tb extends keyof $TB>(trx: any, sql: string[] = []) {
     }
   }
 
-  // update算数运算符，只对标量字段做处理, 调用的时候需要加where条件
+  // Update arithmetric operator, only process scalar fields, and add where conditions when calling
   const updateOperator = (table, data) => {
     const Kx = Object.keys(data || {}).reduce((_, v) => {
       const col = $Att[table].columns[v]
@@ -663,7 +663,7 @@ const $Queries = function <Tb extends keyof $TB>(trx: any, sql: string[] = []) {
     return data ? Kx.update(dbCols(table, data)) : Kx
   }
 
-  // 查找一条record的unique值
+  // Find the unique value of a record
   const recordUnique = (table, record) => {
     let uniqueWhere = {}
     for (const unique of $Att[table].uniques) {
@@ -706,7 +706,7 @@ const $Queries = function <Tb extends keyof $TB>(trx: any, sql: string[] = []) {
           | { '*': true }
       } = {}
     ) {
-      // 处理where条件
+      // Process where condition
       let Kx = trx($Att[table].dbName)
       if (typeof limit === 'number') Kx = Kx.limit(limit)
       if (typeof offset === 'number') Kx = Kx.offset(offset)
@@ -728,7 +728,7 @@ const $Queries = function <Tb extends keyof $TB>(trx: any, sql: string[] = []) {
       const AttCols = $Att[table].columns
       sql.push(wKnex.select('*').toString())
       let result = await wKnex.select('*')
-      // 处理传入的参数
+      // Process incoming parameters
       if (Object.keys(select).length) {
         const [scalarCols, relationCols] = Object.keys(select).reduce(
           (_: any, v: string) => {
@@ -856,7 +856,7 @@ const $Queries = function <Tb extends keyof $TB>(trx: any, sql: string[] = []) {
       let scalarRtn: Array<Pick<$TB[Tb], $ScalarColumns<Tb>>>
 
       if (Array.isArray(args.data)) {
-        // 是数组，将数组内的每条记录过滤，如果存在关系字段，则分离出来
+        // is an array, filter each record in the array, and seperate out if there is a relational field
         const [scalarRecords, relationRecords] = args.data.reduce(
           (_: any, v: any) => {
             let truth = true
@@ -872,7 +872,7 @@ const $Queries = function <Tb extends keyof $TB>(trx: any, sql: string[] = []) {
           },
           [[], []]
         )
-        // 创建纯标量记录
+        // Create pure scalar record
         if (scalarRecords.length) {
           scalarRtn = await trxQuery(
             trx($Att[table].dbName)
@@ -900,21 +900,21 @@ const $Queries = function <Tb extends keyof $TB>(trx: any, sql: string[] = []) {
 
         return scalarRtn
       } else {
-        // 是单条记录，分离出标量字段、关系(主键表、外键表, 多对多表)字段
+        // is single record, seperate out scalar fields, relational(primary key table, foreign key table, many-to-many table) fields
         const [scalarCols, primaryCols, foreignCols, manyCols] = splitCols(
           table,
           args.data
         )
 
-        // 有外键字段，创建其主键表，获取外键值
+        // When there is a foreign key field, create its primary key table and get tje foreign key value
         if (Object.keys(foreignCols).length) {
           const relColumns: any = Object.entries(foreignCols)
-          // 如果存在外键字段，必须先创建主键表获取引用的字段值
+          // If there exists a foreign key field, you must create a primary key table to obtain the referenced field value
           for (const [k, v] of relColumns) {
             const AttCol = $Att[table].columns[k]
             const { references, keys } = AttCol.relation
             if (v.connect && v.insert) {
-              // 查找连接是否存在
+              // Find if the connection exists
               let pTable = await trxQuery(
                 trx($Att[AttCol.type].dbName)
                   .where(dbCols(AttCol.type, v.connect))
@@ -930,16 +930,16 @@ const $Queries = function <Tb extends keyof $TB>(trx: any, sql: string[] = []) {
               for (let i = 0; i < keys.length; i++)
                 scalarCols[keys[i]] = pTable[references[i]]
             } else if (v.connect) {
-              // 查找连接
+              // Find the connection
               let [pTable] = await trxQuery(
                 trx($Att[AttCol.type].dbName)
                   .where(dbCols(AttCol.type, v.connect))
                   .select('*')
               )
               if (!pTable)
-                throw `查询的表 "${
+                throw `table found "${
                   $Att[AttCol.type].dbName
-                }" 记录 "${JSON.stringify(v.connect)}" 不存在`
+                }" record "${JSON.stringify(v.connect)}" does not exist`
 
               for (let i = 0; i < keys.length; i++)
                 scalarCols[keys[i]] = pTable[references[i]]
@@ -953,7 +953,7 @@ const $Queries = function <Tb extends keyof $TB>(trx: any, sql: string[] = []) {
             }
           }
         }
-        // 创建本表，获取unique字段，供外键表使用
+        // Create this table and get the uniqur field for foreign key table to use
         scalarRtn = await trxQuery(
           trx($Att[table].dbName)
             .insert(
@@ -967,7 +967,7 @@ const $Queries = function <Tb extends keyof $TB>(trx: any, sql: string[] = []) {
             )
             .returning(args.select ? Object.keys(args.select) : '*')
         )
-        // 创建所有的外键表，将本表unique键传入相应的表
+        // Create all foreign key tables and apply the unique key of this table to the corresponding table
         if (Object.keys(primaryCols).length) {
           const relColumns: any = Object.entries(primaryCols)
           for (const [k, v] of relColumns) {
@@ -976,7 +976,7 @@ const $Queries = function <Tb extends keyof $TB>(trx: any, sql: string[] = []) {
             const relationForeign: any = {}
             for (let i = 0; i < keys.length; i++)
               relationForeign[keys[i]] = scalarRtn[0][references[i]]
-            // 一对一关系
+            // ont-to-one relationship
             if (AttCol.relation?.toOne) {
               if (v.connect && v.insert) {
                 let rTable = await trxQuery(
@@ -1003,7 +1003,7 @@ const $Queries = function <Tb extends keyof $TB>(trx: any, sql: string[] = []) {
                 })
               }
             } else {
-              // 一对多关系
+              // one-to-many relationship
               if (v.connect) {
                 if (!Array.isArray(v.connect)) v.connect = [v.connect]
                 await trxQuery(
@@ -1027,9 +1027,9 @@ const $Queries = function <Tb extends keyof $TB>(trx: any, sql: string[] = []) {
             }
           }
         }
-        // 创建多对多的关系字段
+        // Create many-to-many relational field
         if (Object.keys(manyCols).length) {
-          // 映射表id
+          // 映射表id mapping table id
           const mapTabelId = $Att[table].id.reduce(
             (_: any, v) => (
               (_[`${$Att[table].dbName}_${v}`] = scalarRtn[0][v]), _
@@ -1039,10 +1039,10 @@ const $Queries = function <Tb extends keyof $TB>(trx: any, sql: string[] = []) {
           const relColumns: any = Object.entries(manyCols)
           for (const [k, v] of relColumns) {
             const AttCol = $Att[table].columns[k]
-            // 本表id
+            // id of this table
             if (v.connect) {
               const items = Array.isArray(v.connect) ? v.connect : [v.connect]
-              // 查询关系表每条记录的id
+              // Query the id of each record in the relational table
               for (const item of items) {
                 let [relMapTableId] = await trxQuery(
                   trx($Att[AttCol.type].dbName)
@@ -1057,7 +1057,7 @@ const $Queries = function <Tb extends keyof $TB>(trx: any, sql: string[] = []) {
                   ),
                   {}
                 )
-                // upsert 数据到映射表
+                // upsert data to the mapping table
                 const mapRecord = { ...mapTabelId, ...relMapTableId }
                 await trxQuery(
                   trx(AttCol.relation.mapTable)
@@ -1120,14 +1120,14 @@ const $Queries = function <Tb extends keyof $TB>(trx: any, sql: string[] = []) {
     },
 
     async update(table: Tb, args: $TableMutationType<Tb, 'update'>) {
-      if (!args.where || !Object.keys(args.where).length) throw `where 不能为空`
-      // 查找该条记录，不存在就返回
-      if (!args.data) throw `修改表 "${table}" 没有传入data数据`
+      if (!args.where || !Object.keys(args.where).length) throw `where cannot be empty`
+      // Find the record and return if not exist
+      if (!args.data) throw `Modified table "${table}" does not have incoming data`
       const trxTmp = await trxQuery(
         trx($Att[table].dbName).where(args.where).select('*')
       )
       if (!trxTmp.length)
-        throw `表 "${$Att[table].dbName}" 没有该条件的记录: "${args.where}"`
+        throw `table "${$Att[table].dbName}" has no record for the condition: "${args.where}"`
 
       const [scalarColumns, primaryColumns, foreignColumns, manyColumns] =
         splitCols(table, args.data)
@@ -1138,7 +1138,7 @@ const $Queries = function <Tb extends keyof $TB>(trx: any, sql: string[] = []) {
         for (const [k, v] of relColumns) {
           const AttCol = $Att[table].columns[k]
           const { references, keys } = AttCol.relation
-          // 将外键作为where条件
+          // Use foreign keys as where condition
           let foreignWhere: any = {},
             currTable: any
           for (let i = 0; i < references.length; i++) {
@@ -1151,7 +1151,7 @@ const $Queries = function <Tb extends keyof $TB>(trx: any, sql: string[] = []) {
               currTable[keys[i]])
           }
           if (v.connect && v.insert) {
-            // 查找连接是否存在
+            // Find if the connection exists
             let pTable = await trxQuery(
               trx($Att[AttCol.type].dbName).where(v.connect).select('*')
             )
@@ -1165,15 +1165,15 @@ const $Queries = function <Tb extends keyof $TB>(trx: any, sql: string[] = []) {
             for (let i = 0; i < keys.length; i++)
               scalarColumns[keys[i]] = pTable[references[i]]
           } else if (v.connect) {
-            // 查找连接
+            // Find the connection
             let [pTable] = await trxQuery(
               trx($Att[AttCol.type].dbName).where(v.connect).select('*')
             )
 
             if (!pTable)
-              throw `查询的表 "${
+              throw `query table "${
                 $Att[AttCol.type].dbName
-              }" 记录 "${JSON.stringify(v.connect)}" 不存在`
+              }" 记录record "${JSON.stringify(v.connect)}" does not exist`
             for (let i = 0; i < keys.length; i++)
               scalarColumns[keys[i]] = pTable[references[i]]
           } else if (v.insert) {
@@ -1206,7 +1206,7 @@ const $Queries = function <Tb extends keyof $TB>(trx: any, sql: string[] = []) {
         }
       }
 
-      // 修改本表
+      // Modify this table
       let tableRtn
       if (Object.keys(scalarColumns).length) {
         const trxTmp = await trxQuery(
@@ -1279,7 +1279,7 @@ const $Queries = function <Tb extends keyof $TB>(trx: any, sql: string[] = []) {
               )
             }
           } else {
-            // 一对多关系
+            // one-to-many relationship
             if (v.set) {
               await trxQuery(
                 trx($Att[AttCol.type].dbName).where(relationForeign).del()
@@ -1332,7 +1332,7 @@ const $Queries = function <Tb extends keyof $TB>(trx: any, sql: string[] = []) {
                     )
                   }
                 }
-                // 是创建
+                // is to create
                 else
                   await this.insert(AttCol.type, {
                     data: { ...record, ...relationForeign },
@@ -1441,12 +1441,12 @@ const $Queries = function <Tb extends keyof $TB>(trx: any, sql: string[] = []) {
           }
         }
       }
-      // 多对多关系
+      // many-to-many relationship
       if (Object.keys(manyColumns).length) {
         const relColumns: any = Object.entries(manyColumns)
         for (const [k, v] of relColumns) {
           const AttCol = $Att[table].columns[k]
-          // 本表id
+          // 本表id this table id
           let tableId
           if (args.where[$Att[table].id.join('_')]) {
             tableId = args.where
@@ -1457,12 +1457,12 @@ const $Queries = function <Tb extends keyof $TB>(trx: any, sql: string[] = []) {
               )
             )[0]
           }
-          // 映射表id
+          // id of mapping table
           let mapTableId: any = {}
           for (const k in tableId) {
             mapTableId[`${$Att[table].dbName}_${k}`] = tableId[k]
           }
-          // 关系表的ids
+          // ids of relational tables
           const trxTmp = await trxQuery(
             trx(AttCol.relation.mapTable).where(mapTableId).select('*')
           )
@@ -1475,8 +1475,8 @@ const $Queries = function <Tb extends keyof $TB>(trx: any, sql: string[] = []) {
 
           if (v.set) {
             const updateSet = async (record) => {
-              // 如果record只有1项，且是unique，且关系表还有其他的必选字段，则认为是connect
-              // 如果record只有1项，且是unique，且关系表没有其他的必选字段，则认为是upsert
+              // If the record has only 1 item, is unique, and the relational table has other required fields, it is considered to be connect
+              // If the record has only 1 item, is unique, and the relational table does not havr other required fields, it is considered to be upsert
               if (
                 Object.keys(record).length === 1 &&
                 $Att[AttCol.type].uniques.some(
@@ -1505,7 +1505,7 @@ const $Queries = function <Tb extends keyof $TB>(trx: any, sql: string[] = []) {
                       AttCol.type,
                       record
                     )
-                  : // 没有必选字段，可能是连接，也可能是创建，需用upsert
+                  : // There is no required field, it may be a connection or a creation, you need to use upsert
                     await trxQuery(
                       trx($Att[AttCol.type].dbName)
                         .insert(argsValidate(AttCol.type, record, 'insert'))
@@ -1514,7 +1514,7 @@ const $Queries = function <Tb extends keyof $TB>(trx: any, sql: string[] = []) {
                         .returning($Att[AttCol.type].id)
                     )
               }
-              // 是创建
+              // is to creat
               else
                 return await this.insert(AttCol.type, {
                   data: record,
@@ -1526,7 +1526,7 @@ const $Queries = function <Tb extends keyof $TB>(trx: any, sql: string[] = []) {
             for (const item of items)
               relTableId = relTableId.concat(await updateSet(item))
 
-            // 删除映射表中老的关系，存入新的关系
+            // Delete the old relationships in the mapping table and store the new relationships
             await trxQuery(
               trx(AttCol.relation.mapTable).where(mapTableId).del()
             )
@@ -1570,7 +1570,7 @@ const $Queries = function <Tb extends keyof $TB>(trx: any, sql: string[] = []) {
               }
             }
             if (v.insert) {
-              // 可能有问题---------------------------------------------------------------------------------
+              // There may be a problem---------------------------------------------------------------------------------
               const updateInsert = async (record) =>
                 await this.upsert(AttCol.type, {
                   where: recordUnique(AttCol.type, record),
@@ -1622,7 +1622,7 @@ const $Queries = function <Tb extends keyof $TB>(trx: any, sql: string[] = []) {
                 (_, v) => trxWhere(_, AttCol.type, v.where, 'OR'),
                 trx($Att[AttCol.type].dbName).del()
               )
-              // 删除映射表中对应的记录(后续完善)
+              // Delete the corresponding records in the mapping table (subsequent improvement)
             }
             if (v.deleteMany) {
               const where = trxWhere(
@@ -1687,7 +1687,7 @@ const $Queries = function <Tb extends keyof $TB>(trx: any, sql: string[] = []) {
     },
 
     async delete(table: Tb, args: $TableMutationType<Tb, 'delete'>) {
-      if (!args.where || !Object.keys(args.where).length) throw `where 不能为空`
+      if (!args.where || !Object.keys(args.where).length) throw `where cannot be empty`
       return await trxWhere(
         trx($Att[table].dbName)
           .del()

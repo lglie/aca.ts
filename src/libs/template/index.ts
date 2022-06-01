@@ -92,7 +92,7 @@ export const serverPkg = (
 `
 }
 
-// 表查询接口模板
+// Table query interface template
 export const tableQuery = (query, tblName) => `{
   const trx = await this.knex.transaction()
   try {
@@ -105,7 +105,7 @@ export const tableQuery = (query, tblName) => `{
   }
 } `
 
-//  前端尾部模板
+//  Frontend footer template
 export const classClientFooter = (dbVar: string) => `\n$ = {
     raw: async (args: string): Promise<{ data?: unknown; error?: string }> =>
     await $.${dbVar}.req({
@@ -116,14 +116,14 @@ export const classClientFooter = (dbVar: string) => `\n$ = {
   }
 })()`
 
-// sql raw 后端模板
+// sql raw backend template
 export const sqlRawServer = (dbVar) => `\n$ = {
   raw: async (args: string): Promise<{ data?: unknown; error?: string }> => {
     const trx = await this.knex.transaction()
     try {
       const data = (await trx.raw(args)).rows
       await trx.commit()
-      // 去掉字符串前后的空白
+      // Rmeove whitespace before and after strings
       for (const v of data) {
         for (const k in v) {
           if (typeof v[k] === 'string') v[k] = v[k].trim()
@@ -138,7 +138,7 @@ export const sqlRawServer = (dbVar) => `\n$ = {
 }
 `
 
-// 后端构造函数
+// Backend constructor
 export const constructor = (config: DbConfig) => {
   const driver = config.connectOption.driver
   const sqlDiff = SqlDiff(driver)
@@ -178,7 +178,7 @@ this.knex = knex({
 `
 }
 
-// 远程函数前端代理模板
+// Remote function frontend proxy template
 export const RPCApi = (
   apiDir: string,
   name: string,
@@ -197,7 +197,7 @@ export async function ${name} (${params}): ${
   })
 } `
 
-// 远程函数命名空间前端代理模板
+// Remote function namespace frontend proxy template
 export const RPCNsApi = (name, body) => `
 export namespace ${name} {
   ${body}
@@ -220,7 +220,7 @@ export async function $ApiBridge(context: unknown, reqBody: $ApiBridge) {
   }
 }
 `
-// orm变更摘要
+// Summary of orm changes
 export const remark = (date, comment) => ({
   date: new Date(date).toLocaleString(),
   id: date,
@@ -245,22 +245,22 @@ export const ${Faas[faas]}
 
 export const createdEcho = (name: string) => `
 $ cd ${name}
-1. 打开.aca/config.json文件进行配置:
+1. Open .aca/config.json file for configuration:
 ${path.resolve(name, Cst.AcaConfig)}
   
-2. 在当前目录下创建服务器端应用(至少需要创建一个)、客户端应用：
-创建服务器端应用使用命令：
+2. Create a server-side app (at least one) and a client-side app in the current directory：
+Create a server-side app using command：
 $ aca server [dirname] --framework <framework or faas> (framework：koa, express, faas:amazon, azure, ali, tencent)
-创建客户端应用使用命令, 内部调用create-react-app创建一个react应用：
+Create a client-side using command, internally call create-react-app to create a react app：
 $ aca client [dirname]
 
-3. 生成数据库及api：
+3. Generate database and api：
 $ aca up
-以后在orm发生变化时使用该命令更新数据库架构及api
+Using this command to update the database schema and api when orm changes in the future
 `
 
 export const serverCreatedEcho = () => `
-运行：aca up，或：aca rollback 回滚
+Run：aca up，or：aca rollback
 `
 
 export function clientApiIndex(dbs: string[], RPCs: string[]) {
@@ -272,18 +272,18 @@ $.${v}.reqIntercept = (args: $ApiBridge) => {
   // $.${v}.requestInit = requestInit
 }
 $.${v}.resIntercept = (rtn: any) => {
-  // 根据需要对返回值：rtn 进行处理
+  // Process the return value：rtn as needed
 }
 `
       )
       .join('\n\n')
 
-  return `// 此文件为模板文件，实际根据需要编写，在其他页面中引入这个文件即可使用
-// 本文件只生成一次，只有删除该文件会重新生成
+  return `// This file is a template file. Introduce this file in other pages to use it.
+// This file is only generated once. It will be regenerated only when the file is deleted
 import { $, $Request, $ApiBridge } from './aca'
 
-// 填写后端服务器的地址，注意：部署到生产环境时，一定要改成生产环境的地址
-/*******************************下面这些根据需要自行填写************************ */
+// Fill in the address of the the backend server. Note: be sure to change it to the address of the production environment when deploying to the production environment
+/*******************************Fill out the following as needed************************ */
 const url = ''
 
 const headers = {
@@ -296,7 +296,6 @@ const requestInit: RequestInit = {
   headers: headers,
 }
 
-// 可以对请求头进行及入参：args进行改写
 ${apiStr(dbs)}
 ${apiStr(RPCs.map((v) => `$RPC.${v}`))}
 export type { $EnumType, $TableType, $TB } from './aca'

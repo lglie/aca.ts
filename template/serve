@@ -1,5 +1,5 @@
-// 本文件为本地开发测试使用，生产环境不需要此文件
-// 在本文件所在目录下运行命令：ts-node dev-serve
+// This file is used for local development and testing, and is not required for the production environment
+// Run the command：ts-node dev-serve in this file directory
 import Koa from 'koa'
 import bodyParser from 'koa-body'
 import cors from 'koa-cors'

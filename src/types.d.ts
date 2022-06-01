@@ -1,7 +1,7 @@
-// 关系约定：
-// 一对一：主键：optional：不是array，外键有props.foreign
-// 一对多：主键：optional: array, 外键有props.foreign，type不以[]结尾
-// 多对多：optional: array, type为[]结尾
+// Relationship agreement：
+// one-to-one：primary key：optional：not array，foreign keys have props.foreign
+// one-to-many：primary key：optional: array, foreign keys have props.foreign，type does not end with []
+// many-to-many：optional: array, type ends with []
 type AcaDir = '.' | '..'
 type Config = {
   orm: string
@@ -163,7 +163,7 @@ interface Name {
 
 type Enums = { [k: string]: Enum }
 
-// 以下为ast的定义
+// Below is the difinition of ast
 interface Enum {
   kind: 'enum'
   namespace: string[]
@@ -298,7 +298,7 @@ interface DbMigrate {
   alter?: DbAlter
 }
 
-// model类型注解
+// model annotations
 interface Annotate {
   dbName?: string
   id?: string[]

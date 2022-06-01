@@ -22,7 +22,7 @@ const KindCode = {
   [ts.SyntaxKind.ModuleDeclaration]: 'namespace',
 }
 
-// 限定名解析
+// Parse qualified name
 const QualifiedName = (n: ts.QualifiedName | ts.Identifier) => {
   let rtn = ''
   if (n.kind === ts.SyntaxKind.Identifier) return n.text
@@ -36,10 +36,10 @@ const QualifiedName = (n: ts.QualifiedName | ts.Identifier) => {
   return rtn + '.' + n.right.text
 }
 
-// 节点属性解析
+// Parse node attribute
 const NodeParse = {
   type(typ: ts.TypeNode): string {
-    // 是数组类型
+    // Is array type
     if (typ.kind === ts.SyntaxKind.ArrayType)
       return (
         NodeParse.type((<ts.ArrayTypeNode>typ).elementType) +
@@ -82,15 +82,15 @@ const NodeParse = {
         rtn = QualifiedName(<any>typ)
         break
       default:
-        console.log(`没有被处理的数据类型：`, JSON.stringify(typ, null, 2))
+        console.log(`Data type not handled：`, JSON.stringify(typ, null, 2))
     }
     return rtn
   },
   initializer(exp: ts.Expression): Initializer {
     let rtn, text
     switch (exp.kind) {
-      case ts.SyntaxKind.TrueKeyword: // 是true
-      case ts.SyntaxKind.FalseKeyword: // 是false
+      case ts.SyntaxKind.TrueKeyword: // is true
+      case ts.SyntaxKind.FalseKeyword: // is false
         rtn = {
           type: 'boolean',
           initializer: {
@@ -99,26 +99,26 @@ const NodeParse = {
           }[exp.kind],
         }
         break
-      case ts.SyntaxKind.NumericLiteral: // 是数字字面量
+      case ts.SyntaxKind.NumericLiteral: // is numeric literal
         text = (<ts.NumericLiteral>exp).text
         rtn = {
           type: text.indexOf('.') === -1 ? 'int' : 'float',
           initializer: text,
         }
         break
-      case ts.SyntaxKind.BigIntLiteral: // 是bigint字面量
+      case ts.SyntaxKind.BigIntLiteral: // is bigint literal
         rtn = {
           type: 'bigint',
           initializer: `${(<ts.BigIntLiteral>exp).text.replace(/n$/, '')}`,
         }
         break
-      case ts.SyntaxKind.StringLiteral: // 是字符串字面量
+      case ts.SyntaxKind.StringLiteral: // is string literal
         rtn = {
           type: 'string',
           initializer: `'${(<ts.StringLiteral>exp).text}'`,
         }
         break
-      case ts.SyntaxKind.PropertyAccessExpression: // 是枚举值
+      case ts.SyntaxKind.PropertyAccessExpression: // is enumeration value
         rtn = {
           type: <string>(
             (<ts.Identifier>(<ts.PropertyAccessExpression>exp).expression)
@@ -129,7 +129,7 @@ const NodeParse = {
           }'`,
         }
         break
-      case ts.SyntaxKind.ObjectLiteralExpression: // 是对象
+      case ts.SyntaxKind.ObjectLiteralExpression: // is object
         rtn = {
           type: 'object',
           initializer: (<ts.ObjectLiteralExpression>exp).properties.reduce(
@@ -143,14 +143,14 @@ const NodeParse = {
           ),
         }
         break
-      case ts.SyntaxKind.Identifier: // 是标识符
+      case ts.SyntaxKind.Identifier: // is identifier
         rtn = {
           type: 'Identifier',
           initializer: `'${(<ts.Identifier>exp).text}'`,
         }
         break
-      case ts.SyntaxKind.CallExpression: // 是函数表达式
-      case ts.SyntaxKind.NewExpression: // 是实例表达式
+      case ts.SyntaxKind.CallExpression: // is function expression
+      case ts.SyntaxKind.NewExpression: // is instance expression
         rtn = {
           type: {
             [ts.SyntaxKind.CallExpression]: 'callExpression',
@@ -184,7 +184,7 @@ const NodeParse = {
         }
         break
       default:
-        console.log(`没有处理的默认值: ${JSON.stringify(exp, null, 2)}`)
+        console.log(`Default values not processed: ${JSON.stringify(exp, null, 2)}`)
         rtn = { type: '', initializer: '' }
     }
     return rtn
@@ -196,15 +196,15 @@ const NodeParse = {
       let key = '',
         value
       switch (exp.kind) {
-        case ts.SyntaxKind.Identifier: //无命名空间，无参数（true）
+        case ts.SyntaxKind.Identifier: //no namespace, no parameter
           key = (<ts.Identifier>exp).text
           value = true
           break
-        case ts.SyntaxKind.PropertyAccessExpression: // 带一级命名空间，无参数
+        case ts.SyntaxKind.PropertyAccessExpression: // with first-level namespace, no parameter
           key = (<ts.PropertyAccessExpression>exp).name.text
           value = true
           break
-        case ts.SyntaxKind.CallExpression: // 带一级命名空间，有参数
+        case ts.SyntaxKind.CallExpression: // with first-level namespace and parameters
           const callExp = <ts.PropertyAccessExpression>(
             (<ts.CallExpression>exp).expression
           )
@@ -215,15 +215,15 @@ const NodeParse = {
             '.' +
             callExp.name.text
           value = (<ts.CallExpression>exp).arguments.map((v2) => {
-            // 是单个元素
+            // is simgle element
             if ((<ts.Identifier>v2).text) {
               return (<ts.Identifier>v2).text
-            } // 是数组参数
+            } // is array parameter
             else if ((<ts.ArrayLiteralExpression>v2).elements) {
               return (<ts.ArrayLiteralExpression>v2).elements.map(
                 (v3) => (<ts.Identifier>v3).text
               )
-            } // 是对象参数
+            } // is object parameter
             else if ((<ts.ObjectLiteralExpression>v2).properties) {
               return (<ts.ObjectLiteralExpression>v2).properties.reduce(
                 (_3: any, v3: any) => {
@@ -271,7 +271,7 @@ async function PickModel(acaDir: '.' | '..', ast: ts.SourceFile) {
     return subAst.statements.reduce((_, v) => {
       let name
       switch (v.kind) {
-        case ts.SyntaxKind.ImportDeclaration: // 是import语句
+        case ts.SyntaxKind.ImportDeclaration: // is import statement
           let named = <ImportName>{}
           const importV = <ts.ImportDeclaration>v
           let clause = importV.importClause
@@ -299,7 +299,7 @@ async function PickModel(acaDir: '.' | '..', ast: ts.SourceFile) {
             from: (<ts.Identifier>importV.moduleSpecifier).text,
           })
           break
-        case ts.SyntaxKind.VariableStatement: // 是变量声明
+        case ts.SyntaxKind.VariableStatement: // is variable statement
           const varV = <ts.VariableStatement>v
           const names = varV.declarationList.declarations.reduce((_2, v2) => {
             const namesRtn = {
@@ -307,7 +307,7 @@ async function PickModel(acaDir: '.' | '..', ast: ts.SourceFile) {
               type: '',
               initializer: '',
             }
-            // 有初始值
+            // Have initial values
             if (v2.initializer) {
               const init = NodeParse.initializer(v2.initializer)
               if ('$db' === (<any>v2.type)?.typeName.text) {
@@ -315,7 +315,7 @@ async function PickModel(acaDir: '.' | '..', ast: ts.SourceFile) {
                 namesRtn.initializer = init.initializer
               }
 
-              // 有类型，覆盖上面的类型
+              // There are types, overriding the above types
               namesRtn.type = v2.type ? KindCode[v2.type.kind] : init.type
               if (['int', 'float'].includes(namesRtn.type))
                 namesRtn.type = 'number'
@@ -328,7 +328,7 @@ async function PickModel(acaDir: '.' | '..', ast: ts.SourceFile) {
             _['$'] = { kind: 'dbConfig', $: names[0].initializer }
           else schm.vars.push({ kind: 'const', names })
           break
-        case ts.SyntaxKind.ModuleDeclaration: // 模块声明(module)
+        case ts.SyntaxKind.ModuleDeclaration: // module declaration
           const moduleV = <ts.ModuleDeclaration>v
           name = moduleV.name.text
           _[name] = {
@@ -338,7 +338,7 @@ async function PickModel(acaDir: '.' | '..', ast: ts.SourceFile) {
             models: Iter(<ts.ModuleBlock>moduleV.body, [...namespace, name]),
           }
           break
-        case ts.SyntaxKind.EnumDeclaration: // 是枚举声明(enum)
+        case ts.SyntaxKind.EnumDeclaration: // is enum declaration
           const enumV = <ts.EnumDeclaration>v
           name = enumV.name.text
           _[name] = {
@@ -349,7 +349,7 @@ async function PickModel(acaDir: '.' | '..', ast: ts.SourceFile) {
             values: enumV.members.map((v2) => (<ts.Identifier>v2.name).text),
           }
           break
-        case ts.SyntaxKind.ClassDeclaration: // 表声明(class)
+        case ts.SyntaxKind.ClassDeclaration: // is table declaration
           const classV = <ts.ClassDeclaration>v
           name = classV.name.text
           let props = NodeParse.decorator(
@@ -402,14 +402,14 @@ async function PickModel(acaDir: '.' | '..', ast: ts.SourceFile) {
               if (props['unique']) body['uniques'].push([colKey])
               if (props['index']) body['indexes'].push([colKey])
             }
-            // 处理初始值
+            // Handle initial values
             let init
             if (V2.initializer) {
               init = NodeParse.initializer(V2.initializer)
               col['props']['default'] = init.initializer
               col.optional = 'optional'
             }
-            // 处理类型定义
+            // Handle type definition
             if (V2.type) {
               col['type'] = NodeParse.type(V2.type)
               const idType = col['type'].match(/^id(\[\w+\])?$/)
@@ -418,9 +418,9 @@ async function PickModel(acaDir: '.' | '..', ast: ts.SourceFile) {
                 // body['id'] = col.name
               }
             }
-            // 如果没有定义数据类型，根据初始值进行推断
+            // If the data type is not defined, infer from the initial values
             else {
-              if (!init) throw `字段: ${colKey}, 没有定义数据类型`
+              if (!init) throw `field '${colKey}', data type is not defined`
               col['type'] = init.type
             }
             _2[colKey] = col
@@ -429,7 +429,7 @@ async function PickModel(acaDir: '.' | '..', ast: ts.SourceFile) {
           _[name] = body
           break
         default:
-          console.log(`字段类型不被schema所支持：${JSON.stringify(v)}`)
+          console.log(`Data type is not supported by schema：${JSON.stringify(v)}`)
       }
       return _
     }, {})
@@ -437,26 +437,26 @@ async function PickModel(acaDir: '.' | '..', ast: ts.SourceFile) {
 
   const dbs: DbModels = Iter(ast)
 
-  // 查找变量kD对应的数据库的配置信息
+  // Find the configuration information of the database correspondong to variable kD
   const DbConfig = (db: DbVar) => {
-    // 默认使用config里database字段(.)作为实例化参数
+    // Using by default the database field(.)in config as an instantiation
     if (!db.models['$']) {
       if (config.database) {
         db.models['$'] = <DbConfig>config.database['default']
-      } else throw `config文件里没有配置数据库实例化参数`
-    } // 指向config/database里的某一个字段路径
+      } else throw `There is no configuration database instantiation parameter in config file`
+    } // Point to a field path on config/database
     else if (
       typeof db.models['$']['$'] === 'string' &&
       db.models['$']['$'].startsWith(`$`)
     ) {
       db.models['$'] = config.database[db.models['$']['$'].slice(1)]
     } else if (typeof db['$'] === 'object') {
-    } else `数据库初始化参数配置错误！`
+    } else `Database initialization parameter configuration error!`
   }
 
-  // 完善表
+  // Perfect table
   const Perfect = (db: Models, dbVar: string) => {
-    // 查找表或枚举
+    // Find table or enumeration
     const findModel = (namespace: string[], relName: string) => {
       let rtn
       const qual = relName.split('.')
@@ -477,8 +477,8 @@ async function PickModel(acaDir: '.' | '..', ast: ts.SourceFile) {
           mdl(nsModels(namespace.slice(0, i)), relName)
           if (rtn) break
         }
-        rtn = rtn || dbs[relName] // 为根目录下的枚举类型
-      } // 含有命名空间限定符
+        rtn = rtn || dbs[relName] // Is the enumeration type in the root directory
+      } // Contain namespace qualifiers
       else {
         const ns = qual.slice(0, -1)
 
@@ -499,7 +499,7 @@ async function PickModel(acaDir: '.' | '..', ast: ts.SourceFile) {
         }
       }
 
-      if (!rtn) throw `没有查找到类型定义：${relName}`
+      if (!rtn) throw `Type definition：${relName} not found`
 
       return <Model>rtn
     }
@@ -508,7 +508,7 @@ async function PickModel(acaDir: '.' | '..', ast: ts.SourceFile) {
     const sqlDiff = SqlDiff(driver)
     const IterFill = (subModels: Models) => {
       for (const k in subModels) {
-        // 标量字段的jsType、dbType、id
+        // jsType、dbType、id of scalar field
         switch (subModels[k].kind) {
           case 'namespace':
             IterFill((<Namespace>subModels[k]).models)
@@ -516,9 +516,9 @@ async function PickModel(acaDir: '.' | '..', ast: ts.SourceFile) {
           case 'view':
             break
           case 'table':
-            // 获取变量对应的数据库引擎
+            // Get the database engine corresponding to the variable
             const tbl = <Table>subModels[k]
-            // 如果有基类，则把把基类中的字段填充到表中
+            // If there is a base class, fill the fields in the base class into the table
             if (tbl.extends) {
               const base = <Table>findModel(tbl.namespace, tbl.extends[0])
               Object.assign(tbl.columns, base.columns)
@@ -568,7 +568,7 @@ async function PickModel(acaDir: '.' | '..', ast: ts.SourceFile) {
                   col.props.jsType = col.type.replace(
                     typ[1],
                     sqlDiff.keyword.scalarType[typ[1]].jsType
-                  ) // 可能是数组
+                  ) // May be an array
                   col.props.dbType =
                     col.props.dbType ||
                     col.type.replace(
@@ -578,17 +578,17 @@ async function PickModel(acaDir: '.' | '..', ast: ts.SourceFile) {
                   break
                 case 'enum':
                   break
-                // 枚举类型或表关系类型, 添加外键字段，建立关系字段，枚举类型替换为全命名空间的全名
+                // enumeration type or table relationship type, add a foreign key field, and establish a relationship field
                 default:
-                  // 查找该枚举或类的定义
+                  // Find the definiton of the enumeration or class
                   const relModel = findModel(tbl.namespace, typ[1])
                   switch ((<Model>relModel).kind) {
-                    case 'enum': // 是枚举
+                    case 'enum': // is enumeration
                       col.type = 'enum'
                       col.props.dbType = 'varchar(20)'
                       col.props.jsType = (<Enum>relModel).jsName
                       break
-                    case 'table': // 是关系, 先完善type的完全限定名
+                    case 'table': // is relation, first complete the fully qualified name of the type
                       const lastDot = typ[1].lastIndexOf('.')
                       const relTbl = typ[1].slice(lastDot + 1)
                       const qualNs = [...relModel.namespace]
@@ -616,12 +616,12 @@ async function PickModel(acaDir: '.' | '..', ast: ts.SourceFile) {
               const col = tbl.columns[k2]
               const typ = col.type.match(typeReg)!
               if (!ScalarTypes.includes(typ[1]) && !col.props.dbType) {
-                // 查找关系表
+                // Find relation table
                 const relTbl = <Table>findModel(tbl.namespace, typ[1])
                 for (const relK2 in relTbl.columns) {
                   const relCol = relTbl.columns[relK2]
                   const relTyp = relCol.type.match(typeReg)!
-                  // 修改类型、添加外键
+                  // Modify type, add foreign key
                   const modify = () => {
                     col.type =
                       [...relTbl.namespace, relTbl.name, relCol.name].join(
@@ -660,15 +660,15 @@ async function PickModel(acaDir: '.' | '..', ast: ts.SourceFile) {
                       (col.map || col.name) +
                       (relTyp[3] || (col.optional === 'optional' ? '?' : ''))
 
-                    // 添加外键字段
+                    // Add foreign key field
                     const addForeign = (
-                      PT: Table, // 主键表
-                      PF: Column, // 主键字段
-                      FT: Table, // 外键表
-                      FF: Column // 外键字段
+                      PT: Table, // primary key table
+                      PF: Column, // primary key field
+                      FT: Table, // foreign key table
+                      FF: Column // foreign key field
                     ) => {
                       let FR = FF.props.foreign
-                      // 如果FR是字符串或字符串数组，则默认引用主键表的id
+                      // If FR is a string or a string array，use the id of primary key by default
                       if (typeof FR === 'string' || Array.isArray(FR)) {
                         const tmpFR = {
                           keys: <string[]>[],
@@ -677,10 +677,10 @@ async function PickModel(acaDir: '.' | '..', ast: ts.SourceFile) {
                         tmpFR.keys = typeof FR === 'string' ? [FR] : FR
                         if (PT.id.length === tmpFR.keys.length)
                           tmpFR.references = PT.id
-                        else throw `外键与引用的主键长度不符：${FR}`
+                        else throw `The foreign key does not match the length of the referenced primary key：${FR}`
                         FR = FF.props.foreign = tmpFR
                       }
-                      // 如果是一对多的关系，则需要将主键表的对应的字段optional设置为：array
+                      // If it is a one-to-many relationship，set the corresponding field optional of the key table to：array
                       if (PF.type.endsWith(']')) {
                         PF.type = PF.type.replace('[]', '')
                         PF.props.jsType = PF.props.jsType.replace('[]', '')
@@ -748,7 +748,7 @@ async function PickModel(acaDir: '.' | '..', ast: ts.SourceFile) {
                   }
                 }
                 if (!col.props.dbType)
-                  throw `表：${tblName}, 字段：${col.name}, 没有匹配到对向表的关系字段：${col.type}`
+                  throw `table '${tblName}', field '${col.name}' do not match the relation field in opposite table：${col.type}`
               }
             }
         }
@@ -756,7 +756,7 @@ async function PickModel(acaDir: '.' | '..', ast: ts.SourceFile) {
     }
 
     IterFill(db)
-    // 处理关系字段,将关系表对应到字段
+    // Process relational field and map relational table to field
     IterRelate(db)
   }
   // fs.writeFileSync(
@@ -781,7 +781,7 @@ async function PickModel(acaDir: '.' | '..', ast: ts.SourceFile) {
       Perfect((<DbVar>dbs[k]).models, k)
     }
   }
-  // 将enum迁移到根命名空间，数据库变为：k：tableLike形式
+  // Transfer enum to the root namespace，and the database becomes: {k：tableLike}
   const rtn = { ...schm, enums: {}, dbs: {} }
 
   const IterDbs = (models: DbModels | Models) =>

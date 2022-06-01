@@ -1,13 +1,13 @@
-// 该工具目前处于内测阶段，bug暂时提交：liaoguolie@gmail.com
-// 注：所有的标识符不得以$开头，以防命名冲突
-// 类成员支持的标量类型：id, int, bigint, float, string, object(键值对), Date，及自定义枚举类型
+// The tool is currently in the internal testing stage, and bug is temporarily submitted to：liaoguolie@gmail.com
+// Note: All identifiers must not start with $ to prevent naming conflicts
+// Scalar types supported by class members：id, int, bigint, float, string, object(Key-value pair), Date，and custom enum types
 import {
   id,
   int,
   float,
-  $db, // 数据库连接配置类型
-  $, // 类装饰器,
-  $_, // 成员装饰器
+  $db, // Database connection configuration type
+  $, // class decorator,
+  $_, // member decorator
 } from './.orm'
 
 enum Gender {
@@ -16,9 +16,9 @@ enum Gender {
   C,
 }
 
-// 数据库类
+// Database class
 namespace Blog {
-  // 每个数据库类只有一个const，并且类型为：$
+  // Each database class has only one const, and the type is: $
   const dbConfig: $db = `$default`
 
   @$.unique(['firstName', 'lastName'])
@@ -52,7 +52,7 @@ namespace Blog {
     user: user
   }
 
-  // 支持多级命名空间
+  // Support multi-level namespaces
   namespace ns {
     enum gtEnum {
       tk,
