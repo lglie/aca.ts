@@ -1,13 +1,13 @@
-// 该工具目前处于内测阶段，bug暂时提交：liaoguolie@gmail.com
-// 注：所有的标识符不得以$开头，以防命名冲突
-// 类成员支持的标量类型：id, int, bigint, float, string, object(键值对), Date，及自定义枚举类型
+// The CLI is currently in the internal testing stage
+// Note: all identifiers must not start with $ to prevent naming conflicts
+// Scalar types supported by class members：id, int, bigint, float, string, object(Key-value pair), Date，and enum type
 import {
   id,
   int,
   float,
-  $db, // 数据库连接配置类型
-  $, // 类装饰器,
-  $_, // 成员装饰器
+  $db, // Database connection configuration type
+  $, // Class decorator
+  $_, // Member decorator
 } from './.misc/.orm'
 
 enum Gender {
@@ -16,10 +16,10 @@ enum Gender {
   Unkown,
 }
 
-// 数据库类
+// Class pointing to the database
 namespace Blog {
-  // 每个数据库类最多只有一个const，并且类型为：$db
-  // 其值指向config.json/database中的同名字段，默认为: default
+  // Each database class has at most one const, and the type is: $db
+  // Its value points to the field with the same name in config.json/database. The default is: default
   const dbConfig: $db = 'default'
 
   @$.unique(['firstName', 'lastName'])
@@ -31,25 +31,25 @@ namespace Blog {
     age: int = 25
     married: boolean = true
     detail?: object // json
-    // 时间戳
+    // timestamp
     @$_.createdAt created_at?: Date
-    // @$_.updatedAt updated_at: Date // 暂不支持
-    profile?: profile // 一对一
-    posts: ns.post[] // 一对多
-    comments: comment[] // 多对多
+    // @$_.updatedAt updated_at: Date // Not supported at the moment
+    profile?: profile // one-to-one
+    posts: ns.post[] // one-to-many
+    comments: comment[] // many-to-many
   }
 
-  @$.map('PROF') // 映射数据库表名
+  @$.map('PROF') // Map database table name
   class profile {
     id: id
-    // 数据库支持的类型
+    // Types supported by the database
     @$_.dbType('char(8)') password: string
-    // 外键
+    // foreign key
     @$_.foreign('userId')
     user: user
   }
 
-  // 支持多级命名空间
+  // Supports multi-level namespaces
   namespace ns {
     enum KindEnum {
       Political,
@@ -68,8 +68,9 @@ namespace Blog {
         onDelete: 'cascade',
       })
       author: user
-      // 如果两个表之间存在一个以上的关系，则其余关系必须指明关系字段
-      //像下面这样：
+      // If more than one relationship exists between two tables,
+      // the remaining relationships must specify the relationship field
+      // Like this:
       // @ts-ignore
       comments: comment['post'][]
       categories: category[]
@@ -77,10 +78,10 @@ namespace Blog {
 
     export class category {
       id: id
-      // unique, index 约束
+      // unique, index constraint
       @$_.unique @$_.index name: string
       posts: post[]
-      // 自关系
+      // self relationship
       @$_.foreign('categoriesId') parent?: category
       children: category[]
       comments: comment[]
@@ -88,7 +89,7 @@ namespace Blog {
   }
 
   export class comment {
-    // 可以指定5种id类型
+    // 5 ID types can be specified
     id: id['autoincrement']
     topEnum = Gender.Fomale
     rating: string

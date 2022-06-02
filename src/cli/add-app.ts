@@ -4,7 +4,7 @@ import * as Cst from '../libs/constant'
 import { addAppConfig, currentDir } from '../libs/common'
 import orm from '../orm'
 
-// command format：aca add [dirname] -s(-c)
+// command format: aca add [dirname] -s(-c)
 export async function addApp(yargs: any) {
   const workDir = currentDir()
   if (!workDir)
@@ -18,12 +18,12 @@ export async function addApp(yargs: any) {
   const argvS = argv.server || argv.s ? server : ''
   const argvC = argv.client || argv.c ? client : ''
   if (!argvS && !argvC)
-    throw new Error(`Missing Command Parameters：--server or：--client`)
+    throw new Error(`Missing Command Parameters: --server or: --client`)
   let appName: string = argv._[1]
 
   if (workDir === Cst.AcaDir) {
     if (!appName)
-      throw new Error(`No appName，usage：aca add [appName] <-s -c>`)
+      throw new Error(`No appName, usage: aca add [appName] <-s -c>`)
     if (!fs.existsSync(appName) || !fs.statSync(appName).isDirectory())
       throw new Error(`The app '${name}' does not exist under this project`)
   } else {
@@ -60,9 +60,9 @@ export async function addApp(yargs: any) {
   }
 
   console.log(
-    `The setting of the app has been written to： ${
+    `The setting of the app has been written to:  ${
       Cst.AcaConfig
-    } file，open the following link to configure：
+    } file, open the following link to configure: 
 ${path.join(path.resolve(acaDir), Cst.AcaConfig)}
 `
   )

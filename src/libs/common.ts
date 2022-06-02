@@ -82,7 +82,7 @@ export const AddQuote = <T extends string | string[]>(el: T, quote = '"'): T =>
 
 // Merge files in a folder into an object
 export const PlainFiles = (p: string): string | { [k: string]: string } => {
-  if (!fs.statSync(p)) throw `Cannot find orm file or folder：${p}`
+  if (!fs.statSync(p)) throw `Cannot find orm file or folder: ${p}`
   if (fs.statSync(p).isFile())
     return { [p]: fs.readFileSync(path.resolve(p), 'utf-8') }
 
@@ -257,13 +257,14 @@ export function addAppConfig(
 
   // install axios
   if (
+    kind === 'client' &&
     !fs.existsSync(path.join(resolveAcaDir, appName, 'node_modules', 'axios'))
   ) {
     console.log(`Installing axios...`)
     execSync(`cd ${path.join(resolveAcaDir, appName)} & npm install axios`)
   }
 }
-// If the current working directory is the project directory, return ".aca"，If it is the app directory, return the app directory name, otherwise return undefined
+// If the current working directory is the project directory, return ".aca", If it is the app directory, return the app directory name, otherwise return undefined
 export function currentDir() {
   const higher = path.join('..', Cst.AcaDir)
   if (fs.existsSync(Cst.AcaDir)) return Cst.AcaDir

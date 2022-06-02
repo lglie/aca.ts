@@ -1,7 +1,7 @@
-// 所有RPC函数都需要放在该目录下
-// 不能写在该index.ts页面中，除非该目录下只有这个页面
-// RPC函数第一个参数必须为上下文（context），生成的前端同名函数没有这个参数
-// 参照下面的写法：
+// All RPC functions need to be placed in this directory
+// It cannot be written in the index.ts page unless there is only one page in the directory
+// The first parameter of RPC function must be context. The generated front-end function with the same name does not have this parameter
+// Refer to the following wording:
 
 import { $TbOper, Blog } from '..'
 

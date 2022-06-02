@@ -14,7 +14,7 @@ import { remark } from '../libs/templates'
 const msg = (acaDir: AcaDir, config: Config) => {
   const resolveAcaDir = path.resolve(acaDir)
   const serverApps = Object.keys(config.serverApps)
-  console.log(`\nThe generated backend files are stored in：`)
+  console.log(`\nThe generated backend files are stored in: `)
   for (const v of serverApps) {
     const apiDir =
       config.serverApps[v].apiDir ??
@@ -24,7 +24,7 @@ const msg = (acaDir: AcaDir, config: Config) => {
   const clientApps = Object.keys(config.clientApps)
   if (clientApps.length) {
     console.log(
-      `\n打开下面的文件配置前端请求的url、headers：Open the file below and configure url and headers required in frontend`
+      `\nOpen the file below and configure url and headers required in frontend:`
     )
     for (const v of clientApps) {
       const apiDir =
@@ -75,7 +75,7 @@ async function pg(
       db = await sqlDiff.keyword.stmt.connect(acaDir, config, connOption)
       await db.query(allSql.sqls)
       await db.end()
-      console.log(`总共：${allSql.total}张表创建成功！`)
+      console.log(`total: ${allSql.total} created!`)
     } catch (e) {
       // Delete the new database if not successful
       await db.end()
@@ -132,7 +132,7 @@ async function mssql(
 ) {
   const sqlDiff = SqlDiff('mssql')
 
-  // 判断数据库是否存在
+  // Determine if the database exists
   const connConf =
     process.env[currdb.config.connectOption.envConnect || ''] ||
     currdb.config.connectOption.connect
@@ -141,23 +141,23 @@ async function mssql(
   const CreateDb = async () => {
     if (db.config.database !== 'master')
       throw new Error(
-        `已经存在数据库：${connOption.database}, 如需重新创建则需先删除该数据库`
+        `Database ${connOption.database} already exists. Delete the database first to recreate'`
       )
-    console.log(`正在创建数据库表...`)
+    console.log(`Creating database tables...`)
     const allSql = CreateAllTblSqls(currdb.config, currdb.tables)
     allSql.sqls =
       sqlDiff.aca.create + sqlDiff.aca.insert(timestamp) + '\n' + allSql.sqls
     console.log(allSql.sqls)
     try {
-      // 新建数据库
+      // Create new database
       await db.query(sqlDiff.db.create(connOption.database))
       await db.close()
       db = await sqlDiff.keyword.stmt.connect(acaDir, config, connOption)
       await db.query(allSql.sqls)
       await db.close()
-      console.log(`总共：${allSql.total}张表创建成功！`)
+      console.log(`Total: ${allSql.total} tables created successfully！`)
     } catch (e) {
-      // 不成功，删除此新建的数据库
+      // Delete the new database if not successful
       db = await sqlDiff.keyword.stmt.connect(acaDir, config, {
         ...connOption,
         database: 'master',
@@ -175,7 +175,9 @@ async function mssql(
       await db.query(sqlDiff.aca.select)
     } catch (e) {
       await db.close()
-      throw `存在数据库"${(<any>connOption).database}", 请先备份删除`
+      throw `Database "${
+        (<any>connOption).database
+      }" exists, please back up and delete first`
     }
 
     const allSqls = DbDiffSqls(currdb, prevDb)
@@ -189,7 +191,7 @@ async function mssql(
       } finally {
         await db.close()
       }
-      console.log(`数据库(${connOption})更新成功！`)
+      console.log(`Database(${connOption}) updated successfully!`)
       return allSqls
     } else {
       await db.close()
@@ -207,7 +209,7 @@ async function mysql2(
   prevDb?: Db
 ) {
   const sqlDiff = SqlDiff('mysql2')
-  // 判断数据库是否存在
+  // Determine if the database exists
   const conn = <RelConn>(
     (process.env[currdb.config.connectOption.envConnect || ''] ||
       currdb.config.connectOption.connect)
@@ -218,7 +220,7 @@ async function mysql2(
   const CreateDb = async () => {
     if (db.connection.database === (<RelConn>conn).database)
       throw new Error(
-        `Darabase：${
+        `Database: ${
           (<RelConn>conn).database
         }already exists, delete the database first to recreate`
       )
@@ -235,7 +237,7 @@ async function mysql2(
       db = await sqlDiff.keyword.stmt.connect(acaDir, config, conn)
       await db.query(allSql.sqls)
       await db.end()
-      console.log(`Total：${allSql.total} tables are created successfully!`)
+      console.log(`Total: ${allSql.total} tables are created successfully!`)
     } catch (e) {
       db = await sqlDiff.keyword.stmt.connect(acaDir, config, {
         ...(<RelConn>conn),
@@ -292,7 +294,7 @@ async function betterSqlite3(
   const app = Object.keys(config.serverApps)[0]
   if (!app)
     throw new Error(
-      `Need to create at least one server-side app, or add an app to register in config.json：aca add [dirname] -s`
+      `Need to create at least one server-side app, or add an app to register in config.json: aca add [dirname] -s`
     )
   const sqlDiff = SqlDiff('betterSqlite3')
   const connConf =
@@ -305,7 +307,7 @@ async function betterSqlite3(
     // Determine if the database exists
     if (fs.existsSync(path.join(acaDir, app, connOption.filename))) {
       throw new Error(
-        `Database：${connOption.filename} already exists, please delete this database to recreate`
+        `Database: ${connOption.filename} already exists, please delete this database to recreate`
       )
     }
     console.log(`Creating database tables...`)
@@ -317,7 +319,7 @@ async function betterSqlite3(
     try {
       db.exec(allSql.sqls)
       db.close()
-      console.log(`Total：${allSql.total} tables created successfully！`)
+      console.log(`Total: ${allSql.total} tables created successfully！`)
     } catch (e) {
       // Unsuccessful, delete the new database
       db.close()

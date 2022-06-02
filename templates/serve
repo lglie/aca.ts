@@ -1,5 +1,5 @@
 // This file is used for local development and testing, and is not required for the production environment
-// Run the command：ts-node dev-serve in this file directory
+// Run the command: ts-node dev-serve in this file directory
 import Koa from 'koa'
 import bodyParser from 'koa-body'
 import cors from 'koa-cors'

@@ -1,6 +1,6 @@
 // Relationship agreement：
-// one-to-one：primary key：optional：not array，foreign keys have props.foreign
-// one-to-many：primary key：optional: array, foreign keys have props.foreign，type does not end with []
+// one-to-one：primary key：optional：not array, foreign keys have props.foreign
+// one-to-many：primary key：optional: array, foreign keys have props.foreign, type does not end with []
 // many-to-many：optional: array, type ends with []
 type AcaDir = '.' | '..'
 type Config = {

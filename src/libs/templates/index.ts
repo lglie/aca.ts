@@ -190,23 +190,23 @@ $ cd ${name}
 1. Open .aca/config.json file for configuration:
 ${path.resolve(name, Cst.AcaConfig)}
   
-2. Create a server-side app (at least one) and a client-side app in the current directory：
-Create a server-side koa app using command：
+2. Create a server-side app (at least one) and a client-side app in the current directory: 
+Create a server-side koa app using command: 
 $ aca server [dirname]
 
-Create a client-side using command, internally call create-react-app to create a react app：
+Create a client-side using command, internally call create-react-app to create a react app: 
 $ aca client [dirname]
 
-Add self built app(the app dictionary in the aca project dictionary)：
+Add self built app(the app dictionary in the aca project dictionary): 
 $ aca add [dirname]
 
-3. Generate database and api：
+3. Generate database and api: 
 $ aca up
 Using this command to update the database schema and api when orm changes in the future
 `
 
 export const createdEchoServer = () => `
-Run：aca up，or：aca rollback
+Run: aca up, or: aca rollback
 `
 
 export function apiIndexClient(dbs: string[], RPCs: string[]) {
@@ -256,7 +256,7 @@ export const fnTpl = (fnApis: string) =>
     ? `export namespace $RPC {
     ${fnApis}
   }`
-    : `export const $RPC = '当前没有远程函数被生成'`
+    : `export const $RPC = 'No remote functions are currently generated'`
 
 export const reqInitValueTpl = `{
   req(args: any) {

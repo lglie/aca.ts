@@ -1,6 +1,6 @@
-// The tool is currently in the internal testing stage, and bug is temporarily submitted to：liaoguolie@gmail.com
+// The tool is currently in the internal testing stage, and bug is temporarily submitted to: liaoguolie@gmail.com
 // Note: All identifiers must not start with $ to prevent naming conflicts
-// Scalar types supported by class members：id, int, bigint, float, string, object(Key-value pair), Date，and custom enum types
+// Scalar types supported by class members: id, int, bigint, float, string, object(Key-value pair), Date, and custom enum types
 import {
   id,
   int,

@@ -82,7 +82,7 @@ const NodeParse = {
         rtn = QualifiedName(<any>typ)
         break
       default:
-        console.log(`Data type not handled：`, JSON.stringify(typ, null, 2))
+        console.log(`Data type not handled: `, JSON.stringify(typ, null, 2))
     }
     return rtn
   },
@@ -432,7 +432,7 @@ async function PickModel(acaDir: '.' | '..', ast: ts.SourceFile) {
           break
         default:
           console.log(
-            `Data type is not supported by schema：${JSON.stringify(v)}`
+            `Data type is not supported by schema: ${JSON.stringify(v)}`
           )
       }
       return _
@@ -505,7 +505,7 @@ async function PickModel(acaDir: '.' | '..', ast: ts.SourceFile) {
         }
       }
 
-      if (!rtn) throw `Type definition：${relName} not found`
+      if (!rtn) throw `Type definition: ${relName} not found`
 
       return <Model>rtn
     }
@@ -674,7 +674,7 @@ async function PickModel(acaDir: '.' | '..', ast: ts.SourceFile) {
                       FF: Column // foreign key field
                     ) => {
                       let FR = FF.props.foreign
-                      // If FR is a string or a string array，use the id of primary key by default
+                      // If FR is a string or a string array, use the id of primary key by default
                       if (typeof FR === 'string' || Array.isArray(FR)) {
                         const tmpFR = {
                           keys: <string[]>[],
@@ -684,10 +684,10 @@ async function PickModel(acaDir: '.' | '..', ast: ts.SourceFile) {
                         if (PT.id.length === tmpFR.keys.length)
                           tmpFR.references = PT.id
                         else
-                          throw `The foreign key does not match the length of the referenced primary key：${FR}`
+                          throw `The foreign key does not match the length of the referenced primary key: ${FR}`
                         FR = FF.props.foreign = tmpFR
                       }
-                      // If it is a one-to-many relationship，set the corresponding field optional of the key table to：array
+                      // If it is a one-to-many relationship, set the corresponding field optional of the key table to: array
                       if (PF.type.endsWith(']')) {
                         PF.type = PF.type.replace('[]', '')
                         PF.props.jsType = PF.props.jsType.replace('[]', '')
@@ -755,7 +755,7 @@ async function PickModel(acaDir: '.' | '..', ast: ts.SourceFile) {
                   }
                 }
                 if (!col.props.dbType)
-                  throw `table '${tblName}', field '${col.name}' do not match the relation field in opposite table：${col.type}`
+                  throw `table '${tblName}', field '${col.name}' do not match the relation field in opposite table: ${col.type}`
               }
             }
         }
@@ -788,7 +788,7 @@ async function PickModel(acaDir: '.' | '..', ast: ts.SourceFile) {
       Perfect((<DbVar>dbs[k]).models, k)
     }
   }
-  // Transfer enum to the root namespace，and the database becomes: {k：tableLike}
+  // Transfer enum to the root namespace, and the database becomes: {k: tableLike}
   const rtn = { ...schm, enums: {}, dbs: {} }
 
   const IterDbs = (models: DbModels | Models) =>

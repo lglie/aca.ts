@@ -1,6 +1,7 @@
 export class $Request {
   constructor(fetch: any, url: string) {
-    if (!url) throw `没有url参数，请在生成的api目录的index.ts中填写`
+    if (!url)
+      throw `Here is no URL parameter, please fill in the index.ts of the generated API directory`
     this.fetch = fetch
     this.url = url
   }

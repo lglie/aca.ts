@@ -86,7 +86,7 @@ const $Queries = function <Tb extends keyof $TB>(trx: any, sql: string[] = []) {
                 )
               : typeof records[i][AttCol] !== AttCols[AttCol].jsType
           ) {
-            throw `表 "${$Att[table].dbName}" 字段 "${AttCol}" 数据类型不符`
+            throw `table "${$Att[table].dbName}" field "${AttCol}" data type mismatch`
           }
           // If it is a number type and an int type
           if (
@@ -117,7 +117,7 @@ const $Queries = function <Tb extends keyof $TB>(trx: any, sql: string[] = []) {
               if ($Att[table].foreignKeys.includes(AttCol))
                 addedColumns[i][AttCol] = null
             } else {
-              throw `"${$Att[table].dbName}" 缺少必输字段missing required field："${AttCol}"`
+              throw `"${$Att[table].dbName}": missing required fieldmissing required field: "${AttCol}"`
             }
           }
         }
@@ -617,7 +617,7 @@ const $Queries = function <Tb extends keyof $TB>(trx: any, sql: string[] = []) {
     return Kx
   }
 
-  // Seperate relation fields into arrays：[scalar,primary,foreign,many]
+  // Seperate relation fields into arrays: [scalar,primary,foreign,many]
   const splitCols = (table: keyof $TB, cols) =>
     Object.keys(cols).reduce(
       (_: any, k: any) => (
@@ -1048,7 +1048,7 @@ const $Queries = function <Tb extends keyof $TB>(trx: any, sql: string[] = []) {
         }
         // Create many-to-many relational field
         if (Object.keys(manyCols).length) {
-          // 映射表id mapping table id
+          // Mapping table id
           const mapTabelId = $Att[table].id.reduce(
             (_: any, v) => (
               (_[`${$Att[table].dbName}_${v}`] = scalarRtn[0][v]), _
@@ -1192,7 +1192,7 @@ const $Queries = function <Tb extends keyof $TB>(trx: any, sql: string[] = []) {
             if (!pTable)
               throw `query table "${
                 $Att[AttCol.type].dbName
-              }" 记录record "${JSON.stringify(v.connect)}" does not exist`
+              }" record "${JSON.stringify(v.connect)}" does not exist`
             for (let i = 0; i < keys.length; i++)
               scalarColumns[keys[i]] = pTable[references[i]]
           } else if (v.insert) {
@@ -1465,7 +1465,7 @@ const $Queries = function <Tb extends keyof $TB>(trx: any, sql: string[] = []) {
         const relColumns: any = Object.entries(manyColumns)
         for (const [k, v] of relColumns) {
           const AttCol = $Att[table].columns[k]
-          // 本表id this table id
+          // this table id
           let tableId
           if (args.where[$Att[table].id.join('_')]) {
             tableId = args.where

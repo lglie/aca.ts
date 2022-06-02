@@ -17,7 +17,7 @@ export async function create(yargs: any) {
   if (name) {
     if (fs.existsSync(name)) throw `${name} exists in current directory`
   } else {
-    throw `Missing parameters：aca create XXX, XXX is the project directory name`
+    throw `Missing parameters: aca create XXX, XXX is the project directory name`
   }
 
   // Recursively create directory

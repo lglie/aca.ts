@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 import * as command from './cli'
 
-declare var echo: any // 系统命令
-// declare var ts-node: any // 系统命令
+declare var echo: any // system command
+// declare var ts-node: any // system command
 
 require('shelljs/global')
 const yargs = require('yargs')

@@ -227,12 +227,12 @@ export function AlterTblSql(
           if (alterCol.props) {
             if (alterCol.props.isId) {
               throw new Error(
-                `table：${tbl.name}，changes to table id are not allowed`
+                `table: ${tbl.name}, changes to table id are not allowed`
               )
             }
             if (alterCol.props.isArray) {
               throw new Error(
-                `${tbl.name}.${colName}，conversion between array and scalar type is not supported`
+                `${tbl.name}.${colName}, conversion between array and scalar type is not supported`
               )
             }
             if (alterCol.props.dbType) {
@@ -369,7 +369,7 @@ function createColSql(
 
     columnSql += `${colObj.optional === 'required' ? ' NOT NULL' : ''}`
 
-    // Add attributes：unique、default、check、createdAt、updatedAt
+    // Add attributes: unique、default、check、createdAt、updatedAt
     if (props.default !== undefined) {
       let dft = props.default
       if (colObj.type === 'boolean' && ['bit'].includes(props.dbType)) {
