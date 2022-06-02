@@ -204,7 +204,7 @@ export function CopyDirectory(src, dest) {
 // 将该应用程序添加到: .aca/config.json#serverApps
 export function addAppConfig(
   acaDir: '.' | '..',
-  name: string,
+  appName: string,
   kind: 'server' | 'client',
   expApi: string[],
   apiDir
@@ -212,7 +212,7 @@ export function addAppConfig(
   const resolveAcaDir = path.resolve(acaDir)
   const config: Config = require(path.join(resolveAcaDir, Cst.AcaConfig))
   const templatePath = path.join(__dirname, '../../templates')
-  const resolveApiDir = path.join(resolveAcaDir, name, apiDir)
+  const resolveApiDir = path.join(resolveAcaDir, appName, apiDir)
 
   const serverFiles = {
     [Cst.ServerRPCIndex]: 'rpc-index',
@@ -235,7 +235,7 @@ export function addAppConfig(
         )
       }
 
-      config.serverApps[name] = {
+      config.serverApps[appName] = {
         apiDir,
       }
       break
@@ -243,7 +243,7 @@ export function addAppConfig(
       // 递归创建各级目录
       MkdirsSync(resolveApiDir)
 
-      config.clientApps[name] = {
+      config.clientApps[appName] = {
         apiDir,
         allowRPCs: Object.keys(config.serverApps),
       }
@@ -255,8 +255,13 @@ export function addAppConfig(
     'utf-8'
   )
 
-  // 装载axios
-  execSync(`cd ${path.join(resolveAcaDir, name)} & npm install axios`)
+  // install axios
+  if (
+    !fs.existsSync(path.join(resolveAcaDir, appName, 'node_modules', 'axios'))
+  ) {
+    console.log(`Installing axios...`)
+    execSync(`cd ${path.join(resolveAcaDir, appName)} & npm install axios`)
+  }
 }
 // 如果当前工作目录是project目录返回".aca"，如果是应用程序目录，返回应用程序目录名称，否则返回undefined
 export function currentDir() {

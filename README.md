@@ -59,8 +59,7 @@ npm install -g aca.ts
 1. Create a aca project:
 
 ```bash
-$ aca create <projectName>
-$ cd <projectName>
+$ aca create <projectName> & cd <projectName>
 ```
 
 2. Open .aca directory, copy your custom ORM file into the directory, and add this file name to config.json/orm field.
