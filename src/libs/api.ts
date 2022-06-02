@@ -31,7 +31,7 @@ import {
 
 const templatePath = `../../templates`
 
-// 生成枚举类型
+// Generate enum types
 const EnumType = (enums: Enums) => {
   let rtn = ``
   for (const k in enums)
@@ -40,7 +40,7 @@ const EnumType = (enums: Enums) => {
   return `export type $EnumType = {${rtn}\n}`
 }
 
-// 生成枚举常量
+// Generate enum constants
 const EnumConst = (enums: Enums) => {
   let rtn = []
   for (const k in enums)
@@ -117,7 +117,7 @@ const tblQueries = (
     .join(`${api.startsWith('transaction') ? ',' : ''}\n\n`)
 }
 
-// 生成前后端的构造函数
+// Generate frontend and backend constructors
 const classServer = (db: Db, dbVar: string) => {
   const { config, tables } = db
   return `\n\nexport const ${dbVar} = new (class  {
@@ -139,11 +139,11 @@ const classClient = (db: Db, dbVar: string) => {
   `
 }
 
-// 生成表的标注及需要的类型
+// Generate table annotations and types
 const Orm = (tables: { [k: string]: Table | View }) => {
-  // 表的详细信息标注
+  // Annotations of tables
   const Att: Annotates = {}
-  // 每张表的所有需要的类型定义
+  // Definitions for all required types of each table
   const typeDefine: {
     [k in
       | 'unique'
@@ -162,7 +162,7 @@ const Orm = (tables: { [k: string]: Table | View }) => {
     foreign: {},
     table: {},
   }
-  // 初始化所有的表
+  // Initialize all tables
   for (const k in tables) {
     const tbl = tables[k]
     Att[tbl.jsName] = { columns: {}, scalarColumns: [], foreignKeys: [] }
@@ -199,7 +199,7 @@ const Orm = (tables: { [k: string]: Table | View }) => {
       const col = (<Table>tbl).columns[k2]
       const colName = col.jsName
       let [typeTbl, relColOpt] = col.props.jsType.split('.')
-      // 默认
+      // Default
       let colDefine = `${col.jsName}${
         'required' === col.optional ? '' : '?'
       }: ${typeTbl}`
@@ -209,7 +209,7 @@ const Orm = (tables: { [k: string]: Table | View }) => {
           name: colName,
         }
       )
-      // 是关系字段
+      // Is relation field
       if (relColOpt) {
         const relTbl = tables[typeTbl]
         const relColName = relColOpt.match(/^\w+/)![0]
@@ -226,7 +226,7 @@ const Orm = (tables: { [k: string]: Table | View }) => {
           optional: relCol.optional,
         }
 
-        // 是外键字段
+        // Is foreign key field
         if (col.props.foreign) {
           typeDefine.table[tbl.jsName].push(
             `${col.jsName}${
@@ -245,7 +245,7 @@ const Orm = (tables: { [k: string]: Table | View }) => {
             references: col.props.foreign.references,
           }
 
-          // 添加主键
+          // Add primary keys
           typeDefine.table[typeTbl].push(
             `${relColName}${
               'required' !== relCol.optional ? '?' : ''
@@ -260,7 +260,7 @@ const Orm = (tables: { [k: string]: Table | View }) => {
             keys: col.props.foreign.keys,
             references: col.props.foreign.references,
           }
-        } // 是多对多字段
+        } // Is many-to-many field
         else if (relColOpt.endsWith(']')) {
           typeDefine.table[tbl.jsName].push(
             `${col.jsName}?: $Relation<'${typeTbl}', '${relColName}', 'M2M'>`
@@ -282,7 +282,7 @@ const Orm = (tables: { [k: string]: Table | View }) => {
           })
         }
       }
-      // 是标量字段
+      // Is scalar field
       else {
         Att[tbl.jsName].scalarColumns!.push(colName)
 
@@ -332,19 +332,19 @@ const Orm = (tables: { [k: string]: Table | View }) => {
   return { typeDefine, Att }
 }
 
-// 生成前后端的api
+// Generate frontend and backend api
 async function DbApi(ast: Ast) {
-  // 需要引入的包
+  // Packages needed to be imported
   let serverApi = fs.readFileSync(
     path.join(__dirname, `${templatePath}/import`),
     'utf-8'
   )
-  // 生成枚举类型
+  // Generate enum types
   let clientApi =
     EnumType(ast.enums) +
-    // 类型定义
+    // Type definition
     require(`${templatePath}/typedefine`)
-  // 生成每个表的类型
+  // Generate the types of each table
   let dbType = {
     TB: <string[]>[],
     UN: <string[]>[],
@@ -397,34 +397,34 @@ async function DbApi(ast: Ast) {
     path.join(__dirname, `${templatePath}/annotation`),
     'utf-8'
   )} = ${JSON.stringify(dbType.anno, null, 2)}`
-  // 后端枚举常量
+  // Backend enum constants
   serverApi += EnumConst(ast.enums)
-  // 表处理逻辑
+  // Table processing logic
   serverApi += fs.readFileSync(
     path.join(__dirname, `${templatePath}/handle`),
     'utf-8'
   )
-  // 处理接口
+  // Handle interface
   serverApi += fs.readFileSync(
     path.join(__dirname, `${templatePath}/handle-server`),
     'utf-8'
   )
-  // 添加前端基类
+  // Add frontend base class
   clientApi +=
     '\n\n' +
     fs.readFileSync(
       path.join(__dirname, `${templatePath}/client-request`),
       'utf-8'
     )
-  // 生成访问表的类
+  // Generate the class of access table
   for (const k in ast.dbs) {
-    // 前端请求头设置的变量
+    // Variables set by the frontend request header
     const db = ast.dbs[k]
     serverApi += classServer(db, k)
     clientApi += classClient(db, k)
   }
   serverApi += apiBridge(Object.keys(ast.dbs))
-  // 生成node package的前端代理
+  // Generate frontend proxy for node package
   // clientApi += await parser.pkgProxy(ast.imports)
 
   return { serverApi, clientApi }
@@ -443,7 +443,7 @@ export default async function (acaDir: AcaDir, config: Config, ast: Ast) {
   }`
 
   if (isEmpty(serverApps)) {
-    throw `至少需要创建一个服务器端应用程序，请先用命令创建：aca server XXX`
+    throw `At least one server-side app needs to be created, please create it first using the command：aca server XXX`
   }
 
   for (const k in serverApps) {
@@ -457,7 +457,7 @@ export default async function (acaDir: AcaDir, config: Config, ast: Ast) {
     const apiIndex = path.join(resolveApiDir, Cst.ApiIndex)
     const RPCDir = path.join(resolveApiDir, Cst.ServerRPCDir)
     fs.writeFileSync(apiIndex, dbApi.serverApi)
-    // 写远程函数的index.ts及前端代理
+    // Write index.ts of remote function and frontend proxy
     clientRPCApis[k] = await parser.RPCProxy(k, RPCDir)
   }
 

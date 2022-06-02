@@ -2,7 +2,7 @@
 
 import { isEmpty, notEmpty } from '../libs/common'
 
-// 判断给定对象或数组的元素的增加或减少
+// Determine the increase or decrease of elements in a given object or array
 function Fluctuate(curr: any, prev: any, rtn: any): any[] {
   if (isEmpty(curr) || isEmpty(prev)) {
     if (notEmpty(curr)) rtn.add = curr
@@ -10,24 +10,24 @@ function Fluctuate(curr: any, prev: any, rtn: any): any[] {
     return []
   }
   const currArr = (Array.isArray(curr) ? curr : Object.keys(curr)).map((v) =>
-    // 有可能元素是数组，对元素全部字符化
+    // Elements may be array, characterize all elements
     JSON.stringify(v)
   )
   const prevArr = (Array.isArray(prev) ? prev : Object.keys(prev)).map((v) =>
     JSON.stringify(v)
   )
   let contains = [...currArr]
-  // 增加的
+  // added
   let add = currArr.reduce((_, v) => {
     if (!prevArr.includes(v)) _.push(v)
     return _
   }, [])
-  // 删除的
+  // deleted
   let remove = prevArr.reduce((_, v) => {
     if (!currArr.includes(v)) _.push(v)
     return _
   }, [])
-  // 存在的
+  // existed
   add.concat(remove).forEach((v) => {
     if (contains.includes(v)) contains.splice(contains.indexOf(v), 1)
   })
@@ -83,7 +83,7 @@ function Column(column, curr, prev) {
   const colAlt = (column.alter = {})
   const colContains = Fluctuate(curr, prev, column)
 
-  // 如果添加的字段是关系字段，且为外键字段（供后面添加外键使用）
+  // If the added field is a relational field and is a foreign key field(for use in adding a foreign key later)
   if (column.add) {
     column.add = column.add.filter((v3) => {
       const rel = v3.props.jsType.split('.')
@@ -91,7 +91,7 @@ function Column(column, curr, prev) {
     })
     if (isEmpty(column.add)) delete column.add
   }
-  // 如果删除的字段是关系字段，且对向关系表如果不存在，则过滤该字段（不生成sql）
+  // If the deleted field is a relational field and the opposite relational table does not exist, filter the field(no sql is generated)
   if (column.remove) {
     column.remove = column.remove.filter((v3) => {
       const rel = v3.props.jsType.split('.')
@@ -104,7 +104,7 @@ function Column(column, curr, prev) {
   for (const v of colContains) {
     const cCol = curr[v],
       pCol = prev[v]
-    // 如果是关系字段则返回
+    // Return if it is a relational field
     if (cCol.type.split('.').length > 1) continue
     colAlt[v] = {}
     if (cCol.map !== pCol.map && cCol.dbName !== pCol.dbName) {
@@ -136,7 +136,7 @@ function Column(column, curr, prev) {
       }
     })
 
-    // 处理外键
+    // Process the foreign key
     if ((<Column>cCol).props.foreign || (<Column>pCol).props.foreign) {
     }
     if (isEmpty(colAlt[v].props)) delete colAlt[v].props

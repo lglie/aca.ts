@@ -4,12 +4,12 @@ import * as Cst from '../libs/constant'
 import { addAppConfig, currentDir } from '../libs/common'
 import orm from '../orm'
 
-// 命令格式：aca add [dirname] -s(-c)
+// command format：aca add [dirname] -s(-c)
 export async function addApp(yargs: any) {
   const workDir = currentDir()
   if (!workDir)
     throw new Error(
-      `当前目录不是aca项目目录，请转到项目目录或项目下的应用程序目录下运行该命令`
+      `Current directory is not an aca project directory. Please move to the project directory or the app directory under the project to run the command`
     )
   const acaDir = workDir === Cst.AcaDir ? '.' : '..'
   const argv = yargs.argv
@@ -17,21 +17,22 @@ export async function addApp(yargs: any) {
     client = Cst.DefaultClientName
   const argvS = argv.server || argv.s ? server : ''
   const argvC = argv.client || argv.c ? client : ''
-  if (!argvS && !argvC) throw new Error(`命令缺少参数：--server 或者：--client`)
+  if (!argvS && !argvC)
+    throw new Error(`Missing Command Parameters：--server or：--client`)
   let appName: string = argv._[1]
 
   if (workDir === Cst.AcaDir) {
     if (!appName)
-      throw new Error(`没有指定appName，请使用：aca add [appName] <-s -c>`)
+      throw new Error(`No appName，usage：aca add [appName] <-s -c>`)
     if (!fs.existsSync(appName) || !fs.statSync(appName).isDirectory())
-      throw new Error(`该项目下不存在文件夹名为: ${appName} 的应用程序`)
+      throw new Error(`The app '${name}' does not exist under this project`)
   } else {
-    // 是在当前应用程序目录下创建其他应用程序配置的命令
+    // The command to create other app configurations under the current app directory
     if (appName) {
-      // 判断该应用程序是否存在
+      // Determine if the app exists
       const namePath = path.join(acaDir, appName)
       if (!fs.existsSync(namePath) || !fs.statSync(namePath).isDirectory())
-        throw new Error(`不存在名为：${appName} 的应用程序`)
+        throw new Error(`The app '${name}' does not exist under this project`)
     } else appName = workDir
   }
 
@@ -59,7 +60,9 @@ export async function addApp(yargs: any) {
   }
 
   console.log(
-    `该应用的配置已被写入到： ${Cst.AcaConfig}文件中，打开如下连接进行配置：
+    `The setting of the app has been written to： ${
+      Cst.AcaConfig
+    } file，open the following link to configure：
 ${path.join(path.resolve(acaDir), Cst.AcaConfig)}
 `
   )

@@ -195,7 +195,7 @@ type $SimpleScalarAllFilter<T> = {
   endsWith?: NonNullable<T> extends string ? NonNullable<T> : never
 }
 
-// not 适用的字段
+// applicable field of not
 type $SimpleScalarNotFilter<T> = {
   not?:
     | $SimpleScalarAllFilter<T>['eq']
@@ -220,7 +220,7 @@ type $SimpleScalarNotFilter<T> = {
 type $SimpleScalarFilter<T> = $SimpleScalarNotFilter<T> &
   $OmitNever<$SimpleScalarAllFilter<T>>
 
-// 用于关系中
+// Used in relationship
 type $Where<
   Tb extends keyof $TB,
   X extends keyof $TB[Tb],
@@ -243,7 +243,7 @@ type $Where<
     | (L extends 'AND' | 'NOT' ? $Where<Tb, X, S> : never)
 }
 
-// 用于关系中
+// Used in relationship
 type $Select<
   Tb extends keyof $TB,
   X extends keyof $TB[Tb],

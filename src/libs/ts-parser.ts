@@ -11,21 +11,21 @@ import generator from 'dts-generator'
 
 export const tsParse = async (args: {
   baseDir: string
-  out: string // 输出路径（含文件名）
+  out: string // Output path(including file name)
   files: string[] //
 }) => await generator(args)
 
-// 生成远程函数前端代理
-// RPCDir: 远程函数根目录绝对路径
+// Generate remote function frontend proxy
+// RPCDir: absolute path of the root directory of the remote function
 export async function RPCProxy(serverName: string, RPCDir: string) {
   const RPCTmpdts = `__RPCTmp.d.ts`
-  // 创建所有函数的index.ts文件
+  // Create index.ts file for all functions
   createIndex(RPCDir)
-  // 生成index.ts的dts临时文件
+  // Generate dts temporary file for index.ts
   await tsParse({ baseDir: RPCDir, out: RPCTmpdts, files: ['index.ts'] })
-  // 根据dts文件生成前端函数
+  // Generate frontend function based on dts file
   const api = generate(RPCTmpdts)
-  // 删除dts临时文件
+  // Delete dts temporary file
   try {
     fs.rmSync(RPCTmpdts)
   } catch (e) {}
@@ -117,7 +117,7 @@ export async function RPCProxy(serverName: string, RPCDir: string) {
             break
           default:
             console.log(
-              '没有被解析的节点：',
+              'nodes that are not parsed',
               node.kind,
               tsContent.slice(node.pos, node.end)
             )
@@ -127,7 +127,7 @@ export async function RPCProxy(serverName: string, RPCDir: string) {
     }
 
     sourceFile.forEachChild((node) => {
-      // 解析每一个模块声明
+      // Parse each module declaration
       if (ts.SyntaxKind.ModuleDeclaration === node.kind) {
         const Nd = <ts.ModuleDeclaration>node
         rtn += moduleParse(Nd.body)
@@ -138,18 +138,18 @@ export async function RPCProxy(serverName: string, RPCDir: string) {
   }
 }
 
-// 生成node package及后端对象的前端代理
+// Generate node package and frontend proxy of backend objects
 export async function pkgProxy(imports: Import[]) {
-  // 查找包的dts文件
+  // Find the dts file of the package
   for (const v of imports) {
-    // 在node_modules中查找
+    // Find in node_modules
     if (v.from.match(/^\w+/)) {
       let file
       const dts = `node_modules/@types/${v.from}.d.ts`
       const nodeDts = `node_modules/@types/node/${v.from}.d.ts`
       const pkgJson = `node_modules/${v.from}/package.json`
-      // 先搜索包本身，再搜索dts，然后再搜索nodeDts
-      // 读取包的package.json文件
+      // Search the package itself first, then dts, and then nodeDts
+      // Read the package.json file of the package
       if (fs.existsSync(pkgJson)) {
         const pkg = require(path.resolve(pkgJson))
         const types = pkg.types

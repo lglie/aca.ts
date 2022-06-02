@@ -11,7 +11,7 @@ function $Handle(trx: Knex.Transaction<any, any[]>) {
     args?: any
     table?: Tb
   }) {
-    // 去掉undefined
+    // remove undefined
     args = args && JSON.parse(JSON.stringify(args))
     let data
 
@@ -20,10 +20,10 @@ function $Handle(trx: Knex.Transaction<any, any[]>) {
       if (Array.isArray(data)) {
         if (select) {
           if (Object.keys(select).length) {
-            // 是否含有关系字段
+            // Whether to contain relational fields
             const yes = Object.values(select).some((v) => typeof v === 'object')
             if (yes) {
-              // 提取data的id字段，进行where in查询
+              // Extract the id field of data and perform where in query
               const whereIn = data.map((record) =>
                 $Att[table].id.reduce((_, v) => (_.push(record[v]), _), [])
               )
@@ -43,20 +43,20 @@ function $Handle(trx: Knex.Transaction<any, any[]>) {
               rtn = $RtnSelect(table, data, select)
             }
           } else {
-            // 传空对象返回全部标量字段
+            // Passing an empty object returns all scalar fields
             rtn = data
           }
         } else {
-          // 不传select返回受影响的行数
+          // Not passing select returns the number of rows affected
           rtn = { data }
         }
       } else {
         if (select) {
           if (Object.keys(select).length) {
-            // 是否含有关系字段
+            // Whether to contain relational fields
             const yes = Object.values(select).some((v) => typeof v === 'object')
             if (yes) {
-              // 提取data的id字段，进行where in查询
+              // Extract the id field of data and perform where in query
               rtn = await this.$Handle({
                 query: 'findOne',
                 args: {
@@ -80,11 +80,11 @@ function $Handle(trx: Knex.Transaction<any, any[]>) {
               ;[rtn] = $RtnSelect(table, [data], select)
             }
           } else {
-            // 传空对象返回全部标量字段
+            // Passing an expty onject returns all scalar fields
             rtn = data
           }
         } else {
-          // 不传select返回受影响的行
+          // Not passing select returns affected rows
           rtn = data
         }
       }

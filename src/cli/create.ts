@@ -15,12 +15,12 @@ export async function create(yargs: any) {
 
   const name = yargs.argv._[1]
   if (name) {
-    if (fs.existsSync(name)) throw `当前目录下存在：${name}`
+    if (fs.existsSync(name)) throw `${name} exists in current directory`
   } else {
-    throw `缺少参数：aca create XXX, XXX为项目目录的名字`
+    throw `Missing parameters：aca create XXX, XXX is the project directory name`
   }
 
-  // 递归创建目录
+  // Recursively create directory
   MkdirsSync(path.join(name, Cst.AcaMiscRecordsDir))
   const tplDir = path.join(__dirname, '../../templates')
 

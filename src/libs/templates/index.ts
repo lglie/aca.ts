@@ -64,7 +64,7 @@ export const pkgServer = (name: string, drivers: string[]) => {
 `
 }
 
-// 表查询接口模板
+// Table query interface template
 export const tableQuery = (query, tblName) => `{
   const trx = await this.knex.transaction()
   try {
@@ -77,7 +77,7 @@ export const tableQuery = (query, tblName) => `{
   }
 } `
 
-//  前端尾部模板
+//  frontend footer
 export const classFooterClient = (dbVar: string) => `\n$ = {
     raw: async (args: string): Promise<{ data?: unknown; error?: string }> =>
     await $.${dbVar}.req({
@@ -88,14 +88,14 @@ export const classFooterClient = (dbVar: string) => `\n$ = {
   }
 })()`
 
-// sql raw 后端模板
+// sql raw backend template
 export const sqlRawServer = (dbVar) => `\n$ = {
   raw: async (args: string): Promise<{ data?: unknown; error?: string }> => {
     const trx = await this.knex.transaction()
     try {
       const data = (await trx.raw(args)).rows
       await trx.commit()
-      // 去掉字符串前后的空白
+      // Rmeove whitespace before and after strings
       for (const v of data) {
         for (const k in v) {
           if (typeof v[k] === 'string') v[k] = v[k].trim()
@@ -110,7 +110,7 @@ export const sqlRawServer = (dbVar) => `\n$ = {
 }
 `
 
-// 后端构造函数
+// Backend constructor
 export const constructor = (config: DbConfig) => {
   const driver = config.connectOption.driver
   const sqlDiff = SqlDiff(driver)
@@ -136,7 +136,7 @@ this.knex = knex({
 `
 }
 
-// 远程函数前端代理模板
+// Remote function frontend proxy template
 export const RPCApi = (
   apiDir: string,
   name: string,
@@ -155,7 +155,7 @@ export async function ${name} (${params}): ${
   })
 } `
 
-// 远程函数命名空间前端代理模板
+// Remote function namespace frontend proxy template
 export const RPCNsApi = (name, body) => `
 export namespace ${name} {
   ${body}
@@ -178,7 +178,7 @@ export async function $ApiBridge(context: unknown, reqBody: $ApiBridge) {
   }
 }
 `
-// orm变更摘要
+// Summary of orm changes
 export const remark = (date, comment) => ({
   date: new Date(date).toLocaleString(),
   id: date,
@@ -187,26 +187,26 @@ export const remark = (date, comment) => ({
 
 export const createdEcho = (name: string) => `
 $ cd ${name}
-1. 打开.aca/config.json文件进行配置:
+1. Open .aca/config.json file for configuration:
 ${path.resolve(name, Cst.AcaConfig)}
   
-2. 在当前目录下创建服务器端应用(至少需要创建一个)、客户端应用：
-  创建服务器端koa应用：
+2. Create a server-side app (at least one) and a client-side app in the current directory：
+Create a server-side koa app using command：
 $ aca server [dirname]
 
-  创建客户端react应用(调用create-react-app创建)：
+Create a client-side using command, internally call create-react-app to create a react app：
 $ aca client [dirname]
 
-  添加自建应用(自建应用的目录必须在aca项目目录下，需先创建好)：
+Add self built app(the app dictionary in the aca project dictionary)：
 $ aca add [dirname]
 
-3. 生成数据库架构及api：
+3. Generate database and api：
 $ aca up
-以后在orm发生变化时使用该命令更新数据库架构及api
+Using this command to update the database schema and api when orm changes in the future
 `
 
 export const createdEchoServer = () => `
-运行：aca up，或：aca rollback 回滚
+Run：aca up，or：aca rollback
 `
 
 export function apiIndexClient(dbs: string[], RPCs: string[]) {

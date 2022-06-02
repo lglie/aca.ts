@@ -1,0 +1,97 @@
+// The tool is currently in the internal testing stage, and bug is temporarily submitted to：liaoguolie@gmail.com
+// Note: All identifiers must not start with $ to prevent naming conflicts
+// Scalar types supported by class members：id, int, bigint, float, string, object(Key-value pair), Date，and custom enum types
+import {
+  id,
+  int,
+  float,
+  $db, // Database connection configuration type
+  $, // class decorator,
+  $_, // member decorator
+} from './.orm'
+
+enum Gender {
+  A,
+  B,
+  C,
+}
+
+// Database class
+namespace Blog {
+  // Each database class has only one const, and the type is: $
+  const dbConfig: $db = `$default`
+
+  @$.unique(['firstName', 'lastName'])
+  class user {
+    id: id
+    @$_.dbType('varchar(16)') firstName: string
+    @$_.dbType('varchar(25)') lastName: string
+    gender = Gender.A
+    age: int = 25
+    bigint: bigint = BigInt('120')
+    married: boolean = true
+    description?: string
+    detail?: object
+    @$_.createdAt created_at?: Date
+    @$_.updatedAt updated_at: Date
+    profile?: profile
+    posts: ns.post[]
+    comments: comment[]
+  }
+
+  @$.map('PROF')
+  class profile {
+    @$_.dbType('varchar(8)') id: id
+    @$_.dbType('char(8)') password: string
+    @$_.foreign({
+      keys: ['firstNameId', 'lastNameId'],
+      references: ['firstName', 'lastName'],
+      onUpdate: 'cascade',
+      onDelete: 'set null',
+    })
+    user: user
+  }
+
+  // Support multi-level namespaces
+  namespace ns {
+    enum gtEnum {
+      tk,
+      fl,
+    }
+
+    export class post {
+      serial: id['autoincrement']
+      isPublished: boolean
+      enum?: gtEnum
+      score: float
+      @$_.foreign({
+        keys: ['firstNameId', 'lastNameId'],
+        references: ['firstName', 'lastName'],
+      })
+      author: user
+      comments: comment[]
+      // @ts-ignore
+      categories: category['posts'][]
+    }
+
+    export class category {
+      id: id['string']
+      @$_.unique @$_.index name: string
+      //@ts-ignore
+      posts: post['categories'][]
+      @$_.foreign('categoriesId') parent?: category
+      children: category[]
+      comments: comment[]
+    }
+  }
+
+  export class comment {
+    id: id['cuid']
+    topEnum = Gender.C
+    content: string
+    category: ns.category[]
+    commenter: user[]
+    @$_.foreign('postsId') post: ns.post
+    createdAt: Date = new Date()
+  }
+}

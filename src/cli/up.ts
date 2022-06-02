@@ -14,7 +14,7 @@ import { remark } from '../libs/templates'
 const msg = (acaDir: AcaDir, config: Config) => {
   const resolveAcaDir = path.resolve(acaDir)
   const serverApps = Object.keys(config.serverApps)
-  console.log(`\n生成的后端文件存放于：`)
+  console.log(`\nThe generated backend files are stored in：`)
   for (const v of serverApps) {
     const apiDir =
       config.serverApps[v].apiDir ??
@@ -23,7 +23,9 @@ const msg = (acaDir: AcaDir, config: Config) => {
   }
   const clientApps = Object.keys(config.clientApps)
   if (clientApps.length) {
-    console.log(`\n打开下面的文件配置前端请求的url、headers：`)
+    console.log(
+      `\n打开下面的文件配置前端请求的url、headers：Open the file below and configure url and headers required in frontend`
+    )
     for (const v of clientApps) {
       const apiDir =
         config.clientApps[v].apiDir ??
@@ -42,7 +44,7 @@ async function pg(
 ) {
   const sqlDiff = SqlDiff('pg')
 
-  // 判断数据库是否存在
+  // Determine if the database exists
   const connConf =
     process.env[currdb.config.connectOption.envConnect || ''] ||
     currdb.config.connectOption.connect
@@ -59,15 +61,15 @@ async function pg(
   const CreateDb = async () => {
     if (db.database !== 'postgres')
       throw new Error(
-        `已经存在数据库：${connOption.database}, 如需重新创建则需先删除该数据库`
+        `Database ${connOption.database} already exists. Delete the database first to recreate'`
       )
-    console.log(`正在创建数据库表...`)
+    console.log(`Creating database tables...`)
     const allSql = CreateAllTblSqls(currdb.config, currdb.tables)
     allSql.sqls =
       sqlDiff.aca.create + sqlDiff.aca.insert(timestamp) + '\n' + allSql.sqls
     console.log(allSql.sqls)
     try {
-      // 新建数据库
+      // Create new database
       await db.query(sqlDiff.db.create(connOption.database))
       await db.end()
       db = await sqlDiff.keyword.stmt.connect(acaDir, config, connOption)
@@ -75,7 +77,7 @@ async function pg(
       await db.end()
       console.log(`总共：${allSql.total}张表创建成功！`)
     } catch (e) {
-      // 不成功，删除此新建的数据库
+      // Delete the new database if not successful
       await db.end()
 
       db = await sqlDiff.keyword.stmt.connect(acaDir, config, {
@@ -91,11 +93,13 @@ async function pg(
 
   const AlterDb = async () => {
     try {
-      // 判断是不是aca建立的数据库（通过aca专有的系统表："___ACA"）
+      // Determine if the database is created by aca (through aca-specific system table: "___ACA")
       await db.query(sqlDiff.aca.select)
     } catch (e) {
       await db.end()
-      throw `存在数据库"${(<any>connOption).database}", 请先备份删除`
+      throw `Database "${
+        (<any>connOption).database
+      }" exists, please backup and delete first`
     }
 
     const allSqls = DbDiffSqls(currdb, prevDb)
@@ -109,7 +113,7 @@ async function pg(
       } finally {
         await db.end()
       }
-      console.log(`数据库(${connOption})更新成功！`)
+      console.log(`Database(${connOption}) updated successfully!`)
       return allSqls
     } else {
       await db.end()
@@ -167,7 +171,7 @@ async function mssql(
 
   const AlterDb = async () => {
     try {
-      // 判断是不是aca建立的数据库（通过aca专有的系统表："___ACA"）
+      // Determine if the database exists
       await db.query(sqlDiff.aca.select)
     } catch (e) {
       await db.close()
@@ -214,24 +218,24 @@ async function mysql2(
   const CreateDb = async () => {
     if (db.connection.database === (<RelConn>conn).database)
       throw new Error(
-        `已经存在数据库：${
+        `Darabase：${
           (<RelConn>conn).database
-        }, 如需重新创建则需先删除该数据库`
+        }already exists, delete the database first to recreate`
       )
-    console.log(`正在创建数据库表...`)
+    console.log(`Creating database tables...`)
     const allSql = CreateAllTblSqls(currdb.config, currdb.tables)
     allSql.sqls =
       sqlDiff.aca.create + sqlDiff.aca.insert(timestamp) + '\n' + allSql.sqls
     console.log(allSql.sqls)
 
     try {
-      // 新建数据库
+      // Create new database
       await db.query(sqlDiff.db.create((<RelConn>conn).database))
       await db.end()
       db = await sqlDiff.keyword.stmt.connect(acaDir, config, conn)
       await db.query(allSql.sqls)
       await db.end()
-      console.log(`总共：${allSql.total}张表创建成功！`)
+      console.log(`Total：${allSql.total} tables are created successfully!`)
     } catch (e) {
       db = await sqlDiff.keyword.stmt.connect(acaDir, config, {
         ...(<RelConn>conn),
@@ -246,11 +250,13 @@ async function mysql2(
 
   const AlterDb = async () => {
     try {
-      // 判断是不是aca建立的数据库（通过aca专有的系统表："___ACA"）
+      // Determine if the database is created by aca (through aca-specific system table: "___ACA")
       await db.query(sqlDiff.aca.select)
     } catch (e) {
       await db.end()
-      throw `存在数据库"${(<RelConn>conn).database}", 请先备份删除`
+      throw `Database "${
+        (<RelConn>conn).database
+      }" exists, please back up and delete first`
     }
 
     const allSqls = DbDiffSqls(currdb, prevDb)
@@ -264,7 +270,9 @@ async function mysql2(
       } finally {
         await db.end()
       }
-      console.log(`数据库(${(<RelConn>conn).database})更新成功！`)
+      console.log(
+        `Database(${(<RelConn>conn).database}) updated successfully！`
+      )
       return allSqls
     } else {
       await db.end()
@@ -284,7 +292,7 @@ async function betterSqlite3(
   const app = Object.keys(config.serverApps)[0]
   if (!app)
     throw new Error(
-      `需至少创建一个服务器端应用，或添加一个应用注册到config.json中：aca add [dirname] -s`
+      `Need to create at least one server-side app, or add an app to register in config.json：aca add [dirname] -s`
     )
   const sqlDiff = SqlDiff('betterSqlite3')
   const connConf =
@@ -294,13 +302,13 @@ async function betterSqlite3(
     typeof connConf === 'string' ? { filename: connConf } : <SqliteConn>connConf
 
   const CreateDb = async () => {
-    // 判断数据库是否存在
+    // Determine if the database exists
     if (fs.existsSync(path.join(acaDir, app, connOption.filename))) {
       throw new Error(
-        `已经存在数据库：${connOption.filename}, 如需重新创建则需先删除该数据库`
+        `Database：${connOption.filename} already exists, please delete this database to recreate`
       )
     }
-    console.log(`正在创建数据库表...`)
+    console.log(`Creating database tables...`)
     const db: any = sqlDiff.db.createSqliteDb(acaDir, config, connOption)
     const allSql = CreateAllTblSqls(currdb.config, currdb.tables)
     allSql.sqls =
@@ -309,9 +317,9 @@ async function betterSqlite3(
     try {
       db.exec(allSql.sqls)
       db.close()
-      console.log(`总共：${allSql.total}张表创建成功！`)
+      console.log(`Total：${allSql.total} tables created successfully！`)
     } catch (e) {
-      // 不成功，删除此新建的数据库
+      // Unsuccessful, delete the new database
       db.close()
       fs.rmSync(path.join(acaDir, app, connOption.filename))
       throw e
@@ -327,12 +335,12 @@ async function betterSqlite3(
       connOption
     )
     try {
-      // 判断是不是aca建立的数据库（通过aca专有的系统表："___ACA"）
+      // Determine if the database is created by aca (through aca-specific system table: "___ACA")
       let upedSchs = db.prepare(sqlDiff.aca.select).all()
     } catch (e) {
-      throw `存在数据库"${
+      throw `Database"${
         (<any>connOption).filename
-      }", 或应用已经被aca up 记录过，请先备份删除`
+      }" already exists, or has been recorded by aca up, please back up and delete first`
     }
 
     const allSqls = DbDiffSqls(currdb, prevDb)
@@ -346,7 +354,7 @@ async function betterSqlite3(
       } finally {
         await db.close()
       }
-      console.log(`数据库(${connOption.filename})更新成功！`)
+      console.log(`Database(${connOption.filename}) updated successfully！`)
       return allSqls
     } else {
       await db.close()
@@ -360,7 +368,7 @@ export async function up(yargs: any) {
   const workDir = currentDir()
   if (!workDir)
     throw new Error(
-      `当前目录不是aca项目目录，请转到项目目录或项目下的应用程序目录下运行该命令`
+      `Current directory is not an aca project directory. Please move to the project directory or the app directory under the project to run the command`
     )
   const acaDir = workDir === Cst.AcaDir ? '.' : '..'
   const rlvAcaDir = path.resolve(acaDir)
@@ -380,7 +388,7 @@ export async function up(yargs: any) {
   }
 
   const dbs = ast.dbs
-  // 对之前的orm进行处理
+  // Process the previous orm
   const lastOrm = logOrm()
   const prevAst = lastOrm && (await orm(acaDir, lastOrm))
   const prevDbs = prevAst ? prevAst.dbs : {}
@@ -404,10 +412,10 @@ export async function up(yargs: any) {
 
   await Api(acaDir, config, ast)
 
-  // 写入changelog
+  // Write changelog
   if (changed.length) WriteLog(changed.join(`\n\n`), isRollback)
   msg(acaDir, config)
-  // 读取变更记录的最后一条或第二条(rollback时)
+  // Read the last or last second change record (rollback)
   function logOrm(isRollback = false) {
     const [lastLog] = isRollback ? logs.slice(-2, -1) : logs.slice(-1)
     if (!lastLog) return

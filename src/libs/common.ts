@@ -20,13 +20,13 @@ export const ScalarTypes = [
   'enum',
 ]
 
-// 递归创建文件夹
+// Create folders recursively
 export function MkdirsSync(dirname: string) {
   if (fs.existsSync(dirname)) return true
   else if (MkdirsSync(path.dirname(dirname))) return fs.mkdirSync(dirname), true
 }
 
-// 空对象或数组
+// Empty object or array
 export const isEmpty = (obj: any) =>
   obj
     ? Array.isArray(obj)
@@ -39,7 +39,7 @@ export const isEmpty = (obj: any) =>
         : true
       : true
     : true
-// 非空对象或数组
+// Non-empty object or array
 export const notEmpty = (obj: any) =>
   obj
     ? Array.isArray(obj)
@@ -53,7 +53,7 @@ export const notEmpty = (obj: any) =>
       : false
     : false
 
-// 格式化日期时间
+// Format datetime
 export const DtFormat = (dt: Date) => {
   const year = dt.getFullYear().toString(),
     month = (dt.getMonth() + 1).toString(),
@@ -76,13 +76,13 @@ export const DtFormat = (dt: Date) => {
 
 export const getName = (obj: any): string => obj.name
 
-// 对字符串或字符串数组内的元素添加引号
+// Add quotation marks to elements in a string or string array
 export const AddQuote = <T extends string | string[]>(el: T, quote = '"'): T =>
   Array.isArray(el) ? <any>el.map((v) => quote + v + quote) : quote + el + quote
 
-// 将文件夹里的文件合并成对象
+// Merge files in a folder into an object
 export const PlainFiles = (p: string): string | { [k: string]: string } => {
-  if (!fs.statSync(p)) throw `没有找到orm文件或文件夹：${p}`
+  if (!fs.statSync(p)) throw `Cannot find orm file or folder：${p}`
   if (fs.statSync(p).isFile())
     return { [p]: fs.readFileSync(path.resolve(p), 'utf-8') }
 
@@ -105,12 +105,12 @@ export const PlainFiles = (p: string): string | { [k: string]: string } => {
   return rtn
 }
 
-// 匹配文件内容括号里的字符串（() [] {}）,返回含起始位置和终止位置的元组
+// Match the string in the parentheses of the file content（() [] {}）and return a tuple
 export function MatchBracket(content: string, bracket: '(' | '[' | '{') {
   const leftReg = RegExp('\\' + bracket, 'g'),
     rightReg = RegExp('\\' + { '(': ')', '[': ']', '{': '}' }[bracket], 'g')
   const left = content.match(RegExp(`\\${bracket}`))
-  if (!left) throw '文本不存在需要匹配的括弧'
+  if (!left) throw 'No parentheses need to be matched in the text'
   const rtn = [left.index!]
   rightReg.lastIndex = rtn[0] + 1
 
@@ -124,11 +124,11 @@ export function MatchBracket(content: string, bracket: '(' | '[' | '{') {
     } else rightReg.lastIndex = right + 1
   }
 
-  if (!rtn[1]) throw '文本不存在需要匹配的括弧'
+  if (!rtn[1]) throw 'No parentheses need to be matched in the text'
   return rtn
 }
 
-// 解析model的表或字段的map
+// Parse model table or map of fields
 export function MapRename(props: { map?: string }) {
   const rtn = { map: '' }
   ;['map'].forEach((v) => {
@@ -150,9 +150,9 @@ export function MapTblName(
   return `_${sorted[0]}_$_${sorted[1]}`
 }
 
-// 在ast中查找给定的model名，并返回该对象及所在的绝对命名空间（绝对路径）
+// Find the given model name in ast and return the object and its absolute namespace(absolute path)
 export function FindModel(obj: object, currNs: string[], name: string) {
-  // 依次从当前命名空间查找枚举定义，直到匹配到为止
+  // Find the enum definitions sequentially from the current namespace until matching
   for (let i = currNs.length; i >= 0; i--) {
     const namespace = currNs.slice(0, i)
     const sub = [...namespace].reduce((_, v) => {
@@ -182,7 +182,7 @@ export function FlatTables(tbls: Tables) {
 export const Deprecated = (comment?: string) =>
   `/**@deprecated ${comment || ''} */\n`
 
-// 复制目录
+// Copy directory
 export function CopyDirectory(src, dest) {
   if (!fs.existsSync(dest)) {
     fs.mkdirSync(dest)
@@ -201,7 +201,7 @@ export function CopyDirectory(src, dest) {
     }
   })
 }
-// 将该应用程序添加到: .aca/config.json#serverApps
+// Add this app to: .aca/config.json#serverApps
 export function addAppConfig(
   acaDir: '.' | '..',
   appName: string,
@@ -220,9 +220,9 @@ export function addAppConfig(
 
   switch (kind) {
     case 'server':
-      // 递归创建各级目录
+      // Create all levels of directories recursively
       MkdirsSync(path.join(resolveApiDir, Cst.ServerRPCDir))
-      // 生成api相关文件
+      // Generate api related files
       fs.writeFileSync(
         path.join(resolveApiDir, Cst.ApiIndex),
         apiPlaceholder(expApi),
@@ -240,7 +240,7 @@ export function addAppConfig(
       }
       break
     case 'client':
-      // 递归创建各级目录
+      // Create all levels of directories recursively
       MkdirsSync(resolveApiDir)
 
       config.clientApps[appName] = {
@@ -263,7 +263,7 @@ export function addAppConfig(
     execSync(`cd ${path.join(resolveAcaDir, appName)} & npm install axios`)
   }
 }
-// 如果当前工作目录是project目录返回".aca"，如果是应用程序目录，返回应用程序目录名称，否则返回undefined
+// If the current working directory is the project directory, return ".aca"，If it is the app directory, return the app directory name, otherwise return undefined
 export function currentDir() {
   const higher = path.join('..', Cst.AcaDir)
   if (fs.existsSync(Cst.AcaDir)) return Cst.AcaDir
@@ -271,7 +271,7 @@ export function currentDir() {
     return path.resolve('.').split(/\\|\//).reverse()[0]
   }
 }
-// 检查config里的应用，如果有被删除的则剔除
+// Check the apps in the config and remove apps that are deleted
 export function checkApps(acaDir: AcaDir, config: Config) {
   let changed = false
 

@@ -4,7 +4,7 @@ import SqlDiff from './sql-diff'
 import { MapTblName, AddQuote, FlatTables, notEmpty } from './common'
 import ormDiff from '../orm/diff'
 
-// 创建表的sql
+// Create table sql
 function CreateTblSql(config: DbConfig, tbls: FlatTables, jsName: string) {
   const sqlDiff = SqlDiff(config.connectOption.driver)
   const rtn: {
@@ -18,7 +18,7 @@ function CreateTblSql(config: DbConfig, tbls: FlatTables, jsName: string) {
 
   for (const k in tbls[jsName].columns) {
     const colObj = tbls[jsName].columns[k]
-    // 是创建视图
+    // Is to create a view
     if ((<TableView>tbls[jsName]).kind === 'view') {
     } else {
       const colSql = createColSql(config, tbls, jsName, <Column>colObj)
@@ -29,7 +29,7 @@ function CreateTblSql(config: DbConfig, tbls: FlatTables, jsName: string) {
       Object.assign(rtn.mapTable, colSql.mapTable)
     }
   }
-  // 添加表的块属性
+  // Add the block attribute of the table
   const tblProps = <TableProp>tbls[jsName].props
   if (tblProps.id)
     create.push(
@@ -82,13 +82,13 @@ export function RemoveTblSql(
 
   for (const k in tbls[jsName].columns) {
     const col = <Column>tbls[jsName].columns[k]
-    // 处理关系字段，只处理主键和多对多关系的映射表
+    // Handle relational fields, only handle the mapping table between primary key and many-to-many relationship
     if (col.type.split('.').length > 1 && !col.props.foreign) {
       const [relTblName, relCol] = col.props.jsType.split('.')
       const relTbl = <Table>tbls[relTblName]
       const relColName = relCol.match(/\w+/)[0]
 
-      // 是多对多的关系字段，移除关系映射表
+      // Is many-to-many relationship field, remove the relationship mapping table
       if (col.type.endsWith(']')) {
         rtn.remove.push(
           sqlDiff
@@ -102,7 +102,7 @@ export function RemoveTblSql(
             )
             .drop()
         )
-      } // 是主键字段，删除关系表的外键
+      } // Is the primary key field, delete the foreign key of the relational table
       else {
         const keys = relTbl.columns[relColName].props.foreign.keys
         rtn.alter.push(sqlDiff.tbl(relTbl.dbName).mutate.drop(keys))
@@ -131,7 +131,7 @@ export function AlterTblSql(
       rtn.alter.push(sqlDiff.tbl(alter[k].map.old).rename(alter[k].map.new))
     }
 
-    // 块属性
+    // Block properties
     if (alter[k].props) {
       const cst = sqlDiff.tbl(tbl.dbName).constraint
       for (const k2 in alter[k].props) {
@@ -155,7 +155,7 @@ export function AlterTblSql(
             }
             break
           case 'id':
-            throw `不能修改id，${tbl.name}`
+            throw `id '${tbl.name}' cannot be changed`
         }
       }
     }
@@ -165,7 +165,7 @@ export function AlterTblSql(
         let constraint
         const columns = []
         alter[k].columns.add.forEach((v) => {
-          // 添加外键约束(根据acaconfig.json的配置)
+          // Add foreign key constraints(through the configuration of acaconfig.json)
           if (v.props.foreign) {
             const relTbl = <Table>tbls[v.props.jsType.split('.')[0]]
             constraint = sqlDiff
@@ -226,11 +226,13 @@ export function AlterTblSql(
           }
           if (alterCol.props) {
             if (alterCol.props.isId) {
-              throw new Error(`表：${tbl.name}，不允许更改表的id`)
+              throw new Error(
+                `table：${tbl.name}，changes to table id are not allowed`
+              )
             }
             if (alterCol.props.isArray) {
               throw new Error(
-                `${tbl.name}.${colName}，不支持数组与标量类型之间的转换`
+                `${tbl.name}.${colName}，conversion between array and scalar type is not supported`
               )
             }
             if (alterCol.props.dbType) {
@@ -304,7 +306,9 @@ export function AlterTblSql(
               }
             }
             if (alterCol.props.foreign) {
-              throw new Error(`字段：${tbl.name}.${colName}，不允许更改外键`)
+              throw new Error(
+                `field '${tbl.name}.${colName}' changes to foreign keys are not allowed`
+              )
             }
           }
         }
@@ -337,9 +341,8 @@ function createColSql(
     mapTable: {},
   }
   const splits = colObj.type.match(/[\w\.]+/)![0].split('.')
-  // 是标量字段
   if (splits.length === 1) {
-    // 是标量字段
+    // Is scalar field
     const dbType = ` ${(
       typ.dbType[props.dbType] || props.dbType
     ).toUpperCase()}`
@@ -366,7 +369,7 @@ function createColSql(
 
     columnSql += `${colObj.optional === 'required' ? ' NOT NULL' : ''}`
 
-    // 添加属性：unique、default、check、createdAt、updatedAt
+    // Add attributes：unique、default、check、createdAt、updatedAt
     if (props.default !== undefined) {
       let dft = props.default
       if (colObj.type === 'boolean' && ['bit'].includes(props.dbType)) {
@@ -378,28 +381,28 @@ function createColSql(
     }
     if (props.unique)
       rtn.unique.push(sqlDiff.tbl(tblName).constraint.unique('ADD', colName))
-    // 添加索引语句
+    // Add index statement
     if (props.index)
       rtn.alter.push(sqlDiff.tbl(tblName).constraint.index('CREATE', colName))
     columnSql += props.check ? ` ${props.check}` : ''
     columnSql += props.createdAt ? sqlDiff.keyword.timestamp.create : ''
     columnSql += props.updatedAt ? sqlDiff.keyword.timestamp.update : ''
     rtn.create.push(columnSql.trim())
-  } // 是关系字段
+  } // Is relational field
   else {
-    // 查找关系表
+    // Find relation table
     const spt = colObj.props.jsType.split('.')
     const relTblName = spt[0]
     const relTbl = <Table>tbls[relTblName]
     const relColName = spt[1].match(/\w+/)[0]
     const relCol = relTbl.columns[relColName]
-    // 是多对多的关系，要建关系映射表
+    // Is a many-to-many relationship, and a relationship mapping table needs to be built
     if (!colObj.props.foreign && colObj.type.endsWith(']')) {
-      // 查找关系表的id
+      // Find the id of the relational table
       rtn.mapTable[
         MapTblName(relTbl.dbName, relCol.dbName, tblObj.dbName, colObj.dbName)
       ] = [tbls[spt[0]], tblObj]
-    } // 是外键，根据配置是否设置外键约束
+    } // Is a foreign key. Whether or not setting foreign key constraint depends on the configuration
     else if (props.foreign) {
       if (config.foreignKeyConstraint) {
         rtn.foreign.push(
@@ -409,7 +412,7 @@ function createColSql(
         )
       }
 
-      // 一对一关系, 需添加unique约束
+      // one-to-one relationship, need to add unique constraint
       if ('array' !== relCol.optional) {
         rtn.unique.push(
           sqlDiff
@@ -478,11 +481,11 @@ export function CreateAllTblSqls(
     Object.assign(tblCreate.mapTable, sql.mapTable)
   }
 
-  // 创建映射表
+  // Create the mapping table
   for (const k in tblCreate.mapTable) {
     tblCreate.create.push(CreateMapTblSql(config, k, tblCreate.mapTable[k]))
   }
-  // 创建表语句
+  // Create table statement
   return {
     total: tblCreate.create.length,
     sqls: tblCreate.create.concat(tblCreate.alter).join(';\n\n'),

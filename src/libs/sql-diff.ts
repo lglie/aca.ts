@@ -413,7 +413,7 @@ const keywords = {
 
 export default function (driver: Driver) {
   if (!Object.keys(keywords).includes(driver))
-    throw new Error(`数据库驱动程序不支持：${driver}`)
+    throw new Error(`Database driver '${driver}' is not supported`)
   const keyword = keywords[driver]
   const qPrefix = keyword.quote.prefix
   const qName = keyword.quote.name
@@ -423,13 +423,13 @@ export default function (driver: Driver) {
     keyword,
     db: {
       exist(dbName: string) {
-        // 是否存在数据库
+        // if the database exists
         return {
           pg: ` SELECT * FROM pg_database WHERE datname = ${qPrefix}${dbName}${qName}`,
         }[driver]
       },
       all() {
-        // 查找所有的表
+        // Find all tables
         return {
           pg: `SELECT tablename FROM pg_tables
           WHERE tablename NOT LIKE 'pg_%'
@@ -452,12 +452,12 @@ export default function (driver: Driver) {
       },
       createSqliteDb(acaDir: AcaDir, config: Config, option: SqliteConn) {
         const resolveAcaDir = path.resolve(acaDir)
-        // 剔除已经删除的应用
+        // Remove deleted apps
         checkApps(acaDir, config)
         const apps = Object.keys(config.serverApps)
 
         if (apps.length !== 1) {
-          throw new Error(`含有sqlite文件型数据库的后端应用只能创建一个`)
+          throw new Error(`Only one backend app containing a sqlite file can be created`)
         }
         const db = require(path.join(
           resolveAcaDir,
@@ -538,7 +538,7 @@ export default function (driver: Driver) {
             }
           },
         },
-        // 表约束
+        // Table constraint
         constraint: {
           find(type: 'UNIQUE' | 'CHECK' | 'PRIMARY KEY' | 'FOREIGN KEY') {
             return {
