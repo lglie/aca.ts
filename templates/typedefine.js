@@ -343,27 +343,7 @@ export type $TbOper<Tb extends keyof $TB> = {
   unique: $UN[Tb]
   where: $Where<Tb, never, never>
   insert: ${Insert('Tb', 'never')}
-  update: {
-    [K in Exclude<keyof $TB[Tb], $Auto<Tb>>]?: NonNullable<
-      $TB[Tb][K]
-    > extends $Relation<infer R, infer R2, infer R3>
-      ? NonNullable<$TB[Tb][K]> extends $Relation<never, never, never>
-        ? $TB[Tb][K]
-        : 'toOne' extends R3
-        ? Omit<
-            $UpdateToOne<R, R2, R3>,
-            $TB[Tb][K] extends $NL[Tb] ? never : 'upsert'
-          >
-        : $UpdateToMany<R, R2, R3>
-      : number extends $TB[Tb][K]
-      ?
-          | $TB[Tb][K]
-          | {
-              increment?: number
-              decrement?: number
-            }
-      : $TB[Tb][K]
-  }
+  update: ${Update('Tb', 'never', 'never')}
   updateMany: ${UpdateMany('Tb')}
   select: ${Select('Tb', 'never', 'never')}
   selectScalar: Pick<$TbOper<Tb>['select'], $ScalarColumns<Tb>>
