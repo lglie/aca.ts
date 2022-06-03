@@ -1,26 +1,7 @@
 type DriverEnum = 'pg' | 'mssql' | 'mysql2' | 'betterSqlite3'
 type OnPrimaryMutation = 'cascade' | 'set null' | 'restrict' | 'no action'
-interface DbConfig {
-  driver: DriverEnum
-  envConnection?: string
-  connection?:
-    | string
-    | {
-        host: string
-        port: number
-        user: string
-        password: string
-        database: string
-      }
-  idDefaultType?: 'cuid' | 'uuid' | 'autoincrement' | 'string' | 'int'
-  autoAddPrimaryField?: boolean
-  autoAddManyToManyField?: boolean
-  foreignKeyConstraint?: boolean
-  onUpdate?: OnPrimaryMutation
-  onDelete?: OnPrimaryMutation
-}
 
-export type $db = `${string}` | DbConfig
+export type $db = string
 export type int = number
 export type float = number
 export type id = {

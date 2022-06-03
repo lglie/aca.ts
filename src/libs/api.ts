@@ -457,6 +457,7 @@ export default async function (acaDir: AcaDir, config: Config, ast: Ast) {
     )
     const apiIndex = path.join(resolveApiDir, Cst.ApiIndex)
     const RPCDir = path.join(resolveApiDir, Cst.ServerRPCDir)
+    if (!fs.existsSync(RPCDir)) MkdirsSync(RPCDir)
     fs.writeFileSync(apiIndex, dbApi.serverApi)
     // Write index.ts of remote function and frontend proxy
     clientRPCApis[k] = await parser.RPCProxy(k, RPCDir)

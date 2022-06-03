@@ -1,5 +1,0 @@
-// This file is automotically generated, the export of each remote function
-// Only support named asychronous function writing. The first parameter defaults to the context
-// For example: 
-// export async function fn(ctx:any, arg:any){...}
-export {}
