@@ -68,7 +68,7 @@ const Select = (Tb, X, S) => `
 `
 
 module.exports = `\n
-type $Enums = keyof $EnumType
+type $Enums = keyof $Enum
 
 type $Enumerable<T> = T | Array<T>
 

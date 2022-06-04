@@ -81,7 +81,7 @@ const $Queries = function <Tb extends keyof $TB>(trx: any, sql: string[] = []) {
           // Determine jsType
           if (
             AttCols[AttCol].type === 'enum'
-              ? !$EnumType[<keyof $EnumType>AttCols[AttCol].jsType].includes(
+              ? !$Enum[<keyof $Enum>AttCols[AttCol].jsType].includes(
                   <any>records[i][AttCol]
                 )
               : typeof records[i][AttCol] !== AttCols[AttCol].jsType

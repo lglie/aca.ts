@@ -37,7 +37,7 @@ const EnumType = (enums: Enums) => {
   for (const k in enums)
     rtn += `\n  ${k}: ${enums[k].values.map((v) => "'" + v + "'").join(' | ')}`
 
-  return `export type $EnumType = {${rtn}\n}`
+  return `export type $Enum = {${rtn}\n}`
 }
 
 // Generate enum constants
@@ -48,7 +48,7 @@ const EnumConst = (enums: Enums) => {
       `\n  ${k}: [ ${enums[k].values.map((v) => "'" + v + "'").join(', ')} ]`
     )
 
-  return `\n\nconst $EnumType = {${rtn.join(`,`)}\n}`
+  return `\n\nconst $Enum = {${rtn.join(`,`)}\n}`
 }
 
 const tblQueries = (
@@ -317,7 +317,7 @@ const Orm = (tables: { [k: string]: Table | View }) => {
           case 'enum':
             colDefine = `${colName}${
               'required' === col.optional ? '' : '?'
-            }: $EnumType['${col.props.jsType}']`
+            }: $Enum['${col.props.jsType}']`
             break
         }
         if (col.props.deprecated) {

@@ -230,7 +230,7 @@ const url = 'http://localhost:8080'
 
 ${apiStr(dbs)}
 ${apiStr(RPCs.map((v) => `$RPC.${v}`))}
-export type { $EnumType, $TbOper, $TB } from './aca'
+export type { $Enum, $TbOper, $TB } from './aca'
 export { $RPC, ${dbs.join(', ')} } from './aca'
 `
 }
