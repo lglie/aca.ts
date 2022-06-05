@@ -1,6 +1,7 @@
 // The CLI is currently in the internal testing stage
 // Note: all identifiers must not start with $ to prevent naming conflicts
-// Scalar types supported by class members：id, int, float, string, object(Key-value pair), Date，and enum type
+// Scalar types supported by class members：id, int, float, string, object(json object), Date，and enum type
+
 import {
   id,
   int,

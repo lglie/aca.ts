@@ -1,3 +1,5 @@
+English | [简体中文](https://act.ts.center)
+
 # Aca.ts
 
 > Aca.ts is a node.js CLI based on Typescript and Knex.js. It can automatically sync database schema according to a custom ORM. It can also automatically generate APIs for accessing the database. More importantly, it can automatically create frontend APIs through backend functions and the generated database APIs (like RPC) and can run on node.js runtime, so frontend developers can easily access the backend without defining routing. The APIs are typescript, and therefore the tips are very friendly when coding.
@@ -93,7 +95,7 @@ $ aca add <appName> --server --client --apiDir <path>
 $ aca up
 ```
 
-Then the database, frontend, and backend are all set up, you can start your application now. Happy coding!
+Then the database, frontend (if necessary), and backend are all set up, you can start your project now. Happy coding!
 
 #
 
