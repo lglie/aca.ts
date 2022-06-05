@@ -59,15 +59,31 @@ const tblQueries = (
   const TblQuery = (tbl: Table) => {
     const tblName = tbl.jsName
     const query = (Q: string) =>
-      `async (args${Cst.argOpts.includes(Q) ? '?' : ''}: ${
+      `async <T extends ${
         ['count', 'countDistinct'].includes(Q)
-          ? aggregateCount(tblName, Q)
-          : `$TableQuery<'${tblName}'>['${
-              Cst.aggregates.includes(Q) ? 'aggregate' : Q
-            }']`
-      }): Promise<$Rtn${'findMany' === Q ? 'Arr' : ''}Type<'${tblName}', ${
-        Cst.aggregates.includes(Q) ? 'true' : 'false'
-      }>> => ${
+          ? `${tblName}_aggregate_args`
+          : `${tblName}_${
+              Cst.aggregates.includes(Q) ? 'aggregateNumber' : Q
+            }_args`
+      }>(args${Cst.argOpts.includes(Q) ? '?' : ''}: ${
+        ['count', 'countDistinct'].includes(Q)
+          ? `SelectSubset<T,${tblName}_aggregate_args>`
+          : `SelectSubset<T, ${tblName}_${
+              Cst.aggregates.includes(Q) ? 'aggregateNumber' : Q
+            }_args>`
+      }): Promise<{data?: ${
+        Cst.aggregates.includes(Q)
+          ? 'number'
+          : ['deleteMany', 'updateMany'].includes(Q)
+          ? 'number'
+          : `CheckSelect<T, ${
+              'findMany' === Q ? 'Array<' + tblName + '>' : tblName
+            }, ${
+              'findMany' === Q
+                ? 'Array<' + tblName + '_payload<T>>>'
+                : tblName + '_payload<T>>'
+            }`
+      } , sql?: string[], error?: string}> => ${
         'server' === api
           ? tableQuery(Q, tblName)
           : `await ${api.endsWith('client') ? `$.${dbVar}.req` : '$Handle'}${
@@ -277,7 +293,7 @@ const Orm = (tables: { [k: string]: Table | View }) => {
             optional: 'optional',
             relation: {
               kind: 'many',
-              relColumn: colName,
+              relColumn: relColName,
               mapTable,
             },
           })
@@ -332,7 +348,447 @@ const Orm = (tables: { [k: string]: Table | View }) => {
 
   return { typeDefine, Att }
 }
+// Generate table types
+const generateTsType = (orm) => {
+  let tsType = []
+  for (let table in orm.Att) {
+    let tableTypeFields = []
+    let tableSelectTypeFields = []
+    let tableWhereFields = []
+    let tableUniqueWhere = `export type ${table}_unique_where = {\n`
+    let tableOrderByFields = []
+    let tableInsertFields = []
+    let tableUpdateFields = []
+    let tableUpdateManyFields = []
+    let tableAggregateNumberFields = []
+    let tableAggregateFields = []
+    let payloadFields = []
+    for (let c in orm.Att[table].columns) {
+      if (orm.Att[table].columns[c].relation) {
+        switch (orm.Att[table].columns[c].relation.kind) {
+          case 'foreign':
+            tableSelectTypeFields.push(
+              `${c}?: boolean | ${orm.Att[table].columns[c].type}_args | ${orm.Att[table].columns[c].type}_select`
+            )
+            tableWhereFields.push(
+              `${c}?: ${orm.Att[table].columns[c].type}_where ${
+                orm.Att[table].columns[c].optional !== 'required'
+                  ? '| null'
+                  : ''
+              }`
+            )
+            tableInsertFields.push(`${c}${
+              orm.Att[table].columns[c].optional !== 'required' ? '?' : ''
+            }: {
+              insert?: Omit<${
+                orm.Att[table].columns[c].type
+              }_insert,  ${orm.Att[table].columns[c].relation.keys
+              .map((v) => `'${v}'`)
+              .join('|')} | '${orm.Att[table].columns[c].relation.relColumn}'>
+              connect?: ${orm.Att[table].columns[c].type}_unique_where
+            }`)
+            tableUpdateFields.push(`${c}?: {
+                insert?: Omit<${
+                  orm.Att[table].columns[c].type
+                }_insert,  ${orm.Att[table].columns[c].relation.keys
+                .map((v) => `'${v}'`)
+                .join('|')} | '${orm.Att[table].columns[c].relation.relColumn}'>
+                connect?: ${orm.Att[table].columns[c].type}_unique_where
+                disconnect?: ${orm.Att[table].columns[c].type}_unique_where
+                update?: Omit<${
+                  orm.Att[table].columns[c].type
+                }_update,  ${orm.Att[table].columns[c].relation.keys
+                .map((v) => `'${v}'`)
+                .join('|')} | '${orm.Att[table].columns[c].relation.relColumn}'>
+                delete?: ${orm.Att[table].columns[c].type}_unique_where
+                upsert?: {
+                    insert:  Omit<${
+                      orm.Att[table].columns[c].type
+                    }_insert,  ${orm.Att[table].columns[c].relation.keys
+                    .map((v) => `'${v}'`)
+                    .join('|')} | '${orm.Att[table].columns[c].relation.relColumn}'>
+                    update:  Omit<${
+                      orm.Att[table].columns[c].type
+                    }_update,  ${orm.Att[table].columns[c].relation.keys
+                    .map((v) => `'${v}'`)
+                    .join('|')} | '${orm.Att[table].columns[c].relation.relColumn}'>
+                }
+            }`)
+            payloadFields.push(
+              `P extends '${c}' ? ${orm.Att[table].columns[c].type}_payload<('select' extends keyof S ? S['select'] : S)[P]> | null : `
+            )
+            break
+          case 'primary':
+            if (orm.Att[table].columns[c].relation.toOne) {
+              tableSelectTypeFields.push(
+                `${c}?: boolean | ${orm.Att[table].columns[c].type}_args | ${orm.Att[table].columns[c].type}_select`
+              )
+              tableWhereFields.push(
+                `${c}?: ${orm.Att[table].columns[c].type}_where ${
+                  orm.Att[table].columns[c].optional !== 'required'
+                    ? '| null'
+                    : ''
+                }`
+              )
+              tableInsertFields.push(`${c}${
+                orm.Att[table].columns[c].optional !== 'required' ? '?' : ''
+              }: {
+                insert?: Omit<${
+                  orm.Att[table].columns[c].type
+                }_insert,  ${orm.Att[table].columns[c].relation.keys
+                .map((v) => `'${v}'`)
+                .join('|')} | '${orm.Att[table].columns[c].relation.relColumn}'>
+                connect?: ${orm.Att[table].columns[c].type}_unique_where
+              }`)
+              tableUpdateFields.push(`${c}?: {
+                  insert?: Omit<${
+                    orm.Att[table].columns[c].type
+                  }_insert,  ${orm.Att[table].columns[c].relation.keys
+                  .map((v) => `'${v}'`)
+                  .join('|')} | '${orm.Att[table].columns[c].relation.relColumn}'>
+                  connect?: ${orm.Att[table].columns[c].type}_unique_where
+                  disconnect?: ${orm.Att[table].columns[c].type}_unique_where
+                  update?: Omit<${
+                    orm.Att[table].columns[c].type
+                  }_update,  ${orm.Att[table].columns[c].relation.keys
+                  .map((v) => `'${v}'`)
+                  .join('|')} | '${orm.Att[table].columns[c].relation.relColumn}'>
+                  delete?: ${orm.Att[table].columns[c].type}_unique_where
+                  upsert?: {
+                      insert:  Omit<${
+                        orm.Att[table].columns[c].type
+                      }_insert,  ${orm.Att[table].columns[c].relation.keys
+                      .map((v) => `'${v}'`)
+                      .join('|')} | '${orm.Att[table].columns[c].relation.relColumn}'>
+                      update:  Omit<${
+                        orm.Att[table].columns[c].type
+                      }_update,  ${orm.Att[table].columns[c].relation.keys
+                      .map((v) => `'${v}'`)
+                      .join('|')} | '${orm.Att[table].columns[c].relation.relColumn}'>
+                  }
+              }`)
+              payloadFields.push(
+                `P extends '${c}' ? ${orm.Att[table].columns[c].type}_payload<('select' extends keyof S ? S['select'] : S)[P]> | null : `
+              )
+            } else {
+              tableSelectTypeFields.push(
+                `${c}?: boolean | ${orm.Att[table].columns[c].type}_findMany_args | ${orm.Att[table].columns[c].type}_select`
+              )
+              tableWhereFields.push(
+                `${c}?: {
+                  every?: ${orm.Att[table].columns[c].type}_where
+                  some?: ${orm.Att[table].columns[c].type}_where
+                  none?: ${orm.Att[table].columns[c].type}_where
+                }`
+              )
+              tableInsertFields.push(`${c}?: {
+                insert?: $Enumerable<Omit<${
+                  orm.Att[table].columns[c].type
+                }_insert,  ${orm.Att[table].columns[c].relation.keys
+                .map((v) => `'${v}'`)
+                .join('|')} | '${orm.Att[table].columns[c].relation.relColumn}'>>
+                connect?: $Enumerable<${orm.Att[table].columns[c].type}_unique_where>
+              }`)
+              tableUpdateFields.push(`${c}?: {
+                  insert?: $Enumerable<Omit<${
+                    orm.Att[table].columns[c].type
+                  }_insert,  ${orm.Att[table].columns[c].relation.keys
+                  .map((v) => `'${v}'`)
+                  .join('|')} | '${orm.Att[table].columns[c].relation.relColumn}'>>
+                  connect?: $Enumerable<${orm.Att[table].columns[c].type}_unique_where>
+                  disconnect?: $Enumerable<${
+                    orm.Att[table].columns[c].type
+                  }_unique_where>
+                  delete?: $Enumerable<${orm.Att[table].columns[c].type}_unique_where>
+                  upsert?: $Enumerable<{
+                    where: ${orm.Att[table].columns[c].type}_unique_where
+                    insert: Omit<${
+                      orm.Att[table].columns[c].type
+                    }_insert,  ${orm.Att[table].columns[c].relation.keys
+                    .map((v) => `'${v}'`)
+                    .join('|')} | '${orm.Att[table].columns[c].relation.relColumn}'>
+                    update: Omit<${
+                      orm.Att[table].columns[c].type
+                    }_update,  ${orm.Att[table].columns[c].relation.keys
+                    .map((v) => `'${v}'`)
+                    .join('|')} | '${orm.Att[table].columns[c].relation.relColumn}'>
+                  }>
+                  update?: $Enumerable<{
+                    where: ${orm.Att[table].columns[c].type}_unique_where
+                    data: Omit<${
+                      orm.Att[table].columns[c].type
+                    }_update,  ${orm.Att[table].columns[c].relation.keys
+                    .map((v) => `'${v}'`)
+                    .join('|')} | '${orm.Att[table].columns[c].relation.relColumn}'>
+                  }>
+                  set?: $Enumerable<${orm.Att[table].columns[c].type}_unique_where>
+                  updateMany?: {
+                    where: ${orm.Att[table].columns[c].type}_where
+                    data: ${orm.Att[table].columns[c].type}_updateMany
+                  }
+                  deleteMany?: ${orm.Att[table].columns[c].type}_where
+              }`)
+              payloadFields.push(
+                `P extends '${c}' ? Array<${orm.Att[table].columns[c].type}_payload<('select' extends keyof S ? S['select'] : S)[P]>> : `
+              )
+            }
+            break
+          case 'many':
+            tableSelectTypeFields.push(
+              `${c}?: boolean | ${orm.Att[table].columns[c].type}_findMany_args | ${orm.Att[table].columns[c].type}_select`
+            )
+            tableWhereFields.push(
+              `${c}?: {
+                every?: ${orm.Att[table].columns[c].type}_where
+                some?: ${orm.Att[table].columns[c].type}_where
+                none?: ${orm.Att[table].columns[c].type}_where
+              }`
+            )
+            tableInsertFields.push(`${c}?: {
+              insert?: Omit<${orm.Att[table].columns[c].type}_insert, '${orm.Att[table].columns[c].relation.relColumn}'> | Omit<${orm.Att[table].columns[c].type}_insert, '${orm.Att[table].columns[c].relation.relColumn}'>[]
+              connect?: ${orm.Att[table].columns[c].type}_unique_where | ${orm.Att[table].columns[c].type}_unique_where[]
+            }`)
+            tableUpdateFields.push(`${c}?: {
+              insert?: $Enumerable<Omit<${orm.Att[table].columns[c].type}_insert, '${orm.Att[table].columns[c].relation.relColumn}'>>
+              connect?: $Enumerable<${orm.Att[table].columns[c].type}_unique_where>
+              disconnect?: $Enumerable<${orm.Att[table].columns[c].type}_unique_where>
+              delete?: $Enumerable<${orm.Att[table].columns[c].type}_unique_where>
+              upsert?: $Enumerable<{
+                where: ${orm.Att[table].columns[c].type}_unique_where
+                insert: Omit<${orm.Att[table].columns[c].type}_insert,  '${orm.Att[table].columns[c].relation.relColumn}'>
+                update: ${orm.Att[table].columns[c].type}_update
+              }>
+              update?: $Enumerable<{
+                where: ${orm.Att[table].columns[c].type}_unique_where
+                data: Omit<${orm.Att[table].columns[c].type}_update,  '${orm.Att[table].columns[c].relation.relColumn}'>
+              }>
+              set?: $Enumerable<${orm.Att[table].columns[c].type}_unique_where>
+              updateMany?: {
+                where: ${orm.Att[table].columns[c].type}_where
+                data: ${orm.Att[table].columns[c].type}_updateMany
+              }
+              deleteMany?: ${orm.Att[table].columns[c].type}_where
+            }`)
+            payloadFields.push(
+              `P extends '${c}' ? Array<${orm.Att[table].columns[c].type}_payload<('select' extends keyof S ? S['select'] : S)[P]>> : `
+            )
+        }
+      } else {
+        let tableWhereFieldsString = ''
+        switch (orm.Att[table].columns[c].type) {
+          case 'enum':
+            orm.Att[table].columns[
+              c
+            ].jsType = `$Enum['${orm.Att[table].columns[c].jsType}']`
+          case 'string':
+            tableWhereFieldsString = `${c}?: StringFilter | ${
+              orm.Att[table].columns[c].jsType
+            } ${
+              orm.Att[table].columns[c].optional === 'required' ? '' : '| null'
+            }`
+            break
+          case 'int':
+          case 'float':
+            tableWhereFieldsString = `${c}?: IntFilter | ${
+              orm.Att[table].columns[c].jsType
+            } ${
+              orm.Att[table].columns[c].optional === 'required' ? '' : '| null'
+            }`
 
+            break
+          case 'Date':
+            tableWhereFieldsString += `${c}?: DateFilter | ${
+              orm.Att[table].columns[c].jsType
+            } ${
+              orm.Att[table].columns[c].optional === 'required' ? '' : '| null'
+            }`
+            break
+          case 'boolean':
+            tableWhereFieldsString += `${c}?: BoolFilter | ${
+              orm.Att[table].columns[c].jsType
+            } ${
+              orm.Att[table].columns[c].optional === 'required' ? '' : '| null'
+            }`
+            break
+          default:
+            tableWhereFieldsString += `${c}?: ${
+              orm.Att[table].columns[c].jsType
+            } ${
+              orm.Att[table].columns[c].optional === 'required' ? '' : '| null'
+            }`
+        }
+        tableTypeFields.push(
+          `${c}?: ${orm.Att[table].columns[c].jsType} ${
+            orm.Att[table].columns[c].optional === 'required' ? '' : '| null'
+          }`
+        )
+        tableSelectTypeFields.push(`${c}?: boolean`)
+        tableWhereFields.push(tableWhereFieldsString)
+        tableOrderByFields.push(`${c}?: $Order`)
+        if (!orm.Att[table].foreignKeys.includes(c)) {
+          tableInsertFields.push(
+            `${c}${
+              orm.Att[table].columns[c].optional !== 'required' ? '?' : ''
+            }: ${orm.Att[table].columns[c].jsType}`
+          )
+          tableUpdateFields.push(`${c}?: ${orm.Att[table].columns[c].jsType}`)
+        }
+        tableUpdateManyFields.push(`${c}?: ${orm.Att[table].columns[c].jsType}`)
+        if (orm.Att[table].columns[c].jsType === 'number') {
+          tableAggregateNumberFields.push(`'${c}'`)
+        }
+        tableAggregateFields.push(`'${c}'`)
+      }
+    }
+    for (let u = 0; u < orm.Att[table].uniques.length; u++) {
+      for (let f of orm.Att[table].uniques[u]) {
+        tableUniqueWhere += `${f}: ${orm.Att[table].columns[f].jsType}\n`
+      }
+      tableUniqueWhere += `} `
+      if (u !== orm.Att[table].uniques.length - 1) {
+        tableUniqueWhere += ` | {\n`
+      }
+    }
+    const tableType = `export type ${table} = {
+      ${tableTypeFields.join('\n')}
+    }`
+    const tableSelectType = `export type ${table}_select = {
+      '*'?: boolean
+      ${tableSelectTypeFields.join('\n')}
+    }`
+    const tableWhere = `export type ${table}_where = {
+      ${tableWhereFields.join('\n')}
+      AND?: ${table}_where | ${table}_where[]
+      OR?: ${table}_where | ${table}_where[]
+      NOT?: ${table}_where | ${table}_where[]
+    }`
+    const tableOrderBy = `export type ${table}_orderBy = {
+      ${tableOrderByFields.join('\n')}
+    }`
+    const tableInsert = `export type ${table}_insert = {
+      ${tableInsertFields.join('\n')}
+    }`
+    const tableUpdate = `export type ${table}_update = {
+      ${tableUpdateFields.join('\n')}
+    }`
+    const tableUpdateMany = `export type ${table}_updateMany = {
+      ${tableUpdateManyFields.join('\n')}
+    }`
+    const tableAggregateNumber = `export type ${table}_aggregateNumber = never ${
+      tableAggregateNumberFields.length ? '|' : ''
+    } ${tableAggregateNumberFields.join('|')}`
+    const tableAggregate = `export type ${table}_aggregate = '*' | ${tableAggregateFields.join(
+      '|'
+    )}`
+    const tablePayload = `type ${table}_payload<
+            S extends boolean | null | undefined | ${table}_args | ${table}_select,
+            U = keyof S
+              > = S extends true
+                ? ${table}
+            : S extends undefined
+            ? never
+            : S extends ${table}_args | ${table}_findMany_args | ${table}_select
+            ? '*' extends Extract<keyof ('select' extends keyof S ? S['select'] : S), '*'>
+            ?  {[P in keyof ${table}]: ${table}[P]} & {
+                [P in TrueKeys<Omit<('select' extends keyof S ? S['select'] : S), '*'>>]: P extends keyof ${table}
+                                ? ${table}[P]
+                                : ${payloadFields.join('\n')}
+                                never
+              } : {
+            [P in TrueKeys<('select' extends keyof S ? S['select'] : S)>]: P extends keyof ${table} ? ${table}[P]
+                :${payloadFields.join('\n')}
+           never }  : {[P in keyof ${table}]: ${table}[P]}`
+
+    let tableFindOneArgs = `export type ${table}_findOne_args = {
+                select?: ${table}_select | null 
+                where: ${table}_unique_where
+                sql?: boolean
+            }`
+    let tableFindFirstArgs = `export type ${table}_findFirst_args = {
+                select?: ${table}_select | null 
+                where?: ${table}_where 
+                orderBy?: $Enumerable<${table}_orderBy>
+                sql?: boolean
+            }`
+    let tableFindManyArgs = `export type ${table}_findMany_args = {
+                select?: ${table}_select | null 
+                where?: ${table}_where 
+                orderBy?: $Enumerable<${table}_orderBy> 
+                limit?: number
+                offset?: number
+                sql?: boolean
+            }`
+    let tableInsertArgs = `export type ${table}_insert_args = {
+                select?: ${table}_select | null 
+                data: ${table}_insert
+                sql?: boolean
+            }`
+    let tableUpdateArgs = `export type ${table}_update_args = {
+                select?: ${table}_select | null 
+                where: ${table}_unique_where
+                data: ${table}_update
+                sql?: boolean
+            }`
+    let tableUpdateManyArgs = `export type ${table}_updateMany_args = {
+                where?: ${table}_where
+                data: ${table}_updateMany
+                sql?: boolean
+            }`
+    let tableUpsertArgs = `export type ${table}_upsert_args = {
+                where: ${table}_unique_where
+                select?: ${table}_select | null 
+                insert: ${table}_insert
+                update: ${table}_update
+                sql?: boolean
+            }`
+    let tableDeleteArgs = `export type ${table}_delete_args = {
+                select?: ${table}_select | null 
+                where: ${table}_unique_where
+                sql?: boolean
+            }`
+    let tableDeleteManyArgs = `export type ${table}_deleteMany_args = {
+                where: ${table}_where
+                sql?: boolean
+            }`
+    let tableArgs = `type ${table}_args = {
+      select?: ${table}_select | null
+    }`
+    let tableAggregateArgs = `type ${table}_aggregate_args = {
+                select?: ${table}_aggregate
+                where: ${table}_where
+                sql?: boolean
+            }`
+    let tableAggregateNumberArgs = `type ${table}_aggregateNumber_args = {
+                select?: ${table}_aggregateNumber
+                where: ${table}_where
+                sql?: boolean
+            }`
+    tsType.push(tableType)
+    tsType.push(tableSelectType)
+    tsType.push(tableWhere)
+    tsType.push(tableUniqueWhere)
+    tsType.push(tableOrderBy)
+    tsType.push(tableInsert)
+    tsType.push(tableUpdate)
+    tsType.push(tableUpdateMany)
+    tsType.push(tableAggregateNumber)
+    tsType.push(tableAggregate)
+    tsType.push(tableFindOneArgs)
+    tsType.push(tableFindFirstArgs)
+    tsType.push(tableFindManyArgs)
+    tsType.push(tableInsertArgs)
+    tsType.push(tableUpdateArgs)
+    tsType.push(tableUpdateManyArgs)
+    tsType.push(tableUpsertArgs)
+    tsType.push(tableDeleteArgs)
+    tsType.push(tableDeleteManyArgs)
+    tsType.push(tableAggregateArgs)
+    tsType.push(tableAggregateNumberArgs)
+    tsType.push(tableArgs)
+    tsType.push(tablePayload)
+  }
+  return tsType
+}
 // Generate frontend and backend api
 async function DbApi(ast: Ast) {
   // Packages needed to be imported
@@ -354,6 +810,7 @@ async function DbApi(ast: Ast) {
     NL: <string[]>[],
     anno: {},
   }
+  let tsType = []
   for (const k in ast.dbs) {
     const orm = Orm(FlatTables(ast.dbs[k].tables))
 
@@ -386,6 +843,8 @@ async function DbApi(ast: Ast) {
     }
     // annotation
     Object.assign(dbType.anno, orm.Att)
+
+    tsType = generateTsType(orm)
   }
 
   serverApi += clientApi +=
@@ -393,7 +852,8 @@ async function DbApi(ast: Ast) {
     ['TB', 'UN', 'FK', 'CU', 'NL']
       .map((v) => `type $${v} = {\n${dbType[v].join('\n')}}`)
       .join('\n\n')
-
+  serverApi += '\n\n' + tsType.join('\n\n')
+  clientApi += '\n\n' + tsType.join('\n\n')
   serverApi += `\n\n${fs.readFileSync(
     path.join(__dirname, `${templatePath}/annotation`),
     'utf-8'
