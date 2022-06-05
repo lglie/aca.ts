@@ -1,4 +1,4 @@
-English | [简体中文](https://act.ts.center)
+English | [简体中文](https://aca.ts.center)
 
 # Aca.ts
 
