@@ -595,6 +595,12 @@ const generateTsType = (orm) => {
             orm.Att[table].columns[
               c
             ].jsType = `$Enum['${orm.Att[table].columns[c].jsType}']`
+            tableWhereFieldsString = `${c}?: $EnumFilter<${
+              orm.Att[table].columns[c].jsType
+            }> | ${
+              orm.Att[table].columns[c].jsType
+            }`
+            break
           case 'string':
             tableWhereFieldsString = `${c}?: $StringFilter | ${
               orm.Att[table].columns[c].jsType
@@ -624,6 +630,21 @@ const generateTsType = (orm) => {
             } ${
               orm.Att[table].columns[c].optional === 'required' ? '' : '| null'
             }`
+            break
+          case 'id':
+            if (orm.Att[table].columns[c].jsType === 'string') {
+              tableWhereFieldsString = `${c}?: $StringFilter | ${
+                orm.Att[table].columns[c].jsType
+              } ${
+                orm.Att[table].columns[c].optional === 'required' ? '' : '| null'
+              }`
+            } else if (orm.Att[table].columns[c].jsType === 'number') {
+              tableWhereFieldsString = `${c}?: $IntFilter | ${
+                orm.Att[table].columns[c].jsType
+              } ${
+                orm.Att[table].columns[c].optional === 'required' ? '' : '| null'
+              }`
+            }
             break
           default:
             tableWhereFieldsString += `${c}?: ${

@@ -501,6 +501,13 @@ type $StringFilter = {
   between?: $Enumerable<string>
 }
 
+type $EnumFilter<T> = {
+  eq?: T
+  in?: $Enumerable<T>
+  notIn?: $Enumerable<T>
+  not?: $EnumFilter<T> | T
+}
+
 type $IntFilter = {
   eq?: number | null
   in?: $Enumerable<number> | null
