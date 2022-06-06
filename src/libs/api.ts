@@ -66,8 +66,8 @@ const tblQueries = (
             }_args`
       }>(args${Cst.argOpts.includes(Q) ? '?' : ''}: ${
         ['count', 'countDistinct'].includes(Q)
-          ? `SelectSubset<T,${tblName}_aggregate_args>`
-          : `SelectSubset<T, ${tblName}_${
+          ? `$SelectSubset<T,${tblName}_aggregate_args>`
+          : `$SelectSubset<T, ${tblName}_${
               Cst.aggregates.includes(Q) ? 'aggregateNumber' : Q
             }_args>`
       }): Promise<{data?: ${
@@ -75,7 +75,7 @@ const tblQueries = (
           ? 'number'
           : ['deleteMany', 'updateMany'].includes(Q)
           ? 'number'
-          : `CheckSelect<T, ${
+          : `$CheckSelect<T, ${
               'findMany' === Q ? 'Array<' + tblName + '>' : tblName
             }, ${
               'findMany' === Q
@@ -349,25 +349,27 @@ const Orm = (tables: { [k: string]: Table | View }) => {
 }
 // Generate table types
 const generateTsType = (orm) => {
-  let tsType = []
-  for (let table in orm.Att) {
-    let tableTypeFields = []
-    let tableSelectTypeFields = []
-    let tableWhereFields = []
+  const tsType = []
+  for (const table in orm.Att) {
     let tableUniqueWhere = `export type ${table}_unique_where = {\n`
-    let tableOrderByFields = []
-    let tableInsertFields = []
-    let tableUpdateFields = []
-    let tableUpdateManyFields = []
-    let tableAggregateNumberFields = []
-    let tableAggregateFields = []
-    let payloadFields = []
-    for (let c in orm.Att[table].columns) {
+    const tableOrderByFields = []
+    const tableTypeFields = []
+    const tableSelectTypeFields = []
+    const tableWhereFields = []
+    const tableInsertFields = []
+    const tableUpdateFields = []
+    const tableUpdateManyFields = []
+    const tableAggregateNumberFields = []
+    const tableAggregateFields = []
+    const payloadFields = []
+    for (const c in orm.Att[table].columns) {
       if (orm.Att[table].columns[c].relation) {
         switch (orm.Att[table].columns[c].relation.kind) {
           case 'foreign':
             tableSelectTypeFields.push(
-              `${c}?: boolean | ${orm.Att[table].columns[c].type}_args | ${orm.Att[table].columns[c].type}_select`
+              `${c}?: boolean | {
+                select: Omit<${orm.Att[table].columns[c].type}_select, '${orm.Att[table].columns[c].relation.relColumn}'>
+              } | Omit<${orm.Att[table].columns[c].type}_select, '${orm.Att[table].columns[c].relation.relColumn}'>`
             )
             tableWhereFields.push(
               `${c}?: ${orm.Att[table].columns[c].type}_where ${
@@ -381,7 +383,7 @@ const generateTsType = (orm) => {
             }: {
               insert?: Omit<${
                 orm.Att[table].columns[c].type
-              }_insert,  ${orm.Att[table].columns[c].relation.keys
+              }_insert, ${orm.Att[table].columns[c].relation.keys
               .map((v) => `'${v}'`)
               .join('|')} | '${orm.Att[table].columns[c].relation.relColumn}'>
               connect?: ${orm.Att[table].columns[c].type}_unique_where
@@ -420,7 +422,9 @@ const generateTsType = (orm) => {
           case 'primary':
             if (orm.Att[table].columns[c].relation.toOne) {
               tableSelectTypeFields.push(
-                `${c}?: boolean | ${orm.Att[table].columns[c].type}_args | ${orm.Att[table].columns[c].type}_select`
+                `${c}?: boolean | {
+                  select: Omit<${orm.Att[table].columns[c].type}_select, '${orm.Att[table].columns[c].relation.relColumn}'>
+                } | Omit<${orm.Att[table].columns[c].type}_select, '${orm.Att[table].columns[c].relation.relColumn}'>`
               )
               tableWhereFields.push(
                 `${c}?: ${orm.Att[table].columns[c].type}_where ${
@@ -592,7 +596,7 @@ const generateTsType = (orm) => {
               c
             ].jsType = `$Enum['${orm.Att[table].columns[c].jsType}']`
           case 'string':
-            tableWhereFieldsString = `${c}?: StringFilter | ${
+            tableWhereFieldsString = `${c}?: $StringFilter | ${
               orm.Att[table].columns[c].jsType
             } ${
               orm.Att[table].columns[c].optional === 'required' ? '' : '| null'
@@ -600,7 +604,7 @@ const generateTsType = (orm) => {
             break
           case 'int':
           case 'float':
-            tableWhereFieldsString = `${c}?: IntFilter | ${
+            tableWhereFieldsString = `${c}?: $IntFilter | ${
               orm.Att[table].columns[c].jsType
             } ${
               orm.Att[table].columns[c].optional === 'required' ? '' : '| null'
@@ -608,14 +612,14 @@ const generateTsType = (orm) => {
 
             break
           case 'Date':
-            tableWhereFieldsString += `${c}?: DateFilter | ${
+            tableWhereFieldsString += `${c}?: $DateFilter | ${
               orm.Att[table].columns[c].jsType
             } ${
               orm.Att[table].columns[c].optional === 'required' ? '' : '| null'
             }`
             break
           case 'boolean':
-            tableWhereFieldsString += `${c}?: BoolFilter | ${
+            tableWhereFieldsString += `${c}?: $BoolFilter | ${
               orm.Att[table].columns[c].jsType
             } ${
               orm.Att[table].columns[c].optional === 'required' ? '' : '| null'
@@ -652,7 +656,7 @@ const generateTsType = (orm) => {
       }
     }
     for (let u = 0; u < orm.Att[table].uniques.length; u++) {
-      for (let f of orm.Att[table].uniques[u]) {
+      for (const f of orm.Att[table].uniques[u]) {
         tableUniqueWhere += `${f}: ${orm.Att[table].columns[f].jsType}\n`
       }
       tableUniqueWhere += `} `
@@ -701,12 +705,12 @@ const generateTsType = (orm) => {
             : S extends ${table}_args | ${table}_findMany_args | ${table}_select
             ? '*' extends Extract<keyof ('select' extends keyof S ? S['select'] : S), '*'>
             ?  {[P in keyof ${table}]: ${table}[P]} & {
-                [P in TrueKeys<Omit<('select' extends keyof S ? S['select'] : S), '*'>>]: P extends keyof ${table}
+                [P in $TrueKeys<Omit<('select' extends keyof S ? S['select'] : S), '*'>>]: P extends keyof ${table}
                                 ? ${table}[P]
                                 : ${payloadFields.join('\n')}
                                 never
               } : {
-            [P in TrueKeys<('select' extends keyof S ? S['select'] : S)>]: P extends keyof ${table} ? ${table}[P]
+            [P in $TrueKeys<('select' extends keyof S ? S['select'] : S)>]: P extends keyof ${table} ? ${table}[P]
                 :${payloadFields.join('\n')}
            never }  : {[P in keyof ${table}]: ${table}[P]}`
 

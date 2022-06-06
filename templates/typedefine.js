@@ -473,43 +473,35 @@ export type $ApiBridge =
       args: any
     }
 
-type SelectSubset<T, U> = {
+type $SelectSubset<T, U> = {
   [key in keyof T]: key extends keyof U ? T[key] : never
 } & ('select' extends T ? 'Please either choose select.' : {})
 
-type RequiredKeys<T> = {
-  [K in keyof T]-?: {} extends Pick<T, K> ? never : K
-}[keyof T]
 
-type TruthyKeys<T> = {
+type $TruthyKeys<T> = {
   [key in keyof T]: T[key] extends false | undefined | null ? never : key
 }[keyof T]
 
-type TrueKeys<T> = TruthyKeys<Pick<T, RequiredKeys<T>>>
+type $TrueKeys<T> = $TruthyKeys<Pick<T, Require<T>>>
 
-type HasSelect = {
+type $HasSelect = {
   select: any
 }
-type CheckSelect<T, S, U> = T extends HasSelect ? U : {[P in keyof S]: S[P]}
-type Without<T, U> = { [P in Exclude<keyof T, keyof U>]?: never }
-type XOR<T, U> = T | U extends object
-  ? (Without<T, U> & U) | (Without<U, T> & T)
-  : T | U
+type $CheckSelect<T, S, U> = T extends $HasSelect ? U : {[P in keyof S]: S[P]}
 
-
-type StringFilter = {
+type $StringFilter = {
   eq?: string | null
   in?: $Enumerable<string> | null
   notIn?: $Enumerable<string> | null
   contains?: string
   startsWith?: string
   endsWith?: string
-  not?: StringFilter | string | null
+  not?: $StringFilter | string | null
   like?: string
   between?: $Enumerable<string>
 }
 
-type IntFilter = {
+type $IntFilter = {
   eq?: number | null
   in?: $Enumerable<number> | null
   notIn?: $Enumerable<number> | null
@@ -517,11 +509,11 @@ type IntFilter = {
   lte?: number
   gt?: number
   gte?: number
-  not?: IntFilter | number | null
+  not?: $IntFilter | number | null
   like?: number
   between?: $Enumerable<number>
 }
-type DateFilter = {
+type $DateFilter = {
   eq?: Date | string
   in?: $Enumerable<Date> | $Enumerable<string>
   notIn?: $Enumerable<Date> | $Enumerable<string>
@@ -529,12 +521,12 @@ type DateFilter = {
   lte?: Date | string
   gt?: Date | string
   gte?: Date | string
-  not?: DateFilter | Date | string
+  not?: $DateFilter | Date | string
   like?: Date | string
   between?: $Enumerable<Date> | $Enumerable<Date>
 }
-type BoolFilter = {
-  rq?: boolean
-  not?: BoolFilter | boolean
+type $BoolFilter = {
+  eq?: boolean
+  not?: $BoolFilter | boolean
 }
 `

@@ -5,14 +5,10 @@ const $ArrayTrue = (arrayItem: string[]) =>
   arrayItem.reduce((_, v) => ((_[v] = true), _), {})
 
 // Process the returned database record
-function $RtnSelect<
-  Tb extends keyof $TB,
-  X extends keyof $TB[Tb],
-  S extends $RelationSign
->(
-  table: Tb,
+function $RtnSelect(
+  table: any,
   rtnCols: any,
-  select?: $Select<Tb, X, S> | $TbOper<Tb>['selectScalar'] | { '*': true }
+  select?: any
 ) {
   if (Array.isArray(rtnCols)) {
     const rtn = []
@@ -697,7 +693,7 @@ const $Queries = function <Tb extends keyof $TB>(trx: any, sql: string[] = []) {
       }: {
         where?: $Where<Tb, X, S>
         distinct?: '*' | $Enumerable<$ScalarColumns<Tb>>
-        orderBy?: $Enumerable<{ [K in $ScalarColumns<Tb>]?: $Order }>
+        orderBy?: any
         limit?: number
         offset?: number
         select?:
