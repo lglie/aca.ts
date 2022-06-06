@@ -482,8 +482,6 @@ type $TruthyKeys<T> = {
   [key in keyof T]: T[key] extends false | undefined | null ? never : key
 }[keyof T]
 
-type $TrueKeys<T> = $TruthyKeys<Pick<T, Require<T>>>
-
 type $HasSelect = {
   select: any
 }

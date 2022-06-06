@@ -381,9 +381,9 @@ const generateTsType = (orm) => {
             tableInsertFields.push(`${c}${
               orm.Att[table].columns[c].optional !== 'required' ? '?' : ''
             }: {
-              insert?: Omit<${
-                orm.Att[table].columns[c].type
-              }_insert, ${orm.Att[table].columns[c].relation.keys
+              insert?: Omit<${orm.Att[table].columns[c].type}_insert, ${orm.Att[
+              table
+            ].columns[c].relation.keys
               .map((v) => `'${v}'`)
               .join('|')} | '${orm.Att[table].columns[c].relation.relColumn}'>
               connect?: ${orm.Att[table].columns[c].type}_unique_where
@@ -595,11 +595,7 @@ const generateTsType = (orm) => {
             orm.Att[table].columns[
               c
             ].jsType = `$Enum['${orm.Att[table].columns[c].jsType}']`
-            tableWhereFieldsString = `${c}?: $EnumFilter<${
-              orm.Att[table].columns[c].jsType
-            }> | ${
-              orm.Att[table].columns[c].jsType
-            }`
+            tableWhereFieldsString = `${c}?: $EnumFilter<${orm.Att[table].columns[c].jsType}> | ${orm.Att[table].columns[c].jsType}`
             break
           case 'string':
             tableWhereFieldsString = `${c}?: $StringFilter | ${
@@ -636,13 +632,17 @@ const generateTsType = (orm) => {
               tableWhereFieldsString = `${c}?: $StringFilter | ${
                 orm.Att[table].columns[c].jsType
               } ${
-                orm.Att[table].columns[c].optional === 'required' ? '' : '| null'
+                orm.Att[table].columns[c].optional === 'required'
+                  ? ''
+                  : '| null'
               }`
             } else if (orm.Att[table].columns[c].jsType === 'number') {
               tableWhereFieldsString = `${c}?: $IntFilter | ${
                 orm.Att[table].columns[c].jsType
               } ${
-                orm.Att[table].columns[c].optional === 'required' ? '' : '| null'
+                orm.Att[table].columns[c].optional === 'required'
+                  ? ''
+                  : '| null'
               }`
             }
             break
@@ -726,12 +726,12 @@ const generateTsType = (orm) => {
             : S extends ${table}_args | ${table}_findMany_args | ${table}_select
             ? '*' extends Extract<keyof ('select' extends keyof S ? S['select'] : S), '*'>
             ?  {
-                [P in (keyof ${table} | $TrueKeys<Omit<('select' extends keyof S ? S['select'] : S), '*'>>)]: P extends keyof ${table}
+                [P in (keyof ${table} | $TruthyKeys<Omit<('select' extends keyof S ? S['select'] : S), '*'>>)]: P extends keyof ${table}
                                 ? ${table}[P]
                                 : ${payloadFields.join('\n')}
                                 never
               } : {
-            [P in $TrueKeys<('select' extends keyof S ? S['select'] : S)>]: P extends keyof ${table} ? ${table}[P]
+            [P in $TruthyKeys<('select' extends keyof S ? S['select'] : S)>]: P extends keyof ${table} ? ${table}[P]
                 :${payloadFields.join('\n')}
            never }  : {[P in keyof ${table}]: ${table}[P]}`
 

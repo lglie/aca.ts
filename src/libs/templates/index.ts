@@ -200,7 +200,7 @@ $ aca client [dirname]
 Add self built app(the app dictionary in the aca project dictionary): 
 $ aca add [dirname]
 
-3. Generate database and api: 
+3. Async database schema. Generate api:
 $ aca up
 Using this command to update the database schema and api when orm changes in the future
 `
