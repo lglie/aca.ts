@@ -94,17 +94,17 @@ function $Handle(trx: Knex.Transaction<any, any[]>) {
     switch (query) {
       case 'findOne':
         data = await $Queries(trx, sql).finder(table, {
-          where: (<$TableQuery<Tb>['findOne']>args).where,
-          select: (<$TableQuery<Tb>['findOne']>args).select,
+          where: args.where,
+          select: args.select,
         })
         data = data[0]
         break
 
       case 'findFirst':
         data = await $Queries(trx, sql).finder(table, {
-          where: (<$TableQuery<Tb>['findMany']>args)?.where,
-          select: (<$TableQuery<Tb>['findMany']>args)?.select,
-          orderBy: (<$TableQuery<Tb>['findMany']>args)?.orderBy,
+          where: args?.where,
+          select: args?.select,
+          orderBy: args?.orderBy,
           limit: 1,
         })
         data = data[0]
@@ -112,30 +112,30 @@ function $Handle(trx: Knex.Transaction<any, any[]>) {
 
       case 'findMany':
         data = await $Queries(trx, sql).finder(table, {
-          where: (<$TableQuery<Tb>['findMany']>args)?.where,
-          select: (<$TableQuery<Tb>['findMany']>args)?.select,
-          orderBy: (<$TableQuery<Tb>['findMany']>args)?.orderBy,
-          limit: (<$TableQuery<Tb>['findMany']>args)?.limit,
-          offset: (<$TableQuery<Tb>['findMany']>args)?.offset,
+          where: args?.where,
+          select: args?.select,
+          orderBy: args?.orderBy,
+          limit: args?.limit,
+          offset: args?.offset,
         })
         break
 
       case 'insert':
         data = await $Queries(trx, sql).insert(
           table,
-          <$TableMutationType<Tb, 'insert'>>args
+          args
         )
         if (typeof data === 'object')
-          data = Array.isArray((<$TableMutationType<Tb, 'insert'>>args).data)
+          data = Array.isArray(args.data)
             ? data
             : data[0]
         break
 
       case 'upsert':
         data = await $Queries(trx, sql).upsert(table, {
-          where: (<$TableMutationType<Tb, 'upsert'>>args).where,
-          insert: (<$TableMutationType<Tb, 'upsert'>>args).insert,
-          update: (<$TableMutationType<Tb, 'upsert'>>args).update,
+          where: args.where,
+          insert: args.insert,
+          update: args.update,
         })
 
         data = data[0]
@@ -143,8 +143,8 @@ function $Handle(trx: Knex.Transaction<any, any[]>) {
 
       case 'update':
         data = await $Queries(trx, sql).update(table, {
-          where: (<$TableMutationType<Tb, 'update'>>args).where,
-          data: (<$TableMutationType<Tb, 'update'>>args).data,
+          where: args.where,
+          data: args.data,
         })
         data = data[0]
         break
@@ -158,7 +158,7 @@ function $Handle(trx: Knex.Transaction<any, any[]>) {
 
       case 'delete':
         data = await $Queries(trx, sql).delete(table, {
-          where: (<$TableMutationType<Tb, 'delete'>>args).where,
+          where: args.where,
         })
         data = data[0]
         break

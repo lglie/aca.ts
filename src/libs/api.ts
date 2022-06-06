@@ -67,8 +67,8 @@ const tblQueries = (
             }_args`
       }>(args${Cst.argOpts.includes(Q) ? '?' : ''}: ${
         ['count', 'countDistinct'].includes(Q)
-          ? `SelectSubset<T,${tblName}_aggregate_args>`
-          : `SelectSubset<T, ${tblName}_${
+          ? `$SelectSubset<T,${tblName}_aggregate_args>`
+          : `$SelectSubset<T, ${tblName}_${
               Cst.aggregates.includes(Q) ? 'aggregateNumber' : Q
             }_args>`
       }): Promise<{data?: ${
@@ -76,7 +76,7 @@ const tblQueries = (
           ? 'number'
           : ['deleteMany', 'updateMany'].includes(Q)
           ? 'number'
-          : `CheckSelect<T, ${
+          : `$CheckSelect<T, ${
               'findMany' === Q ? 'Array<' + tblName + '>' : tblName
             }, ${
               'findMany' === Q
@@ -368,7 +368,9 @@ const generateTsType = (orm) => {
         switch (orm.Att[table].columns[c].relation.kind) {
           case 'foreign':
             tableSelectTypeFields.push(
-              `${c}?: boolean | ${orm.Att[table].columns[c].type}_args | ${orm.Att[table].columns[c].type}_select`
+              `${c}?: boolean | {
+                select: Omit<${orm.Att[table].columns[c].type}_select, '${orm.Att[table].columns[c].relation.relColumn}'>
+              } | Omit<${orm.Att[table].columns[c].type}_select, '${orm.Att[table].columns[c].relation.relColumn}'>`
             )
             tableWhereFields.push(
               `${c}?: ${orm.Att[table].columns[c].type}_where ${
@@ -382,7 +384,7 @@ const generateTsType = (orm) => {
             }: {
               insert?: Omit<${
                 orm.Att[table].columns[c].type
-              }_insert,  ${orm.Att[table].columns[c].relation.keys
+              }_insert, ${orm.Att[table].columns[c].relation.keys
               .map((v) => `'${v}'`)
               .join('|')} | '${orm.Att[table].columns[c].relation.relColumn}'>
               connect?: ${orm.Att[table].columns[c].type}_unique_where
@@ -421,7 +423,9 @@ const generateTsType = (orm) => {
           case 'primary':
             if (orm.Att[table].columns[c].relation.toOne) {
               tableSelectTypeFields.push(
-                `${c}?: boolean | ${orm.Att[table].columns[c].type}_args | ${orm.Att[table].columns[c].type}_select`
+                `${c}?: boolean | {
+                  select: Omit<${orm.Att[table].columns[c].type}_select, '${orm.Att[table].columns[c].relation.relColumn}'>
+                } | Omit<${orm.Att[table].columns[c].type}_select, '${orm.Att[table].columns[c].relation.relColumn}'>`
               )
               tableWhereFields.push(
                 `${c}?: ${orm.Att[table].columns[c].type}_where ${
@@ -581,7 +585,7 @@ const generateTsType = (orm) => {
               c
             ].jsType = `$Enum['${orm.Att[table].columns[c].jsType}']`
           case 'string':
-            tableWhereFieldsString = `${c}?: StringFilter | ${
+            tableWhereFieldsString = `${c}?: $StringFilter | ${
               orm.Att[table].columns[c].jsType
             } ${
               orm.Att[table].columns[c].optional === 'required' ? '' : '| null'
@@ -589,7 +593,7 @@ const generateTsType = (orm) => {
             break
           case 'int':
           case 'float':
-            tableWhereFieldsString = `${c}?: IntFilter | ${
+            tableWhereFieldsString = `${c}?: $IntFilter | ${
               orm.Att[table].columns[c].jsType
             } ${
               orm.Att[table].columns[c].optional === 'required' ? '' : '| null'
@@ -597,14 +601,14 @@ const generateTsType = (orm) => {
 
             break
           case 'Date':
-            tableWhereFieldsString += `${c}?: DateFilter | ${
+            tableWhereFieldsString += `${c}?: $DateFilter | ${
               orm.Att[table].columns[c].jsType
             } ${
               orm.Att[table].columns[c].optional === 'required' ? '' : '| null'
             }`
             break
           case 'boolean':
-            tableWhereFieldsString += `${c}?: BoolFilter | ${
+            tableWhereFieldsString += `${c}?: $BoolFilter | ${
               orm.Att[table].columns[c].jsType
             } ${
               orm.Att[table].columns[c].optional === 'required' ? '' : '| null'
@@ -690,12 +694,12 @@ const generateTsType = (orm) => {
             : S extends ${table}_args | ${table}_findMany_args | ${table}_select
             ? '*' extends Extract<keyof ('select' extends keyof S ? S['select'] : S), '*'>
             ?  {[P in keyof ${table}]: ${table}[P]} & {
-                [P in TrueKeys<Omit<('select' extends keyof S ? S['select'] : S), '*'>>]: P extends keyof ${table}
+                [P in $TrueKeys<Omit<('select' extends keyof S ? S['select'] : S), '*'>>]: P extends keyof ${table}
                                 ? ${table}[P]
                                 : ${payloadFields.join('\n')}
                                 never
               } : {
-            [P in TrueKeys<('select' extends keyof S ? S['select'] : S)>]: P extends keyof ${table} ? ${table}[P]
+            [P in $TrueKeys<('select' extends keyof S ? S['select'] : S)>]: P extends keyof ${table} ? ${table}[P]
                 :${payloadFields.join('\n')}
            never }  : {[P in keyof ${table}]: ${table}[P]}`
 
