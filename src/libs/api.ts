@@ -560,8 +560,8 @@ const generateTsType = (orm) => {
               }`
             )
             tableInsertFields.push(`${c}?: {
-              insert?: Omit<${orm.Att[table].columns[c].type}_insert, '${orm.Att[table].columns[c].relation.relColumn}'> | Omit<${orm.Att[table].columns[c].type}_insert, '${orm.Att[table].columns[c].relation.relColumn}'>[]
-              connect?: ${orm.Att[table].columns[c].type}_unique_where | ${orm.Att[table].columns[c].type}_unique_where[]
+              insert?: $Enumerable<Omit<${orm.Att[table].columns[c].type}_insert, '${orm.Att[table].columns[c].relation.relColumn}'>>
+              connect?: $Enumerable<${orm.Att[table].columns[c].type}_unique_where>
             }`)
             tableUpdateFields.push(`${c}?: {
               insert?: $Enumerable<Omit<${orm.Att[table].columns[c].type}_insert, '${orm.Att[table].columns[c].relation.relColumn}'>>
@@ -704,8 +704,8 @@ const generateTsType = (orm) => {
             ? never
             : S extends ${table}_args | ${table}_findMany_args | ${table}_select
             ? '*' extends Extract<keyof ('select' extends keyof S ? S['select'] : S), '*'>
-            ?  {[P in keyof ${table}]: ${table}[P]} & {
-                [P in $TrueKeys<Omit<('select' extends keyof S ? S['select'] : S), '*'>>]: P extends keyof ${table}
+            ?  {
+                [P in (keyof ${table} | $TrueKeys<Omit<('select' extends keyof S ? S['select'] : S), '*'>>)]: P extends keyof ${table}
                                 ? ${table}[P]
                                 : ${payloadFields.join('\n')}
                                 never
@@ -770,12 +770,12 @@ const generateTsType = (orm) => {
     }`
     let tableAggregateArgs = `type ${table}_aggregate_args = {
                 select?: ${table}_aggregate
-                where: ${table}_where
+                where?: ${table}_where
                 sql?: boolean
             }`
     let tableAggregateNumberArgs = `type ${table}_aggregateNumber_args = {
-                select?: ${table}_aggregateNumber
-                where: ${table}_where
+                select: ${table}_aggregateNumber
+                where?: ${table}_where
                 sql?: boolean
             }`
     tsType.push(tableType)
