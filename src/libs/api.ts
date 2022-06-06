@@ -350,20 +350,20 @@ const Orm = (tables: { [k: string]: Table | View }) => {
 }
 // Generate table types
 const generateTsType = (orm) => {
-  let tsType = []
-  for (let table in orm.Att) {
-    let tableTypeFields = []
-    let tableSelectTypeFields = []
-    let tableWhereFields = []
+  const tsType = []
+  for (const table in orm.Att) {
     let tableUniqueWhere = `export type ${table}_unique_where = {\n`
-    let tableOrderByFields = []
-    let tableInsertFields = []
-    let tableUpdateFields = []
-    let tableUpdateManyFields = []
-    let tableAggregateNumberFields = []
-    let tableAggregateFields = []
-    let payloadFields = []
-    for (let c in orm.Att[table].columns) {
+    const tableOrderByFields = []
+    const tableTypeFields = []
+    const tableSelectTypeFields = []
+    const tableWhereFields = []
+    const tableInsertFields = []
+    const tableUpdateFields = []
+    const tableUpdateManyFields = []
+    const tableAggregateNumberFields = []
+    const tableAggregateFields = []
+    const payloadFields = []
+    for (const c in orm.Att[table].columns) {
       if (orm.Att[table].columns[c].relation) {
         switch (orm.Att[table].columns[c].relation.kind) {
           case 'foreign':
@@ -645,7 +645,7 @@ const generateTsType = (orm) => {
       }
     }
     for (let u = 0; u < orm.Att[table].uniques.length; u++) {
-      for (let f of orm.Att[table].uniques[u]) {
+      for (const f of orm.Att[table].uniques[u]) {
         tableUniqueWhere += `${f}: ${orm.Att[table].columns[f].jsType}\n`
       }
       tableUniqueWhere += `} `

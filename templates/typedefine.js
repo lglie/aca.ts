@@ -477,15 +477,12 @@ type $SelectSubset<T, U> = {
   [key in keyof T]: key extends keyof U ? T[key] : never
 } & ('select' extends T ? 'Please either choose select.' : {})
 
-type $RequiredKeys<T> = {
-  [K in keyof T]-?: {} extends Pick<T, K> ? never : K
-}[keyof T]
 
 type $TruthyKeys<T> = {
   [key in keyof T]: T[key] extends false | undefined | null ? never : key
 }[keyof T]
 
-type $TrueKeys<T> = $TruthyKeys<Pick<T, $RequiredKeys<T>>>
+type $TrueKeys<T> = $TruthyKeys<Pick<T, Require<T>>>
 
 type $HasSelect = {
   select: any
