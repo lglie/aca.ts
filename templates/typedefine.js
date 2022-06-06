@@ -68,7 +68,7 @@ const Select = (Tb, X, S) => `
 `
 
 module.exports = `\n
-type $Enums = keyof $Enum
+type $EnumKeys = keyof $Enum
 
 type $Enumerable<T> = T | Array<T>
 
@@ -179,15 +179,15 @@ type $RelationColumns<
 
 type $SimpleScalarAllFilter<T> = {
   eq?: NonNullable<T> | (undefined extends T ? null : never)
-  lt?: NonNullable<T> extends boolean | $Enums ? never : NonNullable<T>
-  gt?: NonNullable<T> extends boolean | $Enums ? never : NonNullable<T>
-  lte?: NonNullable<T> extends boolean | $Enums ? never : NonNullable<T>
-  gte?: NonNullable<T> extends boolean | $Enums ? never : NonNullable<T>
+  lt?: NonNullable<T> extends boolean | $EnumKeys ? never : NonNullable<T>
+  gt?: NonNullable<T> extends boolean | $EnumKeys ? never : NonNullable<T>
+  lte?: NonNullable<T> extends boolean | $EnumKeys ? never : NonNullable<T>
+  gte?: NonNullable<T> extends boolean | $EnumKeys ? never : NonNullable<T>
   like?: NonNullable<T> extends string ? NonNullable<T> : never
   in?:
-    | (NonNullable<T> extends $Enums ? Array<NonNullable<T>> : never)
+    | (NonNullable<T> extends $EnumKeys ? Array<NonNullable<T>> : never)
     | (NonNullable<T> extends boolean ? never : Array<NonNullable<T>>)
-  between?: NonNullable<T> extends boolean | $Enums
+  between?: NonNullable<T> extends boolean | $EnumKeys
     ? never
     : [NonNullable<T>, NonNullable<T>?]
   contains?: NonNullable<T> extends string ? NonNullable<T> : never
@@ -206,7 +206,7 @@ type $SimpleScalarNotFilter<T> = {
             ? never
             :
                 | 'in'
-                | (T extends $Enums
+                | (T extends $EnumKeys
                     ? never
                     :
                         | 'lt'

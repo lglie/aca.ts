@@ -206,7 +206,7 @@ Using this command to update the database schema and api when orm changes in the
 `
 
 export const createdEchoServer = () => `
-Run: aca up, or: aca rollback
+Run: aca up
 `
 
 export function apiIndexClient(dbs: string[], RPCs: string[]) {
@@ -234,14 +234,6 @@ export type { $Enum, $TbOper, $TB } from './aca'
 export { $RPC, ${dbs.join(', ')} } from './aca'
 `
 }
-
-export const aggregateCount = (table: string, query: string) => `{
-  select: ${
-    query == 'count' ? `'*' | ` : ''
-  }{ [K in $ScalarColumns<'${table}'>]: K }[$ScalarColumns<'${table}'>]
-  where?: NonNullable<$TableQuery<'${table}'>['aggregate']>['where']
-  sql?: NonNullable<$TableQuery<'${table}'>['aggregate']>['sql']
-}`
 
 export const reqInstTpl = (fnStr: string, dbStr: string) => `export const $ = {
   $RPC: {

@@ -23,7 +23,6 @@ import {
   sqlRawServer,
   constructor,
   apiIndexClient,
-  aggregateCount,
   fnTpl,
   reqInstTpl,
   reqInitValueTpl,
@@ -391,27 +390,27 @@ const generateTsType = (orm) => {
                 insert?: Omit<${
                   orm.Att[table].columns[c].type
                 }_insert,  ${orm.Att[table].columns[c].relation.keys
-                .map((v) => `'${v}'`)
-                .join('|')} | '${orm.Att[table].columns[c].relation.relColumn}'>
+              .map((v) => `'${v}'`)
+              .join('|')} | '${orm.Att[table].columns[c].relation.relColumn}'>
                 connect?: ${orm.Att[table].columns[c].type}_unique_where
                 disconnect?: ${orm.Att[table].columns[c].type}_unique_where
                 update?: Omit<${
                   orm.Att[table].columns[c].type
                 }_update,  ${orm.Att[table].columns[c].relation.keys
-                .map((v) => `'${v}'`)
-                .join('|')} | '${orm.Att[table].columns[c].relation.relColumn}'>
+              .map((v) => `'${v}'`)
+              .join('|')} | '${orm.Att[table].columns[c].relation.relColumn}'>
                 delete?: ${orm.Att[table].columns[c].type}_unique_where
                 upsert?: {
                     insert:  Omit<${
                       orm.Att[table].columns[c].type
                     }_insert,  ${orm.Att[table].columns[c].relation.keys
-                    .map((v) => `'${v}'`)
-                    .join('|')} | '${orm.Att[table].columns[c].relation.relColumn}'>
+              .map((v) => `'${v}'`)
+              .join('|')} | '${orm.Att[table].columns[c].relation.relColumn}'>
                     update:  Omit<${
                       orm.Att[table].columns[c].type
                     }_update,  ${orm.Att[table].columns[c].relation.keys
-                    .map((v) => `'${v}'`)
-                    .join('|')} | '${orm.Att[table].columns[c].relation.relColumn}'>
+              .map((v) => `'${v}'`)
+              .join('|')} | '${orm.Att[table].columns[c].relation.relColumn}'>
                 }
             }`)
             payloadFields.push(
@@ -444,27 +443,27 @@ const generateTsType = (orm) => {
                   insert?: Omit<${
                     orm.Att[table].columns[c].type
                   }_insert,  ${orm.Att[table].columns[c].relation.keys
-                  .map((v) => `'${v}'`)
-                  .join('|')} | '${orm.Att[table].columns[c].relation.relColumn}'>
+                .map((v) => `'${v}'`)
+                .join('|')} | '${orm.Att[table].columns[c].relation.relColumn}'>
                   connect?: ${orm.Att[table].columns[c].type}_unique_where
                   disconnect?: ${orm.Att[table].columns[c].type}_unique_where
                   update?: Omit<${
                     orm.Att[table].columns[c].type
                   }_update,  ${orm.Att[table].columns[c].relation.keys
-                  .map((v) => `'${v}'`)
-                  .join('|')} | '${orm.Att[table].columns[c].relation.relColumn}'>
+                .map((v) => `'${v}'`)
+                .join('|')} | '${orm.Att[table].columns[c].relation.relColumn}'>
                   delete?: ${orm.Att[table].columns[c].type}_unique_where
                   upsert?: {
                       insert:  Omit<${
                         orm.Att[table].columns[c].type
                       }_insert,  ${orm.Att[table].columns[c].relation.keys
-                      .map((v) => `'${v}'`)
-                      .join('|')} | '${orm.Att[table].columns[c].relation.relColumn}'>
+                .map((v) => `'${v}'`)
+                .join('|')} | '${orm.Att[table].columns[c].relation.relColumn}'>
                       update:  Omit<${
                         orm.Att[table].columns[c].type
                       }_update,  ${orm.Att[table].columns[c].relation.keys
-                      .map((v) => `'${v}'`)
-                      .join('|')} | '${orm.Att[table].columns[c].relation.relColumn}'>
+                .map((v) => `'${v}'`)
+                .join('|')} | '${orm.Att[table].columns[c].relation.relColumn}'>
                   }
               }`)
               payloadFields.push(
@@ -486,42 +485,54 @@ const generateTsType = (orm) => {
                   orm.Att[table].columns[c].type
                 }_insert,  ${orm.Att[table].columns[c].relation.keys
                 .map((v) => `'${v}'`)
-                .join('|')} | '${orm.Att[table].columns[c].relation.relColumn}'>>
-                connect?: $Enumerable<${orm.Att[table].columns[c].type}_unique_where>
+                .join('|')} | '${
+                orm.Att[table].columns[c].relation.relColumn
+              }'>>
+                connect?: $Enumerable<${
+                  orm.Att[table].columns[c].type
+                }_unique_where>
               }`)
               tableUpdateFields.push(`${c}?: {
                   insert?: $Enumerable<Omit<${
                     orm.Att[table].columns[c].type
                   }_insert,  ${orm.Att[table].columns[c].relation.keys
-                  .map((v) => `'${v}'`)
-                  .join('|')} | '${orm.Att[table].columns[c].relation.relColumn}'>>
-                  connect?: $Enumerable<${orm.Att[table].columns[c].type}_unique_where>
+                .map((v) => `'${v}'`)
+                .join('|')} | '${
+                orm.Att[table].columns[c].relation.relColumn
+              }'>>
+                  connect?: $Enumerable<${
+                    orm.Att[table].columns[c].type
+                  }_unique_where>
                   disconnect?: $Enumerable<${
                     orm.Att[table].columns[c].type
                   }_unique_where>
-                  delete?: $Enumerable<${orm.Att[table].columns[c].type}_unique_where>
+                  delete?: $Enumerable<${
+                    orm.Att[table].columns[c].type
+                  }_unique_where>
                   upsert?: $Enumerable<{
                     where: ${orm.Att[table].columns[c].type}_unique_where
                     insert: Omit<${
                       orm.Att[table].columns[c].type
                     }_insert,  ${orm.Att[table].columns[c].relation.keys
-                    .map((v) => `'${v}'`)
-                    .join('|')} | '${orm.Att[table].columns[c].relation.relColumn}'>
+                .map((v) => `'${v}'`)
+                .join('|')} | '${orm.Att[table].columns[c].relation.relColumn}'>
                     update: Omit<${
                       orm.Att[table].columns[c].type
                     }_update,  ${orm.Att[table].columns[c].relation.keys
-                    .map((v) => `'${v}'`)
-                    .join('|')} | '${orm.Att[table].columns[c].relation.relColumn}'>
+                .map((v) => `'${v}'`)
+                .join('|')} | '${orm.Att[table].columns[c].relation.relColumn}'>
                   }>
                   update?: $Enumerable<{
                     where: ${orm.Att[table].columns[c].type}_unique_where
                     data: Omit<${
                       orm.Att[table].columns[c].type
                     }_update,  ${orm.Att[table].columns[c].relation.keys
-                    .map((v) => `'${v}'`)
-                    .join('|')} | '${orm.Att[table].columns[c].relation.relColumn}'>
+                .map((v) => `'${v}'`)
+                .join('|')} | '${orm.Att[table].columns[c].relation.relColumn}'>
                   }>
-                  set?: $Enumerable<${orm.Att[table].columns[c].type}_unique_where>
+                  set?: $Enumerable<${
+                    orm.Att[table].columns[c].type
+                  }_unique_where>
                   updateMany?: {
                     where: ${orm.Att[table].columns[c].type}_where
                     data: ${orm.Att[table].columns[c].type}_updateMany
