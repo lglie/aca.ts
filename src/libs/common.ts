@@ -209,10 +209,10 @@ export function addAppConfig(
   expApi: string[],
   apiDir
 ) {
-  const resolveAcaDir = path.resolve(acaDir)
-  const config: Config = require(path.join(resolveAcaDir, Cst.AcaConfig))
+  const acaRoot = path.resolve(acaDir)
+  const config: Config = require(path.join(acaRoot, Cst.AcaConfig))
   const templatePath = path.join(__dirname, '../../templates')
-  const resolveApiDir = path.join(resolveAcaDir, appName, apiDir)
+  const resolveApiDir = path.join(acaRoot, appName, apiDir)
 
   const serverFiles = {
     [Cst.ServerRPCIndex]: 'rpc-index',
@@ -250,7 +250,7 @@ export function addAppConfig(
   }
 
   fs.writeFileSync(
-    path.join(resolveAcaDir, Cst.AcaConfig),
+    path.join(acaRoot, Cst.AcaConfig),
     JSON.stringify(config, null, 2),
     'utf-8'
   )
@@ -258,18 +258,22 @@ export function addAppConfig(
   // install axios
   if (
     kind === 'client' &&
-    !fs.existsSync(path.join(resolveAcaDir, appName, 'node_modules', 'axios'))
+    !fs.existsSync(path.join(acaRoot, appName, 'node_modules', 'axios'))
   ) {
     console.log(`Installing axios...`)
-    execSync(`cd ${path.join(resolveAcaDir, appName)} & npm install axios`)
+    process.chdir(path.join(acaRoot, appName))
+    execSync(`npm install axios`)
   }
+
+  console.log(`\nRun the following command to start development:`)
+  console.log(`$ cd ${acaDir === '..' ? '../' : ''}${appName}`)
+  console.log(`$ npm start`)
 }
-// If the current working directory is the project directory, return ".aca", If it is the app directory, return the app directory name, otherwise return undefined
+// If the current working directory is the project directory, return ".", If it is the app directory, return the app directory name, otherwise return undefined
 export function currentDir() {
-  const higher = path.join('..', Cst.AcaDir)
-  if (fs.existsSync(Cst.AcaDir)) return Cst.AcaDir
-  else if (fs.existsSync(higher)) {
-    return path.resolve('.').split(/\\|\//).reverse()[0]
+  if (fs.existsSync(Cst.AcaDir)) return '.'
+  else if (fs.existsSync(path.join('..', Cst.AcaDir))) {
+    return path.basename(path.resolve('.'))
   }
 }
 // Check the apps in the config and remove apps that are deleted

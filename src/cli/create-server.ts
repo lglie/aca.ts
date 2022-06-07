@@ -22,12 +22,12 @@ async function pkg(acaDir: AcaDir, dbs: Dbs, dir: string) {
 
 // aca server
 export async function server(yargs: any) {
-  const workDir = currentDir()
-  if (!workDir)
+  const currDir = currentDir()
+  if (!currDir)
     throw new Error(
       `Current directory is not an aca project directory. Please move to the project directory or the app directory under the project to run the command`
     )
-  const acaDir = workDir === Cst.AcaDir ? '.' : '..'
+  const acaDir = currDir === '.' ? '.' : '..'
   const acaRoot = path.resolve(acaDir)
   const name = yargs.argv['_'][1] || Cst.DefaultServerName
   if (fs.existsSync(path.join(acaRoot, name)))
@@ -64,8 +64,8 @@ export async function server(yargs: any) {
     expArr,
     path.join(Cst.DefaultTsDir, Cst.DefaultServerApiDir)
   )
-  console.log(`loading npm, please wait...`)
   process.chdir(`${acaDir}/${name}`)
+  console.log(`loading npm, please wait...`)
   execSync(`npm install`)
   console.log(createdEchoServer())
 }

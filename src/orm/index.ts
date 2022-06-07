@@ -819,11 +819,11 @@ async function PickModel(acaDir: '.' | '..', ast: ts.SourceFile) {
 }
 
 export default async function (acaDir: '.' | '..', content?: string) {
-  const resolveAcaDir = path.resolve(acaDir)
+  const acaRoot = path.resolve(acaDir)
   if (!content) {
-    const config: Config = require(path.join(resolveAcaDir, Cst.AcaConfig))
+    const config: Config = require(path.join(acaRoot, Cst.AcaConfig))
     content = fs.readFileSync(
-      path.join(resolveAcaDir, Cst.AcaDir, config.orm),
+      path.join(acaRoot, Cst.AcaDir, config.orm),
       'utf-8'
     )
   }

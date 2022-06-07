@@ -6,12 +6,12 @@ import orm from '../orm'
 
 // command format: aca add [dirname] -s(-c)
 export async function addApp(yargs: any) {
-  const workDir = currentDir()
-  if (!workDir)
+  const currDir = currentDir()
+  if (!currDir)
     throw new Error(
       `Current directory is not an aca project directory. Please move to the project directory or the app directory under the project to run the command`
     )
-  const acaDir = workDir === Cst.AcaDir ? '.' : '..'
+  const acaDir = currDir === '.' ? '.' : '..'
   const argv = yargs.argv
   const server = Cst.DefaultServerName,
     client = Cst.DefaultClientName
@@ -21,7 +21,7 @@ export async function addApp(yargs: any) {
     throw new Error(`Missing Command Parameters: --server or: --client`)
   let appName: string = argv._[1]
 
-  if (workDir === Cst.AcaDir) {
+  if (currDir === '.') {
     if (!appName)
       throw new Error(`No appName, usage: aca add [appName] <-s -c>`)
     if (!fs.existsSync(appName) || !fs.statSync(appName).isDirectory())
@@ -33,7 +33,7 @@ export async function addApp(yargs: any) {
       const namePath = path.join(acaDir, appName)
       if (!fs.existsSync(namePath) || !fs.statSync(namePath).isDirectory())
         throw new Error(`The app '${name}' does not exist under this project`)
-    } else appName = workDir
+    } else appName = currDir
   }
 
   const dbs = Object.keys((await orm(acaDir)).dbs)

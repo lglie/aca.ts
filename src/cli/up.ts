@@ -8,7 +8,6 @@ import { CreateAllTblSqls, DbDiffSqls } from '../libs/database'
 import SqlDiff from '../libs/sql-diff'
 import Api from '../libs/api'
 import orm from '../orm'
-import { promisify } from 'util'
 import { remark } from '../libs/templates'
 
 const msg = (acaDir: AcaDir, config: Config) => {
@@ -367,17 +366,17 @@ async function betterSqlite3(
 }
 
 export async function up(yargs: any) {
-  const workDir = currentDir()
-  if (!workDir)
+  const currDir = currentDir()
+  if (!currDir)
     throw new Error(
       `Current directory is not an aca project directory. Please move to the project directory or the app directory under the project to run the command`
     )
-  const acaDir = workDir === Cst.AcaDir ? '.' : '..'
-  const rlvAcaDir = path.resolve(acaDir)
-  const config: Config = require(path.join(rlvAcaDir, Cst.AcaConfig))
+  const acaDir = currDir === '.' ? '.' : '..'
+  const acaRoot = path.resolve(acaDir)
+  const config: Config = require(path.join(acaRoot, Cst.AcaConfig))
   const isRollback = yargs.argv['_'][0] === 'rollback' ? true : false
   const timestamp = Date.now()
-  let logs = <Remark[]>require(path.join(rlvAcaDir, Cst.AcaMiscRemark))
+  let logs = <Remark[]>require(path.join(acaRoot, Cst.AcaMiscRemark))
   let changed: string[] = [],
     rollOrm,
     ast: Ast
