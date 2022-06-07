@@ -695,7 +695,11 @@ const generateTsType = (orm) => {
     }
     for (let u = 0; u < orm.Att[table].uniques.length; u++) {
       for (const f of orm.Att[table].uniques[u]) {
-        tableUniqueWhere += `${f}: ${orm.Att[table].columns[f].jsType}\n`
+        tableUniqueWhere += `${f}: ${
+          orm.Att[table].columns[f].type === 'enum'
+            ? `$Enum['${orm.Att[table].columns[f].jsType}']`
+            : orm.Att[table].columns[f].jsType
+        }\n`
       }
       tableUniqueWhere += `} `
       if (u !== orm.Att[table].uniques.length - 1) {
