@@ -975,9 +975,7 @@ const $Queries = function <Tb extends keyof $TB>(trx: any, sql: string[] = []) {
             .insert(
               argsValidate(
                 table,
-                {
-                  ...argsValidate(table, dbCols(table, scalarCols), 'insert'),
-                },
+                dbCols(table, scalarCols),
                 'insert'
               )
             )
