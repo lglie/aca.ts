@@ -662,11 +662,11 @@ const generateTsType = (orm) => {
           tableInsertFields.push(
             `${c}${
               orm.Att[table].columns[c].optional !== 'required' ? '?' : ''
-            }: ${orm.Att[table].columns[c].jsType}`
+            }: ${orm.Att[table].columns[c].type === 'enum' ? `$Enum['${orm.Att[table].columns[c].jsType}']`: orm.Att[table].columns[c].jsType}`
           )
-          tableUpdateFields.push(`${c}?: ${orm.Att[table].columns[c].jsType}`)
+          tableUpdateFields.push(`${c}?: ${orm.Att[table].columns[c].type === 'enum' ? `$Enum['${orm.Att[table].columns[c].jsType}']`: orm.Att[table].columns[c].jsType}`)
         }
-        tableUpdateManyFields.push(`${c}?: ${orm.Att[table].columns[c].jsType}`)
+        tableUpdateManyFields.push(`${c}?: ${orm.Att[table].columns[c].type === 'enum' ? `$Enum['${orm.Att[table].columns[c].jsType}']`: orm.Att[table].columns[c].jsType}`)
         if (orm.Att[table].columns[c].jsType === 'number') {
           tableAggregateNumberFields.push(`'${c}'`)
         }
