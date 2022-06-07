@@ -592,9 +592,6 @@ const generateTsType = (orm) => {
         let tableWhereFieldsString = ''
         switch (orm.Att[table].columns[c].type) {
           case 'enum':
-            orm.Att[table].columns[
-              c
-            ].jsType = `$Enum['${orm.Att[table].columns[c].jsType}']`
             tableWhereFieldsString = `${c}?: $EnumFilter<${orm.Att[table].columns[c].jsType}> | ${orm.Att[table].columns[c].jsType}`
             break
           case 'string':
@@ -654,7 +651,7 @@ const generateTsType = (orm) => {
             }`
         }
         tableTypeFields.push(
-          `${c}?: ${orm.Att[table].columns[c].jsType} ${
+          `${c}?: ${orm.Att[table].columns[c].type === 'enum' ? `$Enum['${orm.Att[table].columns[c].jsType}']`: orm.Att[table].columns[c].jsType} ${
             orm.Att[table].columns[c].optional === 'required' ? '' : '| null'
           }`
         )
