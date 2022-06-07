@@ -182,8 +182,9 @@ function $Handle(trx: Knex.Transaction<any, any[]>) {
         break
       default:
     }
-
-    if ($MutationQuery[<$MutationQuery>query])
+    if ($FindQuery[query])
+      data = await $RtnSelect(table, data, args.select)
+    if ($MutationQuery[query])
       data = await mutatedSelect(data, args.select)
 
     data = data ?? null

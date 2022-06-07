@@ -787,6 +787,7 @@ const $Queries = function <Tb extends keyof $TB>(trx: any, sql: string[] = []) {
           }
           const relationResult = await this.finder(AttCols[key].type, {
             where,
+            select: select[key]
           })
 
           for (const v of result) {
@@ -861,7 +862,7 @@ const $Queries = function <Tb extends keyof $TB>(trx: any, sql: string[] = []) {
               )
           }
         }
-        result = $RtnSelect(table, result, select)
+
       }
 
       return result
