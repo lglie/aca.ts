@@ -28,9 +28,9 @@ export async function server(yargs: any) {
       `Current directory is not an aca project directory. Please move to the project directory or the app directory under the project to run the command`
     )
   const acaDir = workDir === Cst.AcaDir ? '.' : '..'
-  const rlvAcaDir = path.resolve(acaDir)
+  const acaRoot = path.resolve(acaDir)
   const name = yargs.argv['_'][1] || Cst.DefaultServerName
-  if (fs.existsSync(path.join(rlvAcaDir, name)))
+  if (fs.existsSync(path.join(acaRoot, name)))
     throw new Error(
       `The app '${name}' already exists and cannot be created again`
     )
@@ -39,7 +39,7 @@ export async function server(yargs: any) {
   const expArr = Object.keys(dbs).concat(Cst.ServerApiExport)
   const exp = expArr.join(', ')
   const templatePath = path.join(__dirname, '../../templates')
-  const tsDir = path.join(rlvAcaDir, name, Cst.DefaultTsDir)
+  const tsDir = path.join(acaRoot, name, Cst.DefaultTsDir)
   const tpl = {
     'index.ts': indexKoa(exp),
   }
@@ -52,7 +52,7 @@ export async function server(yargs: any) {
 
   fs.copyFileSync(
     path.join(templatePath, 'tsconfig.app'),
-    path.join(rlvAcaDir, name, Cst.ServerTsconfig)
+    path.join(acaRoot, name, Cst.ServerTsconfig)
   )
   // Introduce corresponding package according to the database required in orm and generate package.json file
   await pkg(acaDir, dbs, name)
@@ -65,6 +65,7 @@ export async function server(yargs: any) {
     path.join(Cst.DefaultTsDir, Cst.DefaultServerApiDir)
   )
   console.log(`loading npm, please wait...`)
-  execSync(`cd ${acaDir}/${name} & npm install`)
+  process.chdir(`${acaDir}/${name}`)
+  execSync(`npm install`)
   console.log(createdEchoServer())
 }
