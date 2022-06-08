@@ -1224,17 +1224,17 @@ const $Queries = function <Tb extends keyof $TB>(trx: any, sql: string[] = []) {
       let tableRtn
       if (Object.keys(scalarColumns).length) {
         const trxTmp = await trxQuery(
-          trx.raw(
-            trxWhere(
-              updateOperator(table, scalarColumns).returning(
-                args.select ? Object.keys(args.select) : '*'
-              ),
+          trx($Att[table].dbName)
+          .where(args?.where)
+          .update(
+            argsValidate(
               table,
-              args?.where
-            ).toString()
-          )
+              dbCols(table, scalarColumns),
+              'update'
+            )
+          ).returning(args.select ? Object.keys(args.select) : '*')
         )
-        tableRtn = trxTmp.rows
+        tableRtn = trxTmp
       } else {
         tableRtn = await trxWhere(
           trx($Att[table].dbName).select(
