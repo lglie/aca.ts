@@ -64,8 +64,8 @@ export async function server(yargs: any) {
     expArr,
     path.join(Cst.DefaultTsDir, Cst.DefaultServerApiDir)
   )
-  process.chdir(`${acaDir}/${name}`)
   console.log(`loading npm, please wait...`)
+  process.chdir(`${acaDir}/${name}`)
   execSync(`npm install`)
   console.log(createdEchoServer())
 }
