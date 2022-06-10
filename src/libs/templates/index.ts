@@ -13,6 +13,7 @@ export const ${dbVar} =new (class {
 export const transaction = (queries: string) => `
 async transaction() {
   const trx = await this.knex.transaction()
+  trx['$Driver'] = this.$Driver
 
   return {
     async commit() {
@@ -67,6 +68,7 @@ export const pkgServer = (name: string, drivers: string[]) => {
 // Table query interface template
 export const tableQuery = (query, tblName) => `{
   const trx = await this.knex.transaction()
+  trx['$Driver'] = this.$Driver
   try {
     const rtn = await $Handle( trx )({ query: '${query}', table: '${tblName}', args })
     await trx.commit()
@@ -92,6 +94,7 @@ export const classFooterClient = (dbVar: string) => `\n$ = {
 export const sqlRawServer = (dbVar) => `\n$ = {
   raw: async (args: string): Promise<{ data?: unknown; error?: string }> => {
     const trx = await this.knex.transaction()
+    trx['$Driver'] = this.$Driver
     try {
       const data = (await trx.raw(args)).rows
       await trx.commit()
@@ -116,22 +119,22 @@ export const constructor = (config: DbConfig) => {
   const sqlDiff = SqlDiff(driver)
 
   return `
-private knex: Knex < any, unknown[] >
+  private $Driver = '${sqlDiff.keyword.fullName}'
+  private knex: Knex < any, unknown[] >
   constructor() {
-  const driver = '${sqlDiff.keyword.fullName}'
-  let connection = process.env['${
-    config.connectOption.envConnect || ''
-  }'] || ${JSON.stringify(config.connectOption.connect, null, 2)}
+    let connection = process.env['${
+      config.connectOption.envConnect || ''
+    }'] || ${JSON.stringify(config.connectOption.connect, null, 2)}
 
-try {
-  if (typeof connection == 'string') connection = JSON.parse(connection)
-} catch (e) { }
+  try {
+    if (typeof connection == 'string') connection = JSON.parse(connection)
+  } catch (e) { }
 
-this.knex = knex({
-  client: driver,
-  ${sqlDiff.keyword.stmt.additionalConnectOpts}
-  connection: ${sqlDiff.keyword.stmt.connectionOpts}
-})
+  this.knex = knex({
+    client: this.$Driver,
+    ${sqlDiff.keyword.stmt.additionalConnectOpts}
+    connection: ${sqlDiff.keyword.stmt.connectionOpts}
+  })
 }
 `
 }
