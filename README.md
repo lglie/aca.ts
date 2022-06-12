@@ -67,7 +67,7 @@ $ cd <projectName>
 
 2. Open .aca directory, copy your custom ORM file into the directory, and add this file name to config.json/orm field.
 
-<img with="80px" hight="180px" src="https://aca.ts.center/static/config.jpg">
+<img with="80px" hight="180px" src="https://aca.ts.center/config.jpg">
 
 3. Use the following method to create aca.ts apps:
 
@@ -100,11 +100,11 @@ Then the database, frontend (if necessary), and backend are all set up, you can 
 
 #
 
-> <font color=red>The generated backend APIs usage example are as follows:</font> <img with="80px" hight="180px" src="https://aca.ts.center/static/server-koa-index.jpg">
+> <font color=red>The generated backend APIs usage example are as follows:</font> <img with="80px" hight="180px" src="https://aca.ts.center/server-koa-index.jpg">
 
 #
 
-> <font color=red>The generated frontend APIs usage example are as follows:</font> <img with="80px" hight="180px" src="https://aca.ts.center/static/client-react-app.jpg">
+> <font color=red>The generated frontend APIs usage example are as follows:</font> <img with="80px" hight="180px" src="https://aca.ts.center/client-react-app.jpg">
 
 #
 

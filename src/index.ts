@@ -8,20 +8,21 @@ require('shelljs/global')
 const yargs = require('yargs')
 
 const comment = {
-  create: 'Init a new aca project [dirname]',
-  server: 'Create a server [dirname] application, [dirname] default: server.',
-  client: 'Create a client [dirname] application, [dirname] default: client.',
-  add: 'Add a app config. -s(--server) or -c(--client): server app or client app, -a [name]: apiDir name, default src/aca.server or src/aca.client',
-  up: 'Alter database schema and generate api',
-  rollback: 'Rollback to previous release',
+  create: 'create a new aca project <projectName>',
+  server: 'create a server app, [appName] default: server',
+  client: 'create a client app, [appName] default: client',
+  add: 'add yourself app to the project, -s(--server) -c(--client), -a(--apiDir) [path]: default src/aca.server src/aca.client',
+  up: 'create or alter database schema, and generate api',
+  rollback: 'rollback to previous release',
 }
 const usage = `
-aca create [dirname]  ${comment.create}
-aca server [dirname]  ${comment.server}
-aca client [dirname]  ${comment.client}
-aca add [dirname] <-s or -c> -a [name]  ${comment.add}
-aca up  ${comment.up}
-aca rollback  ${comment.rollback}
+aca create <projectName>           ${comment.create}
+aca server [appName]               ${comment.server}
+aca client [appName]               ${comment.client}
+aca add [appName] -s -c -a [path]  ${comment.add}
+aca up                             ${comment.up}
+aca rollback                       ${comment.rollback}
+aca --version                      show current version
 `
 
 if (yargs.argv._.length) {
