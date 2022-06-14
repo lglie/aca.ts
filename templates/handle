@@ -77,7 +77,7 @@ const $Queries = function <Tb extends keyof $TB>(trx: any, sql: string[] = []) {
           // Determine jsType
           if (
             AttCols[AttCol].type === 'enum'
-              ? !$Enum[<keyof $Enum>AttCols[AttCol].jsType].includes(
+              ? !$Enum[AttCols[AttCol].jsType].includes(
                   <any>records[i][AttCol]
                 )
               : typeof records[i][AttCol] !== AttCols[AttCol].jsType
@@ -1159,9 +1159,7 @@ const $Queries = function <Tb extends keyof $TB>(trx: any, sql: string[] = []) {
             foreignWhere[references[i]] =
               args.where[keys[i]] ||
               (!currTable &&
-                ([currTable] = await trxQuery(
-                  trx($Att[table].dbName).where(args.where).select('*')
-                )),
+                ([currTable] = trxTmp),
               currTable[keys[i]])
           }
           if (v.connect && v.insert) {
@@ -1296,62 +1294,22 @@ const $Queries = function <Tb extends keyof $TB>(trx: any, sql: string[] = []) {
             // one-to-many relationship
             if (v.set) {
               await trxQuery(
-                trx($Att[AttCol.type].dbName).where(relationForeign).del()
+                trx($Att[AttCol.type].dbName).where(relationForeign).update(keys.reduce(
+                  (_: any, v: any) => ((_[v] = null), _),
+                  {}
+                ))
               )
-
-              const sets = Array.isArray(v.set) ? v.set : [v.set]
-              for (const record of sets) {
-                if (
-                  Object.keys(record).length === 1 &&
-                  $Att[AttCol.type].uniques.some(
-                    (v) => record[Array.isArray(v) ? v.join('_') : v]
-                  )
-                ) {
-                  const columns = $Att[AttCol.type].columns
-                  let requiredItem = []
-                  $Att[AttCol.type].uniques.some((v) => {
-                    const items = Array.isArray(v) ? v : [v]
-                    if (record[items.join('_')]) {
-                      requiredItem = Object.keys(columns).filter((v) =>
-                        items.includes(v)
-                          ? false
-                          : 'required' === columns[v].optional
+              if (!Array.isArray(v.set)) v.set = [v.set]
+                await trxQuery(
+                  trx.raw(
+                    v.set
+                      .reduce(
+                        (_, v) => trxWhere(_, AttCol.type, v, 'OR'),
+                        trx($Att[AttCol.type].dbName).update(relationForeign)
                       )
-                      return true
-                    } else return false
-                  })
-
-                  if (requiredItem.length) {
-                    await trxWhere(
-                      trx($Att[AttCol.type].dbName).update(relationForeign),
-                      AttCol.type,
-                      record
-                    )
-                  } else {
-                    await trxQuery(
-                      trx($Att[AttCol.type].dbName)
-                        .insert(
-                          argsValidate(
-                            AttCol.type,
-                            {
-                              ...record,
-                              ...relationForeign,
-                            },
-                            'insert'
-                          )
-                        )
-                        .onConflict(Object.keys(record))
-                        .merge(relationForeign)
-                        .returning($Att[AttCol.type].id)
-                    )
-                  }
-                }
-                // is to create
-                else
-                  await this.insert(AttCol.type, {
-                    data: { ...record, ...relationForeign },
-                  })
-              }
+                      .toString()
+                  )
+                )
             } else {
               if (v.connect) {
                 if (!Array.isArray(v.connect)) v.connect = [v.connect]

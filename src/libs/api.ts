@@ -777,7 +777,7 @@ const generateTsType = (orm) => {
             }`
     let tableInsertArgs = `export type ${table}_insert_args = {
                 select?: ${table}_select | null 
-                data: ${table}_insert
+                data: $Enumerable<${table}_insert>
                 sql?: boolean
             }`
     let tableUpdateArgs = `export type ${table}_update_args = {
