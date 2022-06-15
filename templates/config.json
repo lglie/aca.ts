@@ -1,5 +1,5 @@
 {
-  "$schema": "https://www.ts.center/static/config.schema.json",
+  "$schema": ".misc/config.schema.json",
   "orm": "example-blog.ts",
   "databases": {
     "default": {

@@ -264,7 +264,8 @@ export function AlterTblSql(
               )
             }
             if (alterCol.props.default !== undefined) {
-              if (alterCol.props.default.new === '') alterCol.props.default.new = `'${alterCol.props.default.new}'`
+              if (alterCol.props.default.new === '')
+                alterCol.props.default.new = `''`
               rtn.alter.push(
                 sqlDiff
                   .tbl(tbl.dbName)

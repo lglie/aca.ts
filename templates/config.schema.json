@@ -1,0 +1,120 @@
+{
+  "type": "object",
+  "properties": {
+    "orm": {
+      "type": "string"
+    },
+    "databases": {
+      "type": "object",
+      "description": "Database config, default: default",
+      "properties": {
+        "default": {
+          "$ref": "#/$defs/database"
+        }
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/database"
+      }
+    },
+    "serverApps": {
+      "type": "object",
+      "description": "Server app configuration, with the directory name of the application as the key",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "apiDir": {
+            "type": "string",
+            "description": "The path of the directory where the automatically generated API is stored. default: src/aca.server"
+          }
+        }
+      }
+    },
+    "clientApps": {
+      "type": "object",
+      "description": "Client app configuration, with the directory name of the application as the key",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "apiDir": {
+            "type": "string",
+            "description": "The path of the directory where the automatically generated API is stored. default: src/aca.client"
+          },
+          "allowRPCs": {
+            "type": "array",
+            "description": "List of servers that allow this application to access server RPC"
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "database": {
+      "type": "object",
+      "description": "Information about the configuration of the database. The database address supports environment variable",
+      "properties": {
+        "tableNameWithNamespace": {
+          "type": "boolean"
+        },
+        "onlyApi": {
+          "type": "boolean"
+        },
+        "driver": {
+          "type": "string",
+          "enum": [
+            "pg",
+            "mssql",
+            "mariadb",
+            "betterSqlite3"
+          ]
+        },
+        "envConnection": {
+          "type": [
+            "string",
+            "object"
+          ]
+        },
+        "connection": {
+          "type": [
+            "string",
+            "object"
+          ]
+        },
+        "idDefaultType": {
+          "type": "string",
+          "description": "default id type",
+          "enum": [
+            "cuid",
+            "uuid",
+            "autoincrement",
+            "string",
+            "int"
+          ]
+        },
+        "foreignKeyConstraint": {
+          "type": "boolean",
+          "description": "Does the database need foreign key constraints"
+        },
+        "onUpdate": {
+          "type": "string",
+          "description": "When the primary key is changed, the default operation of the foreign key",
+          "enum": [
+            "cascade",
+            "set null",
+            "restrict",
+            "no action"
+          ]
+        },
+        "onDelete": {
+          "type": "string",
+          "description": "The default operation of a foreign key when the primary key is deleted",
+          "enum": [
+            "cascade",
+            "set null",
+            "restrict",
+            "no action"
+          ]
+        }
+      }
+    }
+  }
+}

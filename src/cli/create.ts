@@ -6,6 +6,7 @@ import { MkdirsSync } from '../libs/common'
 
 export async function create(yargs: any) {
   const files = {
+    [Cst.AcaConfigSchema]: 'config.schema.json',
     [Cst.AcaConfig]: 'config.json',
     [Cst.AcaExample]: 'example-blog',
     [Cst.AcaOrmPropetty]: '.orm',
