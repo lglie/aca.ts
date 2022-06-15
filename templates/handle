@@ -54,6 +54,10 @@ function $RtnSelect(
     } else return rtnCols
   }
 }
+function isValidDate(value) {
+  const date = new Date(value)
+  return !isNaN(date.getTime())
+}
 
 const $Queries = function <Tb extends keyof $TB>(trx: any, sql: string[] = []) {
   const trxQuery = async (clause: any) => {
@@ -80,7 +84,7 @@ const $Queries = function <Tb extends keyof $TB>(trx: any, sql: string[] = []) {
               ? !$Enum[AttCols[AttCol].jsType].includes(
                   <any>records[i][AttCol]
                 )
-              : typeof records[i][AttCol] !== AttCols[AttCol].jsType
+              : AttCols[AttCol].type === 'Date' ? !isValidDate(records[i][AttCol]) : typeof records[i][AttCol] !== AttCols[AttCol].jsType
           ) {
             throw `table "${$Att[table].dbName}" field "${AttCol}" data type mismatch`
           }
