@@ -548,7 +548,7 @@ const generateTsType = (tables: Tables) => {
         case 'count':
         case 'countDistinct':
           return `
-                where: where
+                where?: where
                 select: '*' | keyof scalar
                 sql?: boolean
                 `
@@ -559,8 +559,12 @@ const generateTsType = (tables: Tables) => {
         case 'max':
         case 'mix':
           return `
-                where: where
-                select: '*' | keyof scalar
+                where?: where
+                select: ${fields
+									.filter((v) => v.fieldType === 'number').length ? fields
+									.filter((v) => v.fieldType === 'number')
+									.map((v) => `'${v.fieldName}'`)
+									.join('|') : 'never'}
                 sql?: boolean
                 `
       }
@@ -626,6 +630,7 @@ const generateTsType = (tables: Tables) => {
         )
         columns[col.jsName].isArray =
           relColOpt.endsWith(']') || col.optional === 'array' ? '[]' : ''
+        columns[col.jsName].required = relColOpt.endsWith(']') || col.optional === 'array' ? '?' : ''
         columns[col.jsName].relationKeys = `'${relColOpt.match(/^\w+/)[0]}'`
         columns[col.jsName].OmitSelectKeys = `'${relColOpt.match(/^\w+/)[0]}'`
         if (col.props.foreign) {
