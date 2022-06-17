@@ -269,24 +269,6 @@ type $NumberUpdateOperator = {
   decrement?: number
 }
 
-type $Upsert<
-  Tb extends keyof $TB,
-  X extends keyof $TB[Tb],
-  S extends $RelationSign
-> = {
-  where: $UN[Tb]
-  insert: ${Insert('Tb', 'X')}
-  update?: ${Update('Tb', 'X', 'S')}
-}
-
-type $Update<
-  Tb extends keyof $TB,
-  X extends keyof $TB[Tb],
-  S extends $RelationSign
-> = {
-  where: $UN[Tb]
-  data: ${Update('Tb', 'X', 'S')}
-}
 
 type $UpdateToOne<
   RTb extends keyof $TB,
@@ -440,20 +422,6 @@ type $TableMutationType<
   select?: $TbOper<Tb>['selectScalar']
 }
 
-type $RelationSelect<
-  Tb extends keyof $TB,
-  X extends Exclude<keyof $TB[Tb], $ScalarColumns<Tb>>,
-  S extends $RelationSign
-> = {
-  [K in keyof Omit<$TB[Tb], S extends 'M2M' ? never : X>]?: NonNullable<
-    $TB[Tb][K]
-  > extends $Relation<infer R, infer R2, infer R3>
-    ? 'toOne' extends R3
-      ? $RelationSelect<R, R2, R3>
-      : $RelationSelect<R, R2, R3>[]
-    : $TB[Tb][K]
-}
-
 export type $ApiBridge =
   | {
       kind: 'rpc'
@@ -473,40 +441,26 @@ export type $ApiBridge =
       args: any
     }
 
-type $SelectSubset<T, U> = {
-  [key in keyof T]: key extends keyof U ? T[key] : never
-} & ('select' extends T ? 'Please either choose select.' : {})
-
-
-type $TruthyKeys<T> = {
-  [key in keyof T]: T[key] extends false | undefined | null ? never : key
-}[keyof T]
-
-type $HasSelect = {
-  select: any
-}
-type $CheckSelect<T, S, U> = T extends $HasSelect ? U : {[P in keyof S]: S[P]}
-
-type $StringFilter = {
+type $stringFilter = {
   eq?: string | null
   in?: $Enumerable<string> | null
   notIn?: $Enumerable<string> | null
   contains?: string
   startsWith?: string
   endsWith?: string
-  not?: $StringFilter | string | null
+  not?: $stringFilter | string | null
   like?: string
   between?: $Enumerable<string>
 }
 
-type $EnumFilter<T> = {
+type $enumFilter<T> = {
   eq?: T
   in?: $Enumerable<T>
   notIn?: $Enumerable<T>
-  not?: $EnumFilter<T> | T
+  not?: $enumFilter<T> | T
 }
 
-type $IntFilter = {
+type $numberFilter = {
   eq?: number | null
   in?: $Enumerable<number> | null
   notIn?: $Enumerable<number> | null
@@ -514,7 +468,7 @@ type $IntFilter = {
   lte?: number
   gt?: number
   gte?: number
-  not?: $IntFilter | number | null
+  not?: $numberFilter | number | null
   like?: number
   between?: $Enumerable<number>
 }
@@ -530,8 +484,8 @@ type $DateFilter = {
   like?: Date | string
   between?: $Enumerable<Date> | $Enumerable<Date>
 }
-type $BoolFilter = {
+type $booleanFilter = {
   eq?: boolean
-  not?: $BoolFilter | boolean
+  not?: $booleanFilter | boolean
 }
 `
