@@ -694,8 +694,6 @@ async function DbApi(ast: Ast) {
 
   for (const k in ast.dbs) {
     const orm = Orm(FlatTables(ast.dbs[k].tables))
-console.log(111,orm.typeDefine);
-
     const tmp: string[] = []
     for (const k2 in orm.typeDefine.table) {
       tmp.push(`  ${k2}: {\n${orm.typeDefine.table[k2].join('\n')}\n  }`)
