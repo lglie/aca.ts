@@ -226,17 +226,18 @@ type $Where<
   X extends keyof $TB[Tb],
   S extends $RelationSign
 > = {
-  [K in Exclude<keyof $TB[Tb], S extends 'M2M' ? never : X>]?:
-    | ($TB[Tb][K] extends $NL[Tb] ? null : never)
-    | (K extends $SimpleScalarColumns<Tb>
-        ? $TB[Tb][K] | $SimpleScalarFilter<$TB[Tb][K]>
-        : NonNullable<$TB[Tb][K]> extends $Relation<infer R, infer R2, infer R3>
-        ? 'toOne' extends R3
-          ? $Where<R, R2, R3>
-          : {
-              [K2 in $ToManyFilter]?: $Where<R, R2, R3>
-            }
-        : never)
+  [K in Exclude<
+    keyof $TB[Tb],
+    S extends 'M2M' ? never : X
+  >]?: K extends $SimpleScalarColumns<Tb>
+    ? $TB[Tb][K] | $SimpleScalarFilter<$TB[Tb][K]>
+    : NonNullable<$TB[Tb][K]> extends $Relation<infer R, infer R2, infer R3>
+    ? 'toOne' extends R3
+      ? $Where<R, R2, R3>
+      : {
+          [K2 in $ToManyFilter]?: $Where<R, R2, R3>
+        }
+    : never
 } & {
   [L in $WhereLogic]?:
     | $Where<Tb, X, S>[]

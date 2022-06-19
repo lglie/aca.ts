@@ -156,18 +156,12 @@ const Orm = (tables: { [k: string]: Table | View }) => {
   const Att: Annotates = {}
   // Definitions for all required types of each table
   const typeDefine: {
-    [k in
-      | 'unique'
-      | 'check'
-      | 'optional'
-      | 'scalar'
-      | 'onTime'
-      | 'foreign'
-      | 'table']: { [k: string]: string[] }
+    [k in 'unique' | 'check' | 'scalar' | 'onTime' | 'foreign' | 'table']: {
+      [k: string]: string[]
+    }
   } = {
     unique: {},
     check: {},
-    optional: {},
     scalar: {},
     onTime: {},
     foreign: {},
@@ -305,8 +299,6 @@ const Orm = (tables: { [k: string]: Table | View }) => {
           optional: col.optional,
         })
 
-        if ('required' !== col.optional)
-          typeDefine.optional[tbl.jsName].push(colName)
         switch (col.type) {
           case 'Date':
             if (col.props.createdAt || col.props.updatedAt)
@@ -334,6 +326,14 @@ const Orm = (tables: { [k: string]: Table | View }) => {
           colDefine = `${Deprecated(col.props.deprecated)}${colDefine}`
           col.optional = 'optional'
         }
+        if (
+          'required' !== col.optional &&
+          col.props.default === undefined &&
+          !col.props.isId &&
+          !col.props.createdAt &&
+          !col.props.updatedAt
+        )
+          colDefine += ' | null'
         typeDefine.scalar[tbl.jsName].push(colDefine)
         typeDefine.table[tbl.jsName].push(colDefine)
       }
@@ -560,11 +560,14 @@ const generateTsType = (tables: Tables) => {
         case 'mix':
           return `
                 where?: where
-                select: ${fields
-									.filter((v) => v.fieldType === 'number').length ? fields
-									.filter((v) => v.fieldType === 'number')
-									.map((v) => `'${v.fieldName}'`)
-									.join('|') : 'never'}
+                select: ${
+                  fields.filter((v) => v.fieldType === 'number').length
+                    ? fields
+                        .filter((v) => v.fieldType === 'number')
+                        .map((v) => `'${v.fieldName}'`)
+                        .join('|')
+                    : 'never'
+                }
                 sql?: boolean
                 `
       }
@@ -615,7 +618,10 @@ const generateTsType = (tables: Tables) => {
       columns[col.jsName] = {
         fieldName: col.jsName,
         isEnum: col.type === 'enum' ? true : false,
-        fieldType: typeTbl.endsWith(']') && col.type !== 'enum' ? typeTbl.slice(0, -2) : typeTbl,
+        fieldType:
+          typeTbl.endsWith(']') && col.type !== 'enum'
+            ? typeTbl.slice(0, -2)
+            : typeTbl,
         required: col.optional === 'required' ? '' : '?',
         isRelation: false,
         isArray: col.optional === 'array' ? '[]' : '',
@@ -630,7 +636,8 @@ const generateTsType = (tables: Tables) => {
         )
         columns[col.jsName].isArray =
           relColOpt.endsWith(']') || col.optional === 'array' ? '[]' : ''
-        columns[col.jsName].required = relColOpt.endsWith(']') || col.optional === 'array' ? '?' : ''
+        columns[col.jsName].required =
+          relColOpt.endsWith(']') || col.optional === 'array' ? '?' : ''
         columns[col.jsName].relationKeys = `'${relColOpt.match(/^\w+/)[0]}'`
         columns[col.jsName].OmitSelectKeys = `'${relColOpt.match(/^\w+/)[0]}'`
         if (col.props.foreign) {
@@ -682,12 +689,12 @@ async function DbApi(ast: Ast) {
     UN: <string[]>[],
     FK: <string[]>[],
     CU: <string[]>[],
-    NL: <string[]>[],
     anno: {},
   }
 
   for (const k in ast.dbs) {
     const orm = Orm(FlatTables(ast.dbs[k].tables))
+console.log(111,orm.typeDefine);
 
     const tmp: string[] = []
     for (const k2 in orm.typeDefine.table) {
@@ -702,7 +709,7 @@ async function DbApi(ast: Ast) {
     }
     dbType.UN.push(...tmp)
 
-    for (const v2 of ['foreign', 'onTime', 'optional']) {
+    for (const v2 of ['foreign', 'onTime']) {
       tmp.length = 0
       for (const k3 in orm.typeDefine[v2]) {
         tmp.push(
@@ -712,9 +719,7 @@ async function DbApi(ast: Ast) {
           }`
         )
       }
-      dbType[
-        <'FK' | 'CU' | 'NL'>{ foreign: 'FK', onTime: 'CU', optional: 'NL' }[v2]
-      ].push(...tmp)
+      dbType[<'FK' | 'CU'>{ foreign: 'FK', onTime: 'CU' }[v2]].push(...tmp)
     }
     // annotation
     Object.assign(dbType.anno, orm.Att)
@@ -722,7 +727,7 @@ async function DbApi(ast: Ast) {
 
   serverApi += clientApi +=
     '\n\nexport ' +
-    ['TB', 'UN', 'FK', 'CU', 'NL']
+    ['TB', 'UN', 'FK', 'CU']
       .map((v) => `type $${v} = {\n${dbType[v].join('\n')}}`)
       .join('\n\n')
 

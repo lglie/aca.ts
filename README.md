@@ -2,7 +2,7 @@ English | [中文文档](https://aca.ts.center/zh)
 
 # Aca.ts
 
-> Aca.ts is a node.js CLI based on Typescript and Knex.js. It can automatically sync database schema according to a custom ORM. It can also automatically generate APIs for accessing the database. More importantly, it can automatically create frontend APIs through backend functions and the generated database APIs (like RPC), so frontend developers can easily access the backend without defining routing. The APIs are typescript, and therefore the tips are very friendly when coding.
+> Aca.ts is a CLI that automatically generates typescript API. It can automatically synchronize database schema according to a custom ORM file(database definition described by typescript class); Automatically generate frontend and backend APIs for accessing the database; Automatically generate frontend APIs with the same name to access Web backend functions (like RPC, do not specify routes). The backend code can be written on the frontend, which is an ideal solution for fullstack development.
 
 Use the class syntax of Typescript to define ORM:
 
