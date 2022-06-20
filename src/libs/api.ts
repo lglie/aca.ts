@@ -343,8 +343,12 @@ const Orm = (tables: { [k: string]: Table | View }) => {
   return { typeDefine, Att }
 }
 // Generate table types
-const generateTsType = (tables: Tables) => {
-  const TblType = (columns, uniques: Array<Array<string>>) => {
+const generateTsType = (tables) => {
+  function titleCase(str) {
+    const newStr = str.slice(0, 1).toUpperCase() + str.slice(1)
+    return newStr
+  }
+  const TblType = (columns, uniques) => {
     const query = (Q) => {
       const fields: any = Object.values(columns)
       switch (Q) {
@@ -355,39 +359,50 @@ const generateTsType = (tables: Tables) => {
               (v) => `${v.fieldName}${v.required}: ${v.fieldType}${v.isArray}`
             )
             .join('\n')
+        case 'orderBy':
+          return fields
+            .filter((v) => !v.isRelation)
+            .map((v) => `${v.fieldName}?:  $Order`)
+            .join('\n')
         case 'where':
           return fields
-            .filter((v) => v.fieldType !== 'object')
             .map(
               (v) =>
                 `${v.fieldName}?: ${
                   v.isRelation
                     ? v.isArray
                       ? `{
-                    every?: ${v.fieldType}.where
-                    some?: ${v.fieldType}.where
-                    none?: ${v.fieldType}.where
+                    every?: Omit<${v.fieldType}.where, ${v.OmitSelectKeys}>
+                    some?: Omit<${v.fieldType}.where, ${v.OmitSelectKeys}>
+                    none?: Omit<${v.fieldType}.where, ${v.OmitSelectKeys}>
                 }`
-                      : `${v.fieldType}.where`
+                      : `Omit<${v.fieldType}.where, ${v.OmitSelectKeys}>`
                     : `${
                         v.isEnum
-                          ? `$enumFilter<${v.fieldType}>`
-                          : `$${v.fieldType}Filter`
-                      } | ${v.fieldType}`
+                          ? `$EnumFilter<${v.fieldType}, ${v.isNull}>`
+                          : `$${titleCase(v.fieldType)}Filter<${v.isNull}>`
+                      } | ${v.fieldType} ${v.isNull ? ' | null' : ''}`
                 }`
             )
             .join('\n')
         case 'select':
           return `
-            '*': boolean
+            '*'?: boolean
             ${fields
               .map(
                 (v) =>
                   `${v.fieldName}?: ${
                     v.isRelation
                       ? v.isArray
-                        ? `${v.fieldType}.findMany | ${v.fieldType}.select`
-                        : `Omit<${v.fieldType}.select, ${v.OmitSelectKeys}>`
+                        ? `Omit<{[P in keyof ${v.fieldType}.select]?: ${v.fieldType}.select[P]}, ${v.OmitSelectKeys}> | {
+										where?: ${v.fieldType}.where
+										orderBy?: ${v.fieldType}.orderBy
+										limit?: number
+                    offset?: number
+										distinct?: '*' | $Enumerable<scalar>
+										select?: Omit<{[P in keyof ${v.fieldType}.select]?: ${v.fieldType}.select[P]}, ${v.OmitSelectKeys}>
+									}`
+                        : `Omit<{[P in keyof ${v.fieldType}.select]?: ${v.fieldType}.select[P]}, ${v.OmitSelectKeys}> | {select?: Omit<{[P in keyof ${v.fieldType}.select]?: ${v.fieldType}.select[P]}, ${v.OmitSelectKeys}>}`
                       : 'boolean'
                   }`
               )
@@ -402,23 +417,26 @@ const generateTsType = (tables: Tables) => {
         case 'findFirst':
           return `
                     where?: where
-                    orderBy?: {[P in keyof scalar]?: $Order}
+                    orderBy?: orderBy
                     select?: {[P in keyof select]?: select[P]}
+										distinct?: '*' | $Enumerable<scalar>
                     sql?: boolean
                 `
         case 'findMany':
           return `
                     where?: where
-                    orderBy?: {[P in keyof scalar]?: $Order}
+                    orderBy?: orderBy
                     limit?: number
                     offset?: number
                     select?: {[P in keyof select]?: select[P]}
+										distinct?: '*' | $Enumerable<scalar>
                     sql?: boolean
                 `
         case 'insert':
           return `
                 data: $Enumerable<{
                     ${fields
+                      .filter((v) => !v.isAuto && !v.isForeign)
                       .map(
                         (v) =>
                           `${v.fieldName}${v.required}: ${
@@ -448,6 +466,7 @@ const generateTsType = (tables: Tables) => {
                 where: uniqueWhere
                 data: {
                     ${fields
+                      .filter((v) => !v.isAuto && !v.isForeign)
                       .map(
                         (v) =>
                           `${v.fieldName}?: ${
@@ -590,7 +609,7 @@ const generateTsType = (tables: Tables) => {
           }`
         )
         .join(' | ')
-    const queries = ['scalar', 'where', 'select', ...Cst.queries]
+    const queries = ['where', 'scalar', 'orderBy', 'select', ...Cst.queries]
       .map(
         (v) => `export ${v === '$' ? 'namespace' : 'type'} ${
           v === 'delete' ? 'del' : v
@@ -608,9 +627,9 @@ const generateTsType = (tables: Tables) => {
         return _
       }, [])
       .join(`\n`)
-
   const tblTypeApi = (tbl, key) => {
-    const columns: any = {}
+    const columns = {}
+    const foreign = []
     for (const k in tbl.columns) {
       const col = tbl.columns[k]
       let [typeTbl, relColOpt] = col.props.jsType.split('.')
@@ -624,9 +643,27 @@ const generateTsType = (tables: Tables) => {
             : typeTbl,
         required: col.optional === 'required' ? '' : '?',
         isRelation: false,
+        isAuto: false,
+        isNull: false,
+        isForeign: foreign.includes(col.jsName) ? true : false,
         isArray: col.optional === 'array' ? '[]' : '',
         relationKeys: 'never',
         OmitSelectKeys: 'never',
+      }
+      if (col.props.createdAt || col.props.updatedAt) {
+        columns[col.jsName].isAuto = true
+      }
+      if (col.props.isId && !['string', 'int'].includes(col.props.idType)) {
+        columns[col.jsName].isAuto = true
+      }
+      if (
+        !col.props.createdAt &&
+        !col.props.updatedAt &&
+        !col.props.isId &&
+        col.optional !== 'required' &&
+        col.props.default === undefined
+      ) {
+        columns[col.jsName].isNull = true
       }
       if (relColOpt) {
         columns[col.jsName].isRelation = true
@@ -637,12 +674,38 @@ const generateTsType = (tables: Tables) => {
         columns[col.jsName].isArray =
           relColOpt.endsWith(']') || col.optional === 'array' ? '[]' : ''
         columns[col.jsName].required =
-          relColOpt.endsWith(']') || col.optional === 'array' ? '?' : ''
+          relColOpt.endsWith(']') || col.optional !== 'required' ? '?' : ''
         columns[col.jsName].relationKeys = `'${relColOpt.match(/^\w+/)[0]}'`
-        columns[col.jsName].OmitSelectKeys = `'${relColOpt.match(/^\w+/)[0]}'`
+
         if (col.props.foreign) {
-          columns[col.jsName].relationKeys +=
-            '|' + col.props.foreign.keys.map((v) => `'${v}'`).join(' | ')
+          if (col.props.foreign.keys) {
+            for (const k of col.props.foreign.keys) {
+              if (columns[k]) {
+                columns[k].isForeign = true
+              }
+              foreign.push(k)
+            }
+          }
+          if (
+            columns[col.jsName].fieldType
+              .split('.')
+              .reduce((_, v) => (_.columns ? _.columns[v] : _[v]), tables)
+          ) {
+            const relationTbl = columns[col.jsName].fieldType
+              .split('.')
+              .reduce((_, v) => (_.columns ? _.columns[v] : _[v]), tables)
+            if (relationTbl) {
+              const relationCol =
+                relationTbl.columns[`${relColOpt.match(/^\w+/)[0]}`]
+              if (relationCol && relationCol.optional !== 'array') {
+                columns[col.jsName].OmitSelectKeys = `'${
+                  relColOpt.match(/^\w+/)[0]
+                }'`
+              }
+            }
+          }
+        } else if (!relColOpt.endsWith(']')) {
+          columns[col.jsName].OmitSelectKeys = `'${relColOpt.match(/^\w+/)[0]}'`
         }
       }
     }
@@ -680,6 +743,11 @@ async function DbApi(ast: Ast) {
   )
   // Generate enum types
   let clientApi =
+    EnumType(ast.enums) +
+    // Type definition
+    require(`${templatePath}/typedefine`)
+
+  serverApi +=
     EnumType(ast.enums) +
     // Type definition
     require(`${templatePath}/typedefine`)
@@ -723,11 +791,11 @@ async function DbApi(ast: Ast) {
     Object.assign(dbType.anno, orm.Att)
   }
 
-  serverApi += clientApi +=
-    '\n\nexport ' +
-    ['TB', 'UN', 'FK', 'CU']
-      .map((v) => `type $${v} = {\n${dbType[v].join('\n')}}`)
-      .join('\n\n')
+  // serverApi += clientApi +=
+  //   '\n\nexport ' +
+  //   ['TB', 'UN', 'FK', 'CU']
+  //     .map((v) => `type $${v} = {\n${dbType[v].join('\n')}}`)
+  //     .join('\n\n')
 
   serverApi += `\n\n${fs.readFileSync(
     path.join(__dirname, `${templatePath}/annotation`),

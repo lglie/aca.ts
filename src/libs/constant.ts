@@ -1,5 +1,5 @@
 export const Delimiter = `__` // Namespace seperator for database table names
-export const ClientApiExport = ['$RPC', '$Enum', '$TB', '$TbOper']
+export const ClientApiExport = ['$RPC', '$Enum']
 export const ServerApiExport = [...ClientApiExport, '$ApiBridge']
 export const FrameworkClient = ['vue', 'react', 'gatsby']
 export const Pkg = `package.json`

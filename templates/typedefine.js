@@ -1,71 +1,3 @@
-const Insert = (Tb, X) => `{[K in keyof Omit<$TB[${Tb}], ${X} | $Auto<${Tb}>>]: Omit<$TB[${Tb}], ${X} | $Auto<${Tb}>>[K]}`
-
-const Update = (Tb, X, S) => `
-{
-  [K in Exclude<
-    keyof $TB[${Tb}],
-    (${S} extends 'M2M' ? never : ${X}) | $Auto<${Tb}>
-  >]?: NonNullable<$TB[${Tb}][K]> extends $Relation<infer R, infer R2, infer R3>
-    ? NonNullable<$TB[${Tb}][K]> extends $Relation<never, never, never>
-      ? $TB[${Tb}][K]
-      : 'toOne' extends R3
-      ? Omit<
-          $UpdateToOne<R, R2, R3>,
-          undefined extends $TB[${Tb}][K]
-            ? never
-            :
-                | 'upsert'
-                | ('toOne' extends ${S}
-                    ? undefined extends $TB[R][R2]
-                      ? 'disconnect'
-                      : never
-                    : never)
-        >
-      : $UpdateToMany<R, R2, R3>
-    : number extends $TB[${Tb}][K]
-    ?
-        | $TB[${Tb}][K]
-        | {
-            increment?: number
-            decrement?: number
-          }
-    : $TB[${Tb}][K]
-}
-`
-const UpdateMany = (Tb) => `
-{
-  [K in keyof Pick<
-    $TB[${Tb}],
-    Exclude<$ScalarColumns<${Tb}>, $Auto<${Tb}>>
-  >]?: number extends Pick<$TB[${Tb}], $ScalarColumns<${Tb}>>[K]
-    ?
-        | Pick<$TB[${Tb}], $ScalarColumns<${Tb}>>[K]
-        | {
-            increment?: number
-            decrement?: number
-          }
-    : Pick<$TB[${Tb}], $ScalarColumns<${Tb}>>[K]
-}
-`
-const Select = (Tb, X, S) => `
-| {
-  '*'?: true
-} & {
-  [K in keyof Omit<$TB[${Tb}], ${S} extends 'M2M' ? never : ${X}>]?: NonNullable<
-    $TB[${Tb}][K]
-  > extends $Relation<infer R, infer R2, infer R3>
-    ? NonNullable<$TB[${Tb}][K]> extends $Relation<never, never, never>
-      ? true
-      :
-          | $Select<R, R2, R3>
-          | ('toOne' extends R3
-              ? {
-                  select?: $Select<R, R2, R3>
-                }
-              : $FindMany<R, R2, R3>)
-    : true
-}
-`
 
 module.exports = `\n
 type $EnumKeys = keyof $Enum
@@ -75,10 +7,6 @@ type $Enumerable<T> = T | Array<T>
 type $Order = 'asc' | 'desc'
 
 type $WhereLogic = 'AND' | 'OR' | 'NOT'
-
-type $ToManyFilter = 'every' | 'some' | 'none'
-
-type $RelationSign = 'toOne' | 'toMany' | 'M2M'
 
 const $FindQuery = {
   findOne: true,
@@ -110,318 +38,6 @@ type $FindQuery = keyof typeof $FindQuery
 type $AggregateQuery = keyof typeof $AggregateQuery
 type $MutationQuery = keyof typeof $MutationQuery
 
-// omit key's never type
-type $OmitNever<T> = Pick<
-  T,
-  {
-    [K in keyof Required<T>]: Required<T>[K] extends never ? never : K
-  }[keyof T]
->
-
-type $Auto<Tb extends keyof $TB> = $FK[Tb] | $CU[Tb]
-
-type $Relation<
-  Tb extends keyof $TB,
-  X extends Exclude<keyof $TB[Tb], $ScalarColumns<Tb>>,
-  S extends $RelationSign
-> =
-  | {
-    insert: S extends 'toOne'
-    ? ${Insert('Tb', 'X')}
-      :
-        | ${Insert('Tb', "(S extends 'M2M' ? never : X)")}
-        | ${Insert('Tb', "(S extends 'M2M' ? never : X)")}[]
-}
-| {
-  connect: S extends 'toOne'
-        ? undefined extends $TB[Tb][X]
-          ? $UN[Tb]
-          : never
-        : $UN[Tb] | $UN[Tb][]
-    }
-
-type $ScalarColumns<Tb extends keyof $TB> = NonNullable<
-  {
-    [K in keyof $TB[Tb]]: NonNullable<$TB[Tb][K]> extends $Relation<
-      any,
-      any,
-      any
-    >
-      ? never
-      : K
-  }[keyof $TB[Tb]]
->
-
-type $SimpleScalarColumns<Tb extends keyof $TB> = {
-  [K in $ScalarColumns<Tb>]: NonNullable<$TB[Tb][K]> extends
-    | boolean
-    | number
-    | bigint
-    | Date
-    | string
-    ? K
-    : never
-}[$ScalarColumns<Tb>]
-
-type $ArrayScalarColumns<Tb extends keyof $TB> = {
-  [K in $ScalarColumns<Tb>]: NonNullable<$TB[Tb][K]> extends any[] ? K : never
-}[$ScalarColumns<Tb>]
-
-type $JsonScalarColumns<Tb extends keyof $TB> = {
-  [K in $ScalarColumns<Tb>]: object extends $TB[Tb][K] ? K : never
-}[$ScalarColumns<Tb>]
-
-type $RelationColumns<
-  Tb extends keyof $TB,
-  X extends Exclude<keyof $TB[Tb], $ScalarColumns<Tb>>,
-  S extends $RelationSign
-> = Exclude<keyof $TB[Tb], $ScalarColumns<Tb> | ('M2M' extends S ? never : X)>
-
-type $SimpleScalarAllFilter<T> = {
-  eq?: NonNullable<T> | (undefined extends T ? null : never)
-  lt?: NonNullable<T> extends boolean | $EnumKeys ? never : NonNullable<T>
-  gt?: NonNullable<T> extends boolean | $EnumKeys ? never : NonNullable<T>
-  lte?: NonNullable<T> extends boolean | $EnumKeys ? never : NonNullable<T>
-  gte?: NonNullable<T> extends boolean | $EnumKeys ? never : NonNullable<T>
-  like?: NonNullable<T> extends string ? NonNullable<T> : never
-  in?:
-    | (NonNullable<T> extends $EnumKeys ? Array<NonNullable<T>> : never)
-    | (NonNullable<T> extends boolean ? never : Array<NonNullable<T>>)
-  between?: NonNullable<T> extends boolean | $EnumKeys
-    ? never
-    : [NonNullable<T>, NonNullable<T>?]
-  contains?: NonNullable<T> extends string ? NonNullable<T> : never
-  startsWith?: NonNullable<T> extends string ? NonNullable<T> : never
-  endsWith?: NonNullable<T> extends string ? NonNullable<T> : never
-}
-
-// applicable field of not
-type $SimpleScalarNotFilter<T> = {
-  not?:
-    | $SimpleScalarAllFilter<T>['eq']
-    | Pick<
-        $SimpleScalarAllFilter<T>,
-        | 'eq'
-        | (boolean extends T
-            ? never
-            :
-                | 'in'
-                | (T extends $EnumKeys
-                    ? never
-                    :
-                        | 'lt'
-                        | 'gt'
-                        | 'lte'
-                        | 'gte'
-                        | (string extends T ? 'like' : 'between')))
-      >
-}
-
-type $SimpleScalarFilter<T> = $SimpleScalarNotFilter<T> &
-  $OmitNever<$SimpleScalarAllFilter<T>>
-
-// Used in relationship
-type $Where<
-  Tb extends keyof $TB,
-  X extends keyof $TB[Tb],
-  S extends $RelationSign
-> = {
-  [K in Exclude<
-    keyof $TB[Tb],
-    S extends 'M2M' ? never : X
-  >]?: K extends $SimpleScalarColumns<Tb>
-    ? $TB[Tb][K] | $SimpleScalarFilter<$TB[Tb][K]>
-    : NonNullable<$TB[Tb][K]> extends $Relation<infer R, infer R2, infer R3>
-    ? 'toOne' extends R3
-      ? $Where<R, R2, R3>
-      : {
-          [K2 in $ToManyFilter]?: $Where<R, R2, R3>
-        }
-    : never
-} & {
-  [L in $WhereLogic]?:
-    | $Where<Tb, X, S>[]
-    | (L extends 'AND' | 'NOT' ? $Where<Tb, X, S> : never)
-}
-
-// Used in relationship
-type $Select<
-  Tb extends keyof $TB,
-  X extends keyof $TB[Tb],
-  S extends $RelationSign
-> =
-${Select('Tb', 'X', 'S')}
-type $FindMany<
-  Tb extends keyof $TB,
-  X extends keyof $TB[Tb],
-  S extends $RelationSign
-> = {
-  where?: $Where<Tb, X, S>
-  distinct?: '*' | $Enumerable<$ScalarColumns<Tb>>
-  orderBy?: $Enumerable<{ [K in $ScalarColumns<Tb>]?: $Order }>
-  limit?: number
-  offset?: number
-  select?: ${Select('Tb', 'X', 'S')}
-
-}
-
-type $NumberUpdateOperator = {
-  increment?: number
-  decrement?: number
-}
-
-
-type $UpdateToOne<
-  RTb extends keyof $TB,
-  RX extends keyof $TB[RTb],
-  RS extends $RelationSign
-> = {
-  insert?: ${Insert('RTb', 'RX')}
-  update?: Partial<Omit<$TB[RTb], RX | $Auto<RTb>>>
-  upsert?: {
-    insert: ${Insert('RTb', 'RX')}
-    update?: ${Update('RTb', 'RX', 'RS')}
-  }
-  delete?: true
-  connect?: $UN[RTb]
-  disconnect?: true
-}
-
-type $UpdateToMany<
-  RTb extends keyof $TB,
-  RX extends keyof $TB[RTb],
-  RS extends $RelationSign
-> = {
-  set?: $Enumerable<
-    | Omit<$TB[RTb], RX | $Auto<RTb>>
-    | (undefined extends $TB[RTb][RX] ? $UN[RTb] : never)
-  >
-  insert?: $Enumerable<${Insert('RTb', 'RX')}>
-  upsert?: $Enumerable<{
-    where: $UN[RTb]
-    insert: ${Insert('RTb', 'RX')}
-    update?: ${Update('RTb', 'RX', 'RS')}
-  }>
-  update?: $Enumerable<{
-    where: $UN[RTb]
-    data: ${Update('RTb', 'RX', 'RS')}
-  }>
-  updateMany?: $UpdateMany<RTb, RX, RS>
-  delete?: $UN[RTb] | $UN[RTb][]
-  deleteMany?: $Where<RTb, RX, RS>
-  connect?: $UN[RTb] | $UN[RTb][]
-  disconnect?: $UN[RTb] | $UN[RTb][]
-}
-
-type $UpdateMany<
-  Tb extends keyof $TB,
-  X extends keyof $TB[Tb],
-  S extends $RelationSign
-> = {
-  where?: $Where<Tb, X, S>
-  data: ${UpdateMany('Tb')}
-}
-
-export type $TbOper<Tb extends keyof $TB> = {
-  unique: $UN[Tb]
-  where: $Where<Tb, never, never>
-  insert: ${Insert('Tb', 'never')}
-  update: ${Update('Tb', 'never', 'never')}
-  updateMany: ${UpdateMany('Tb')}
-  select: ${Select('Tb', 'never', 'never')}
-  selectScalar: Pick<$TbOper<Tb>['select'], $ScalarColumns<Tb>>
-}
-
-type $TableQuery<Tb extends keyof $TB> = {
-  findOne: {
-    where: $TbOper<Tb>['unique']
-    select?: $TbOper<Tb>['select']
-    sql?: true
-  }
-  findFirst?: {
-    where?: $TbOper<Tb>['where']
-    select?: $TbOper<Tb>['select']
-    sql?: true
-    orderBy?: $Enumerable<{ [K in $ScalarColumns<Tb>]?: $Order }>
-  }
-  findMany?: {
-    where?: $TbOper<Tb>['where']
-    select?: $TbOper<Tb>['select']
-    distinct?: '*' | $Enumerable<$ScalarColumns<Tb>>
-    limit?: number
-    offset?: number
-    sql?: boolean
-    orderBy?: $Enumerable<{ [K in $ScalarColumns<Tb>]?: $Order }>
-  }
-  insert: {
-    data: $TbOper<Tb>['insert'] | $TbOper<Tb>['insert'][]
-    select?: $TbOper<Tb>['select']
-    sql?: true
-  }
-  upsert: {
-    where: $UN[Tb]
-    insert: $TbOper<Tb>['insert']
-    update?: $TbOper<Tb>['update']
-    select?: $TbOper<Tb>['select']
-    sql?: true
-  }
-  update: {
-    where: $UN[Tb]
-    data: $TbOper<Tb>['update']
-    select?: $TbOper<Tb>['select']
-    sql?: true
-  }
-  updateMany?: {
-    where?: $TbOper<Tb>['where']
-    data: $TbOper<Tb>['updateMany']
-    select?: $TbOper<Tb>['selectScalar']
-    sql?: true
-  }
-  delete: {
-    where: $UN[Tb]
-    select?: $TbOper<Tb>['selectScalar']
-    sql?: true
-  }
-  deleteMany?: {
-    where: $TbOper<Tb>['where']
-    select?: $TbOper<Tb>['selectScalar']
-    sql?: true
-  }
-  groupBy?: {
-    by: $ScalarColumns<Tb>
-    aggregate?: {
-      name: string
-      column: $ScalarColumns<Tb>
-      function: $AggregateQuery
-    }[]
-    where?: $TbOper<Tb>['where']
-    having?: $TbOper<Tb>['where']
-  }
-  join?: {
-    table: keyof $TB
-    method: 'left' | 'right' | 'inner' | 'outer' | 'cross'
-    on: {
-      columns: $ScalarColumns<Tb>
-      tableColumns: $ScalarColumns<Tb>
-    }
-    select: $TbOper<Tb>['select']
-    tableSelect: $TbOper<Tb>['where']
-  }
-  aggregate?: {
-    select: {
-      [K in keyof Required<$TB[Tb]>]?: number extends $TB[Tb][K] ? K : never
-    }[keyof $TB[Tb]]
-    where?: $TbOper<Tb>['where']
-    sql?: true
-  }
-}
-
-type $TableMutationType<
-  Tb extends keyof $TB,
-  query extends $MutationQuery
-> = Omit<$TableQuery<Tb>[query], 'select'> & {
-  select?: $TbOper<Tb>['selectScalar']
-}
 
 export type $ApiBridge =
   | {
@@ -442,51 +58,80 @@ export type $ApiBridge =
       args: any
     }
 
-type $stringFilter = {
-  eq?: string | null
-  in?: $Enumerable<string> | null
-  notIn?: $Enumerable<string> | null
+type $StringFilter<TNull = true> = {
+  eq?: TNull extends true ? string | null : string
+  in?: TNull extends true ? Array<string> | null : Array<string>
+  notIn?: TNull extends true ? Array<string> | null : Array<string>
+  not?: TNull extends true
+    ? $StringFilter<TNull> | string | null
+    : $StringFilter<TNull> | string
   contains?: string
   startsWith?: string
   endsWith?: string
-  not?: $stringFilter | string | null
   like?: string
-  between?: $Enumerable<string>
+  between?: Array<string>
+  lt?: string
+  lte?: string
+  gt?: string
+  gte?: string
 }
 
-type $enumFilter<T> = {
-  eq?: T
-  in?: $Enumerable<T>
-  notIn?: $Enumerable<T>
-  not?: $enumFilter<T> | T
+type $EnumFilter<T, TNull = true> = {
+  eq?: TNull extends true ? T | null : T
+  in?: TNull extends true ? Array<T> | null : Array<T>
+  notIn?: TNull extends true ? Array<T> | null : Array<T>
+  not?: TNull extends true
+    ? $EnumFilter<T, TNull> | T | null
+    : $EnumFilter<T, TNull> | T
+  contains?: string
+  startsWith?: string
+  endsWith?: string
+  like?: string
+  between?: Array<string>
+  lt?: string
+  lte?: string
+  gt?: string
+  gte?: string
 }
 
-type $numberFilter = {
-  eq?: number | null
-  in?: $Enumerable<number> | null
-  notIn?: $Enumerable<number> | null
+type $NumberFilter<TNull = true> = {
+  eq?: TNull extends true ? number | null : number
+  in?: TNull extends true ? Array<number> | null : Array<number>
+  notIn?: TNull extends true ? Array<number> | null : Array<number>
+  not?: TNull extends true
+    ? $NumberFilter<TNull> | number | null
+    : $NumberFilter<TNull> | number
   lt?: number
   lte?: number
   gt?: number
   gte?: number
-  not?: $numberFilter | number | null
   like?: number
-  between?: $Enumerable<number>
+  between?: Array<number>
 }
-type $DateFilter = {
-  eq?: Date | string
-  in?: $Enumerable<Date> | $Enumerable<string>
-  notIn?: $Enumerable<Date> | $Enumerable<string>
-  lt?: Date | string
-  lte?: Date | string
-  gt?: Date | string
-  gte?: Date | string
-  not?: $DateFilter | Date | string
-  like?: Date | string
-  between?: $Enumerable<Date> | $Enumerable<Date>
+
+type $DateFilter<TNull = true> = {
+  eq?: TNull extends true ? Date | null : Date
+  in?: TNull extends true ? Array<Date> | null : Array<Date>
+  notIn?: TNull extends true ? Array<Date> | null : Array<Date>
+  not?: TNull extends true
+    ? $DateFilter<TNull> | Date | null
+    : $DateFilter<TNull> | Date
+  lt?: Date
+  lte?: Date
+  gt?: Date
+  gte?: Date
+  like?: Date
+  between?: Array<Date>
 }
-type $booleanFilter = {
-  eq?: boolean
-  not?: $booleanFilter | boolean
+type $BooleanFilter<TNull = true> = {
+  eq?: TNull extends true ? boolean | null : boolean
+  not?: TNull extends true
+    ? $BooleanFilter<TNull> | boolean | null
+    : $BooleanFilter<TNull> | boolean
+}
+
+type $ObjectFilter<TNull = true> = {
+  eq?: TNull extends true ? string | null : string
+  not?: TNull extends true ? Array<string> | null : Array<string>
 }
 `

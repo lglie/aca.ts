@@ -12,7 +12,7 @@ export const ${dbVar} =new (class {
 
 export const transaction = (queries: string) => `
 async transaction() {
-  const trx = await this.knex.transaction()
+  const trx:any = await this.knex.transaction()
   trx['$Driver'] = this.$Driver
 
   return {
@@ -67,13 +67,13 @@ export const pkgServer = (name: string, drivers: string[]) => {
 
 // Table query interface template
 export const tableQuery = (query, tblName) => `{
-  const trx = await this.knex.transaction()
+  const trx:any = await this.knex.transaction()
   trx['$Driver'] = this.$Driver
   try {
     const rtn = await $Handle( trx )({ query: '${query}', table: '${tblName}', args })
     await trx.commit()
     return rtn
-  } catch (err) {
+  } catch (err:any) {
     await trx.rollback()
     return { error: err.toString() }
   }
@@ -93,7 +93,7 @@ export const classFooterClient = (dbVar: string) => `\n$ = {
 // sql raw backend template
 export const sqlRawServer = (dbVar) => `\n$ = {
   raw: async (args: string): Promise<{ data?: unknown; error?: string }> => {
-    const trx = await this.knex.transaction()
+    const trx:any = await this.knex.transaction()
     trx['$Driver'] = this.$Driver
     try {
       const data = (await trx.raw(args)).rows
@@ -105,7 +105,7 @@ export const sqlRawServer = (dbVar) => `\n$ = {
         }
       }
       return { data }
-    } catch (e) {
+    } catch (e:any) {
       await trx.rollback()
       return { error: e.toString() }
     }
@@ -120,7 +120,7 @@ export const constructor = (config: DbConfig) => {
 
   return `
   private $Driver = '${sqlDiff.keyword.fullName}'
-  private knex: Knex < any, unknown[] >
+  private knex: Knex
   constructor() {
     let connection = process.env['${
       config.connectOption.envConnect || ''
@@ -174,10 +174,10 @@ export async function $ApiBridge(context: unknown, reqBody: $ApiBridge) {
       )
     case 'orm':
       return await reqBody.method
-        .reduce((_, v) => _[v], { ${dbs.toString()} }[reqBody.dbVar])
+        .reduce((_:any, v: any) => _[v], { ${dbs.toString()} }[reqBody.dbVar])
         [reqBody.query](reqBody.args)
     case 'raw':
-      return await { ${dbs.toString()} }[reqBody.dbVar].$.raw(reqBody.args)
+      return await { ${dbs.toString()} }[reqBody.dbVar]?.$.raw(reqBody.args)
   }
 }
 `

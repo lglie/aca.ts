@@ -3,8 +3,8 @@
 // The first parameter of RPC function must be context. The generated front-end function with the same name does not have this parameter
 // Refer to the following wording:
 
-import { $TbOper, Blog } from '..'
+import { Blog } from '..'
 
-export async function example(ctx: any, name: $TbOper<'Blog__user'>['unique']) {
+export async function example(ctx: any, name: Blog.user.uniqueWhere) {
   return await Blog.user.findOne({ where: name, select: { id: true } })
 }

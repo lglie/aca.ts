@@ -4,7 +4,7 @@ export const reactPage = (consts: string) =>
   `import React, { useState } from 'react'
 import logo from './logo.svg'
 import './App.css'
-import { Blog, $RPC, $Enum, $TB, $TbOper } from './aca.client'
+import { Blog, $RPC } from './aca.client'
 
 function App() {
   const [state, setState] = useState(
