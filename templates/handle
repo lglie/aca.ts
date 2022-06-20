@@ -75,7 +75,9 @@ const $Queries = function (trx: any, sql: string[] = []) {
           // Determine jsType
           if (
             AttCols[AttCol].type === 'enum'
-              ? !$Enum[<$EnumKeys>AttCols[AttCol].jsType].includes(records[i][AttCol])
+              ? !(<any>$Enum[<$EnumKeys>AttCols[AttCol].jsType]).includes(
+                  records[i][AttCol]
+                )
               : AttCols[AttCol].type === 'Date'
               ? !isValidDate(records[i][AttCol])
               : typeof records[i][AttCol] !== AttCols[AttCol].jsType
