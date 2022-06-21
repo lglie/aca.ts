@@ -5,7 +5,7 @@ const $ArrayTrue = (arrayItem: string[]) =>
 // Process the returned database record
 function $RtnSelect(table: string, rtnCols: any, select?: any):any {
   if (Array.isArray(rtnCols)) {
-    const rtn = []
+    const rtn:any = []
     for (const v of rtnCols) rtn.push($RtnSelect(table, v, select))
     return rtn
   } else {
@@ -388,7 +388,7 @@ const $Queries = function (trx: any, sql: string[] = []) {
   // Convert columns into database columns
   const dbCols = (table: string, cols: { [x: string]: any }):any => {
     if (Array.isArray(cols)) {
-      const rtn = []
+      const rtn:any = []
       for (const v of cols) rtn.push(dbCols(table, v))
       return rtn
     } else {
@@ -1189,7 +1189,7 @@ const $Queries = function (trx: any, sql: string[] = []) {
                 )
               ) {
                 const columns = $Att[AttCol.type].columns
-                let requiredItem = []
+                let requiredItem:any = []
                 $Att[AttCol.type].uniques.some((v: any) => {
                   const items = Array.isArray(v) ? v : [v]
                   if (record[items.join('_')]) {
@@ -1346,7 +1346,7 @@ const $Queries = function (trx: any, sql: string[] = []) {
               const items = Array.isArray(v.disconnect)
                 ? v.disconnect
                 : [v.disconnect]
-              const relMapIds = []
+              const relMapIds:any = []
               for (const v2 of items) {
                 const [relRecId] = await trxQuery(
                   trx($Att[AttCol.type].dbName).where(
