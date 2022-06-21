@@ -216,14 +216,24 @@ export function apiIndexClient(dbs: string[], RPCs: string[]) {
   const apiStr = (arr: string[]) =>
     arr
       .map(
-        (v) => `$.${v} = new $Request(fetch, url)
+        (v) => `
+$.${v} = new $Request(url)
+$.${v}.interceptors.request((init:RequestInit) => {
+  // 请根据需求编写请求拦截代码
+  console.log(init)
+  return init
+})
+$.${v}.interceptors.response((rtn:any) => {
+  // 请根据需求编写响应拦截代码
+  console.log(rtn)
+  return rtn
+})
 `
       )
       .join('\n\n')
 
   return `// This file can be modified as needed, and can be used by importing this file in other pages
 // This file is generated only once. Deleting this file will regenerate it
-import fetch from 'axios'
 import { $, $Request } from './aca'
 
 /***************************************************************** */
@@ -233,7 +243,7 @@ const url = 'http://localhost:8080'
 
 ${apiStr(dbs)}
 ${apiStr(RPCs.map((v) => `$RPC.${v}`))}
-export type { $Enum, $TbOper, $TB } from './aca'
+export type { $Enum } from './aca'
 export { $RPC, ${dbs.join(', ')} } from './aca'
 `
 }
@@ -257,4 +267,8 @@ export const reqInitValueTpl = `{
   req(args: any) {
     return <any>{}
   },
+  interceptors: {
+    request: (callback: (init: RequestInit) => RequestInit) => {},
+    response: (callback: any) => {},
+  }
 }`

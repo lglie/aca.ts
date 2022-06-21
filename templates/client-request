@@ -1,22 +1,40 @@
 export class $Request {
-  constructor(fetch: any, url: string) {
+  constructor(url: string, init?: RequestInit) {
     if (!url)
       throw `Here is no URL parameter, please fill in the index.ts of the generated API directory`
-    this.fetch = fetch
     this.url = url
+    if (init) this.requestInit = init
   }
-
-  private fetch
   private url = ''
-  private requestInit = {
+  private requestInit: RequestInit = {
     method: 'post',
+    mode: 'cors',
+		headers:{
+			'Content-Type': 'application/json'
+		}
   }
-
+	private interceptor_req:any = null
+	private interceptor_res:any = null
   public async req(args: any) {
-    const res = await this.fetch(this.url, {
+    if(this.interceptor_req) {
+			this.requestInit = this.interceptor_req(this.requestInit)
+    }
+    const res = await fetch(this.url, {
       ...this.requestInit,
-      data: args,
+      body: JSON.stringify(args),
     })
-    return res.data
+    let data = await res.json()
+		if(this.interceptor_res) {
+			data = this.interceptor_res(data)
+    }
+    return data
+  }
+  public interceptors = {
+    request: (callback: any) => {
+			this.interceptor_req = callback
+		},
+    response: (callback: any) => {
+      this.interceptor_res = callback
+    },
   }
 }

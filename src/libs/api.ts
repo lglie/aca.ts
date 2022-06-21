@@ -408,6 +408,100 @@ const generateTsType = (tables) => {
               )
               .join('\n')}
           `
+        case 'insertInput':
+          return `
+               
+                    ${fields
+                      .filter((v) => !v.isAuto && !v.isForeign)
+                      .map(
+                        (v) =>
+                          `${v.fieldName}${v.required}: ${
+                            v.isRelation
+                              ? `{
+                        insert?: ${
+                          v.isArray
+                            ? `$Enumerable<Omit<${v.fieldType}.insertInput, ${v.relationKeys}>>`
+                            : `Omit<${v.fieldType}.insertInput, ${v.relationKeys}>`
+                        }
+                        connect?: ${
+                          v.isArray
+                            ? `$Enumerable<${v.fieldType}.uniqueWhere>`
+                            : `${v.fieldType}.uniqueWhere`
+                        }
+                    }`
+                              : v.fieldType
+                          }`
+                      )
+                      .join('\n')}
+               `
+        case 'updateInput':
+          return `
+              ${fields
+                .filter((v) => !v.isAuto && !v.isForeign)
+                .map(
+                  (v) =>
+                    `${v.fieldName}?: ${
+                      v.isRelation
+                        ? `{
+                  insert?: ${
+                    v.isArray
+                      ? `$Enumerable<Omit<${v.fieldType}.insertInput, ${v.relationKeys}>>`
+                      : `Omit<${v.fieldType}.insertInput, ${v.relationKeys}>`
+                  }
+                  connect?: ${
+                    v.isArray
+                      ? `$Enumerable<${v.fieldType}.uniqueWhere>`
+                      : `${v.fieldType}.uniqueWhere`
+                  }
+                  disconnect?: ${
+                    v.isArray
+                      ? `$Enumerable<${v.fieldType}.uniqueWhere>`
+                      : `${v.fieldType}.uniqueWhere`
+                  }
+                  delete?: ${
+                    v.isArray
+                      ? `$Enumerable<${v.fieldType}.uniqueWhere>`
+                      : `${v.fieldType}.uniqueWhere`
+                  }
+                  upsert?: ${
+                    v.isArray
+                      ? `$Enumerable<{
+                      where: uniqueWhere
+                      insert: Omit<${v.fieldType}.insertInput, ${v.relationKeys}>
+                      update: Omit<${v.fieldType}.updateInput, ${v.relationKeys}>
+                  }>`
+                      : `{
+                      where: uniqueWhere
+                      insert: Omit<${v.fieldType}.insertInput, ${v.relationKeys}>
+                      update: Omit<${v.fieldType}.updateInput, ${v.relationKeys}>
+                  }`
+                  }
+                  update?: ${
+                    v.isArray
+                      ? `$Enumerable<{
+                      where: ${v.fieldType}.uniqueWhere
+                      data: Omit<${v.fieldType}.updateInput, ${v.relationKeys}>
+                  }>`
+                      : `{
+                      where: ${v.fieldType}.uniqueWhere
+                      data: Omit<${v.fieldType}.updateInput, ${v.relationKeys}>
+                  }`
+                  }
+                  ${
+                    v.isArray
+                      ? `
+                      set?: ${v.fieldType}.uniqueWhere
+                      updateMany?: ${v.fieldType}.updateMany
+                      deleteMany?: ${v.fieldType}.where
+                  `
+                      : ''
+                  }
+              }`
+                        : v.fieldType
+                    }`
+                )
+                .join('\n')}
+          `
         case 'findOne':
           return `
                     where: uniqueWhere
@@ -434,103 +528,14 @@ const generateTsType = (tables) => {
                 `
         case 'insert':
           return `
-                data: $Enumerable<{
-                    ${fields
-                      .filter((v) => !v.isAuto && !v.isForeign)
-                      .map(
-                        (v) =>
-                          `${v.fieldName}${v.required}: ${
-                            v.isRelation
-                              ? `{
-                        insert?: ${
-                          v.isArray
-                            ? `$Enumerable<Omit<${v.fieldType}.insert['data'], ${v.relationKeys}>>`
-                            : `Omit<${v.fieldType}.insert['data'], ${v.relationKeys}>`
-                        }
-                        connect?: ${
-                          v.isArray
-                            ? `$Enumerable<${v.fieldType}.uniqueWhere>`
-                            : `${v.fieldType}.uniqueWhere`
-                        }
-                    }`
-                              : v.fieldType
-                          }`
-                      )
-                      .join('\n')}
-                }>
+                data: $Enumerable<insertInput>
                 select?: {[P in keyof select]?: select[P]}
                 sql?: boolean
                 `
         case 'update':
           return `
                 where: uniqueWhere
-                data: {
-                    ${fields
-                      .filter((v) => !v.isAuto && !v.isForeign)
-                      .map(
-                        (v) =>
-                          `${v.fieldName}?: ${
-                            v.isRelation
-                              ? `{
-                        insert?: ${
-                          v.isArray
-                            ? `$Enumerable<Omit<${v.fieldType}.insert['data'], ${v.relationKeys}>>`
-                            : `Omit<${v.fieldType}.insert['data'], ${v.relationKeys}>`
-                        }
-                        connect?: ${
-                          v.isArray
-                            ? `$Enumerable<${v.fieldType}.uniqueWhere>`
-                            : `${v.fieldType}.uniqueWhere`
-                        }
-                        disconnect?: ${
-                          v.isArray
-                            ? `$Enumerable<${v.fieldType}.uniqueWhere>`
-                            : `${v.fieldType}.uniqueWhere`
-                        }
-                        delete?: ${
-                          v.isArray
-                            ? `$Enumerable<${v.fieldType}.uniqueWhere>`
-                            : `${v.fieldType}.uniqueWhere`
-                        }
-                        upsert?: ${
-                          v.isArray
-                            ? `$Enumerable<{
-                            where: uniqueWhere
-                            insert: Omit<${v.fieldType}.insert['data'], ${v.relationKeys}>
-                            update: Omit<${v.fieldType}.update['data'], ${v.relationKeys}>
-                        }>`
-                            : `{
-                            where: uniqueWhere
-                            insert: Omit<${v.fieldType}.insert['data'], ${v.relationKeys}>
-                            update: Omit<${v.fieldType}.update['data'], ${v.relationKeys}>
-                        }`
-                        }
-                        update?: ${
-                          v.isArray
-                            ? `$Enumerable<{
-                            where: ${v.fieldType}.uniqueWhere
-                            data: Omit<${v.fieldType}.update['data'], ${v.relationKeys}>
-                        }>`
-                            : `{
-                            where: ${v.fieldType}.uniqueWhere
-                            data: Omit<${v.fieldType}.update['data'], ${v.relationKeys}>
-                        }`
-                        }
-                        ${
-                          v.isArray
-                            ? `
-                            set?: ${v.fieldType}.uniqueWhere
-                            updateMany?: ${v.fieldType}.updateMany
-                            deleteMany?: ${v.fieldType}.where
-                        `
-                            : ''
-                        }
-                    }`
-                              : v.fieldType
-                          }`
-                      )
-                      .join('\n')}
-                }
+                data: updateInput
                 select?: {[P in keyof select]?: select[P]}
                 sql?: boolean
                 `
@@ -539,7 +544,7 @@ const generateTsType = (tables) => {
                 where: where
                 data: {
                     ${fields
-                      .filter((v) => !v.isRelation)
+                      .filter((v) => !v.isRelation && !v.isAuto)
                       .map((v) => `${v.fieldName}?: ${v.fieldType}`)
                       .join('\n')}
                 }
@@ -548,8 +553,8 @@ const generateTsType = (tables) => {
         case 'upsert':
           return `
                 where: uniqueWhere
-                insert: insert['data']
-                update: update['data']
+                insert: insertInput
+                update: updateInput
                 select?: {[P in keyof select]?: select[P]}
                 sql?: boolean
                 `
@@ -609,7 +614,7 @@ const generateTsType = (tables) => {
           }`
         )
         .join(' | ')
-    const queries = ['where', 'scalar', 'orderBy', 'select', ...Cst.queries]
+    const queries = ['where', 'scalar', 'orderBy', 'select', 'insertInput', 'updateInput', ...Cst.queries]
       .map(
         (v) => `export ${v === '$' ? 'namespace' : 'type'} ${
           v === 'delete' ? 'del' : v
@@ -826,10 +831,10 @@ async function DbApi(ast: Ast) {
     // Variables set by the frontend request header
     const db = ast.dbs[k]
     const tsType = namespaceType(db, k)
-    serverApi += tsType
-    clientApi += tsType
     serverApi += classServer(db, k)
     clientApi += classClient(db, k)
+    serverApi += tsType
+    clientApi += tsType
   }
   serverApi += apiBridge(Object.keys(ast.dbs))
   // Generate frontend proxy for node package
