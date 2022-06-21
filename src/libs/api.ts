@@ -394,15 +394,15 @@ const generateTsType = (tables) => {
                   `${v.fieldName}?: ${
                     v.isRelation
                       ? v.isArray
-                        ? `Omit<{[P in keyof ${v.fieldType}.select]?: ${v.fieldType}.select[P]}, ${v.OmitSelectKeys}> | {
+                        ? `Omit<${v.fieldType}.select, ${v.OmitSelectKeys}> | {
 										where?: ${v.fieldType}.where
 										orderBy?: ${v.fieldType}.orderBy
 										limit?: number
                     offset?: number
 										distinct?: '*' | $Enumerable<scalar>
-										select?: Omit<{[P in keyof ${v.fieldType}.select]?: ${v.fieldType}.select[P]}, ${v.OmitSelectKeys}>
+										select?: Omit<${v.fieldType}.select, ${v.OmitSelectKeys}>
 									}`
-                        : `Omit<{[P in keyof ${v.fieldType}.select]?: ${v.fieldType}.select[P]}, ${v.OmitSelectKeys}> | {select?: Omit<{[P in keyof ${v.fieldType}.select]?: ${v.fieldType}.select[P]}, ${v.OmitSelectKeys}>}`
+                        : `Omit<${v.fieldType}.select, ${v.OmitSelectKeys}> | {select?: Omit<${v.fieldType}.select, ${v.OmitSelectKeys}>}`
                       : 'boolean'
                   }`
               )
