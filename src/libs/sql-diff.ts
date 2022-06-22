@@ -96,7 +96,7 @@ const keywords = {
   },
   mssql: {
     fullName: 'mssql',
-    npm: `"tedious": "",`,
+    npm: `"mssql": "",`,
     quote: { prefix: '"', name: '"', value: "'" },
     idDefaultType: 'cuid',
     idType: {
@@ -150,7 +150,7 @@ const keywords = {
         const resolveAcaDir = path.resolve(acaDir)
         const app = Object.keys(config.serverApps)[0]
         let Db, db
-        Db = require(path.join(resolveAcaDir, app, 'node_modules/tedious'))
+        Db = require(path.join(resolveAcaDir, app, 'node_modules/mssql'))
         const opts: any = {
           ...(<RelConn>options),
           options: {
