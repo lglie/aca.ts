@@ -1,6 +1,6 @@
 {
   "name": "aca.ts",
-  "version": "0.0.69",
+  "version": "0.0.70",
   "description": "Aca.ts is a CLI based on Typescript and Knex.js. It can automatically sync database schema, automatically generate APIs for accessing the database, automatically create frontend APIs through backend functions (like RPC).",
   "keywords": [
     "aca",

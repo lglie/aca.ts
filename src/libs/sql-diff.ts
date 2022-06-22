@@ -344,8 +344,8 @@ const keywords = {
     fullName: 'better-sqlite3',
     npm: `"better-sqlite3": "",`,
     quote: { prefix: '"', name: '"', value: "'" },
-    maxTblLen: 64,
-    maxColLen: 64,
+    maxTblLen: 128,
+    maxColLen: 128,
     idDefaultType: 'cuid',
     idType: {
       autoincrement: {

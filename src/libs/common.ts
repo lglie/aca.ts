@@ -258,16 +258,6 @@ export function addAppConfig(
     'utf-8'
   )
 
-  // install axios
-  if (
-    kind === 'client' &&
-    !fs.existsSync(path.join(acaRoot, appName, 'node_modules', 'axios'))
-  ) {
-    console.log(`Installing axios...`)
-    process.chdir(path.join(acaRoot, appName))
-    execSync(`npm install axios`)
-  }
-
   console.log(`\nRun the following command to start development:`)
   console.log(`$ cd ${acaDir === '..' ? '../' : ''}${appName}`)
   console.log(`$ npm start`)
