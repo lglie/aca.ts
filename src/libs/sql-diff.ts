@@ -14,6 +14,8 @@ const keywords = {
     fullName: 'pg',
     npm: `"pg": "",`,
     quote: { prefix: '"', name: '"', value: "'" },
+    maxTblLen: 64,
+    maxColLen: 64,
     idDefaultType: 'cuid',
     idType: {
       autoincrement: { jsType: 'number', dbType: 'serial8' },
@@ -96,8 +98,10 @@ const keywords = {
   },
   mssql: {
     fullName: 'mssql',
-    npm: `"tedious": "",`,
+    npm: `"mssql": "",`,
     quote: { prefix: '"', name: '"', value: "'" },
+    maxTblLen: 128,
+    maxColLen: 128,
     idDefaultType: 'cuid',
     idType: {
       autoincrement: { jsType: 'number', dbType: 'int' },
@@ -150,7 +154,7 @@ const keywords = {
         const resolveAcaDir = path.resolve(acaDir)
         const app = Object.keys(config.serverApps)[0]
         let Db, db
-        Db = require(path.join(resolveAcaDir, app, 'node_modules/tedious'))
+        Db = require(path.join(resolveAcaDir, app, 'node_modules/mssql'))
         const opts: any = {
           ...(<RelConn>options),
           options: {
@@ -176,6 +180,8 @@ const keywords = {
     fullName: 'mysql2',
     npm: `"mysql2": "",`,
     quote: { prefix: '`', name: '`', value: "'" },
+    maxTblLen: 64,
+    maxColLen: 64,
     idDefaultType: 'cuid',
     idType: {
       autoincrement: {
@@ -254,6 +260,8 @@ const keywords = {
     fullName: 'mysql',
     npm: `"mysql": "",`,
     quote: { prefix: '`', name: '`', value: "'" },
+    maxTblLen: 64,
+    maxColLen: 64,
     idDefaultType: 'cuid',
     idType: {
       autoincrement: {
@@ -336,6 +344,8 @@ const keywords = {
     fullName: 'better-sqlite3',
     npm: `"better-sqlite3": "",`,
     quote: { prefix: '"', name: '"', value: "'" },
+    maxTblLen: 64,
+    maxColLen: 64,
     idDefaultType: 'cuid',
     idType: {
       autoincrement: {
@@ -457,7 +467,9 @@ export default function (driver: Driver) {
         const apps = Object.keys(config.serverApps)
 
         if (apps.length !== 1) {
-          throw new Error(`Only one backend app containing a sqlite file can be created`)
+          throw new Error(
+            `Only one backend app containing a sqlite file can be created`
+          )
         }
         const db = require(path.join(
           resolveAcaDir,

@@ -137,6 +137,7 @@ async function mssql(
     currdb.config.connectOption.connect
   const connOption = <RelConn>connConf
   let db = await sqlDiff.keyword.stmt.connect(acaDir, config, connOption)
+
   const CreateDb = async () => {
     if (db.config.database !== 'master')
       throw new Error(

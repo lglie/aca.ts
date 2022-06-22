@@ -146,8 +146,11 @@ export function MapTblName(
   table2: string,
   column2: string
 ) {
-  const sorted = [`${table}_${column}`, `${table2}_${column2}`].sort()
-  return `_${sorted[0]}_$_${sorted[1]}`
+  const sorted = [
+    `${table}${column[0].toUpperCase()}${column.slice(1)}`,
+    `${table2}${column2[0].toUpperCase()}${column2.slice(1)}`,
+  ].sort()
+  return `_${sorted[0]}_${sorted[1]}`
 }
 
 // Find the given model name in ast and return the object and its absolute namespace(absolute path)
