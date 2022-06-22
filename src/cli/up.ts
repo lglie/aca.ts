@@ -139,10 +139,10 @@ async function mssql(
   let db = await sqlDiff.keyword.stmt.connect(acaDir, config, connOption)
 
   const CreateDb = async () => {
-    // if (db.config.database !== 'master')
-    //   throw new Error(
-    //     `Database ${connOption.database} already exists. Delete the database first to recreate'`
-    //   )
+    if (db.config.database !== 'master')
+      throw new Error(
+        `Database ${connOption.database} already exists. Delete the database first to recreate'`
+      )
     console.log(`Creating database tables...`)
     const allSql = CreateAllTblSqls(currdb.config, currdb.tables)
     allSql.sqls =

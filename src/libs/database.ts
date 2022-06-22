@@ -15,7 +15,11 @@ function CreateTblSql(config: DbConfig, tbls: FlatTables, jsName: string) {
   const create: string[] = []
   const uniques: string[] = []
   const foreigns: string[] = []
-
+  if (tbls[jsName].dbName.length > sqlDiff.keyword.maxTblLen) {
+    throw new Error(
+      `table ${tbls[jsName].dbName} length more than the ${sqlDiff.keyword.maxTblLen}`
+    )
+  }
   for (const k in tbls[jsName].columns) {
     const colObj = tbls[jsName].columns[k]
     // Is to create a view
@@ -343,13 +347,15 @@ function createColSql(
     mapTable: {},
   }
   const splits = colObj.type.match(/[\w\.]+/)![0].split('.')
+  if (colName.length > sqlDiff.keyword.maxColLen) {
+    throw new Error(`column ${colName} length more than the ${sqlDiff.keyword.maxColLen}`)
+  }
   if (splits.length === 1) {
     // Is scalar field
     const dbType = ` ${(
       typ.dbType[props.dbType] || props.dbType
     ).toUpperCase()}`
     let columnSql = `${qPrefix}${colName}${qName}`
-
     if (props.idType) {
       if (props.isId) {
         const primaryKey = sqlDiff.keyword.stmt.primaryKey.toUpperCase()
@@ -434,6 +440,9 @@ export function CreateMapTblSql(
   tbl: [Table, Table]
 ) {
   const sqlDiff = SqlDiff(config.connectOption.driver)
+  if (mapName.length > sqlDiff.keyword.maxTblLen) {
+    throw new Error(`table ${mapName} length more than the ${sqlDiff.keyword.maxTblLen}`)
+  }
   const typ = sqlDiff.keyword
   const qPrefix = typ.quote.prefix
   const qName = typ.quote.name
@@ -445,7 +454,6 @@ export function CreateMapTblSql(
         table.dbName
       }_${v}${qName} ${dbType.toUpperCase()} NOT NULL`
     })
-
   const U = (table: Table) => table.id.map((v) => table.dbName + '_' + v)
 
   return sqlDiff

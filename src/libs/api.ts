@@ -57,7 +57,7 @@ const tblQueries = (
 ) => {
   const TblQuery = (tbl: Table) => {
     const tblName = tbl.jsName
-    const tblType = tbl.jsName.replace(/__/g, '.')
+    const tblType = tbl.jsName.replace(/_/g, '.')
     const query = (Q: string) =>
       `async (args${Cst.argOpts.includes(Q) ? '?' : ''}: ${tblType}.${
         Cst.aggregates.includes(Q) ? `$.${Q}` : Q === 'delete' ? 'del' : Q
