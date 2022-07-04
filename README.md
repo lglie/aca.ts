@@ -2,7 +2,7 @@ English | [中文文档](https://aca.ts.center/zh)
 
 # Aca.ts
 
-> Aca.ts is a CLI that automatically generates typescript API. It can automatically synchronize database schema according to a custom ORM file(database definition described by typescript class); Automatically generate frontend and backend APIs for accessing the database; Automatically generate frontend APIs with the same name to access Web backend functions (like RPC, do not specify routes). The backend code can be written on the frontend, which is an ideal solution for fullstack development.
+> ACA.ts is a fullstack development toolkit, which can automatically synchronize databases and generate database query APIs according to a typescript ORM document; Automatically generate the frontend access backend APIs according to the backend functions and database query APIs, so that the backend code can be developed on the frontend.
 
 Use the class syntax of Typescript to define ORM:
 
@@ -50,7 +50,7 @@ namespace db {
 }
 ```
 
-# Install
+# Installation
 
 ```bash
 npm install -g aca.ts

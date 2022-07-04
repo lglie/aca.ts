@@ -2,7 +2,6 @@ import fs from 'fs'
 import path from 'path'
 import * as Cst from './constant'
 import { apiPlaceholder } from './templates'
-import { execSync } from 'child_process'
 
 BigInt.prototype['toJSON'] = function () {
   return this.toString()
