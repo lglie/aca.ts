@@ -44,7 +44,7 @@ export async function RPCProxy(serverName: string, RPCDir: string) {
       if (fs.statSync(d).isDirectory()) {
         fs.readdirSync(d, 'utf-8').forEach((v) => Iter(path.join(d, v)))
       } else {
-        exps.push(`export * from './${d.slice(root.length + 1, -3)}'`)
+        exps.push(`export * from './${d.replaceAll("\\", "/").slice(root.length + 1, -3)}'`)
       }
     }
     Iter(root)
@@ -71,7 +71,7 @@ export async function RPCProxy(serverName: string, RPCDir: string) {
         switch (node.kind) {
           case ts.SyntaxKind.VariableStatement:
           case ts.SyntaxKind.TypeAliasDeclaration:
-            rtn2 += '\n' + tsContent.slice(node.pos, node.end)
+            rtn2 += '\n export ' + tsContent.slice(node.pos, node.end)
             break
           case ts.SyntaxKind.ExportDeclaration:
             break

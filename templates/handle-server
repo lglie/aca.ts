@@ -15,7 +15,7 @@ function $Handle(trx: any) {
     args = args && JSON.parse(JSON.stringify(args))
     let data
 
-    const mutatedSelect = async (data: any[], select: ArrayLike<unknown> | { [s: string]: unknown }):Promise<any> => {
+    const mutatedSelect = async (data: any[], select: ArrayLike<unknown> | { [s: string]: unknown }): Promise<any> => {
       let rtn
       if (Array.isArray(data)) {
         if (select) {
@@ -65,14 +65,14 @@ function $Handle(trx: any) {
                   where:
                     $Att[table].id.length === 1
                       ? {
-                          [$Att[table].id[0]]: data[$Att[table].id[0]],
-                        }
+                        [$Att[table].id[0]]: data[$Att[table].id[0]],
+                      }
                       : {
-                          [$Att[table].id.join('_')]: $Att[table].id.reduce(
-                            (_: { [x: string]: any }, v: string | number) => ((_[v] = data[v]), _),
-                            {}
-                          ),
-                        },
+                        [$Att[table].id.join('_')]: $Att[table].id.reduce(
+                          (_: { [x: string]: any }, v: string | number) => ((_[v] = data[v]), _),
+                          {}
+                        ),
+                      },
                   select,
                 },
                 table,
@@ -94,12 +94,15 @@ function $Handle(trx: any) {
     }
 
     switch (query) {
+
       case 'findOne':
-        data = await $Queries(trx, sql).finder(table, {
-          where: args?.where,
-          select: args?.select,
-        })
-        data = data[0]
+        if (Object.keys(args?.where).length) {
+          data = await $Queries(trx, sql).finder(table, {
+            where: args?.where,
+            select: args?.select,
+          })
+          data = data[0]
+        }
         break
 
       case 'findFirst':
@@ -179,11 +182,11 @@ function $Handle(trx: any) {
         break
       default:
     }
-    if ($FindQuery[<$FindQuery>query]) data = await $RtnSelect(table, data, args.select)
+    if ($FindQuery[<$FindQuery>query] && data) data = await $RtnSelect(table, data, args.select)
     if ($MutationQuery[<$MutationQuery>query]) data = await mutatedSelect(data, args.select)
 
     data = data ?? null
 
-    return args?.sql ? { data, sql } : { data }
+    return args?.sql ? {data, sql} : {data}
   }
 }

@@ -482,10 +482,7 @@ const generateTsType = (tables) => {
                       where: ${v.fieldType}.uniqueWhere
                       data: Omit<${v.fieldType}.updateInput, ${v.relationKeys}>
                   }>`
-                      : `{
-                      where: ${v.fieldType}.uniqueWhere
-                      data: Omit<${v.fieldType}.updateInput, ${v.relationKeys}>
-                  }`
+                      : `Omit<${v.fieldType}.updateInput, ${v.relationKeys}>`
                   }
                   ${
                     v.isArray

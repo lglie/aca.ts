@@ -533,7 +533,11 @@ const $Queries = function (trx: any, sql: string[] = []) {
           }
           const relationResult = await this.finder(AttCols[key].type, {
             where,
-            select: select[key],
+            orderBy: relationCols[key].orderBy,
+            limit: relationCols[key].limit,
+            offset: relationCols[key].offset,
+            distinct: relationCols[key].distinct,
+						select: relationCols[key].select ?? select[key],
           })
 
           for (const v of result) {
