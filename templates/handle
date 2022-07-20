@@ -1245,7 +1245,7 @@ const $Queries = function (trx: any, sql: string[] = []) {
                 relTableId.map((v2) =>
                   Object.assign(
                     Object.keys(v2).reduce(
-                      (_:any, v3) => ((_[`${AttCol.type}_${v3}`] = v2[v3]), _),
+                      (_:any, v3) => ((_[`${$Att[AttCol.type].dbName}_${v3}`] = v2[v3]), _),
                       {}
                     ),
                     mapTableId
@@ -1285,22 +1285,18 @@ const $Queries = function (trx: any, sql: string[] = []) {
                   where: recordUnique(AttCol.type, record),
                   insert: record,
                 })
+              const items = Array.isArray(v.insert) ? v.insert : [v.insert]
+              ids = await updateInsert(items)
 
-              if (Array.isArray(v.insert)) {
-                for (const record of v.insert)
-                  ids = ids.concat(await updateInsert(record))
-              } else ids = await updateInsert(v.insert)
-
-              await trxQuery(
-                trx(AttCol.relation.mapTable).insert(
-                  ids.map((v2: { [x: string]: any }) =>
-                    Object.keys(v2).reduce(
-                      (_, v3) => ((_[`${k}_${v3}`] = v2[v3]), _),
-                      mapTableId
-                    )
-                  )
+              for (const v2 of ids) {
+                const tableId = mapTableId
+                for (const v3 of $Att[AttCol.type].id) {
+                  tableId[`${$Att[AttCol.type].dbName}_${v3}`] = v2[v3]
+                }
+                await trxQuery(
+                  trx(AttCol.relation.mapTable).insert(tableId)
                 )
-              )
+              }  
             }
             if (v.upsert) {
               const items = Array.isArray(v.upsert) ? v.upsert : [v.upsert]

@@ -487,7 +487,7 @@ const generateTsType = (tables) => {
                   ${
                     v.isArray
                       ? `
-                      set?: ${v.fieldType}.uniqueWhere
+                      set?: $Enumerable<${v.fieldType}.uniqueWhere>
                       updateMany?: ${v.fieldType}.updateMany
                       deleteMany?: ${v.fieldType}.where
                   `

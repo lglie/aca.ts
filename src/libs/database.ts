@@ -130,6 +130,7 @@ export function AlterTblSql(
   }
 
   for (const k in alter) {
+
     const tbl = <Table>tbls[k]
     if (alter[k].map) {
       rtn.alter.push(sqlDiff.tbl(alter[k].map.old).rename(alter[k].map.new))
@@ -220,14 +221,14 @@ export function AlterTblSql(
                 )
             )
           }
-          if (alterCol.type) {
-            rtn.alter.push(
-              sqlDiff
-                .tbl(tbl.dbName)
-                .mutate.alter(colName)
-                .type(alterCol.type.new)
-            )
-          }
+          // if (alterCol.type) {
+          //   rtn.alter.push(
+          //     sqlDiff
+          //       .tbl(tbl.dbName)
+          //       .mutate.alter(colName)
+          //       .type(alterCol.type.new)
+          //   )
+          // }
           if (alterCol.props) {
             if (alterCol.props.isId) {
               throw new Error(
