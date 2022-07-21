@@ -6,10 +6,11 @@ interface IHttpClient {
 	}>
 	interceptors?: {
 		request?: (req: RequestInit) => RequestInit
-		response?: (data: { data?: any; sql?: string[]; error?: string }) => {
+		response?: (res: { data?: any; sql?: string[]; error?: string, errcode?: number }) => {
 			data?: any
 			sql?: string[]
 			error?: string
+      errcode?: number
 		}
 	}
 }

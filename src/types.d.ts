@@ -19,6 +19,7 @@ type Config = {
     [k: string]: {
       apiDir?: string
       allowRPCs?: string[]
+      fetcher?: 'wx.request' | 'my.request' | 'tt.request' | 'uni.request' | 'Taro.request'  | 'fetch'
     }
   }
 }

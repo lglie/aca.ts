@@ -906,7 +906,8 @@ ${fnTpl(RPCApis)}
       MkdirsSync(path.join(resolveAcaDir, apiDir))
     fs.writeFileSync(api, clientApi)
     if (!fs.existsSync(apiIndex)) {
-      fs.writeFileSync(apiIndex, apiIndexClient(Object.keys(ast.dbs), RPCs))
+      const fetcher = clientApps[k]?.fetcher || 'fetch'
+      fs.writeFileSync(apiIndex, apiIndexClient(Object.keys(ast.dbs), RPCs, fetcher))
     }
   }
 }

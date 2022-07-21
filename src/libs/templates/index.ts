@@ -212,34 +212,107 @@ export const createdEchoServer = () => `
 Run: aca up
 `
 
-export function apiIndexClient(dbs: string[], RPCs: string[]) {
+export function apiIndexClient(dbs: string[], RPCs: string[], fetcher: string) {
   const apiStr = (arr: string[]) =>
     arr
       .map(
-        (v) => `
-$.${v} = new $Request(url)
-$.${v}.setHttpClient({
-  interceptors:{
-    request: (init) => {
-      // 请根据需求编写请求拦截代码
-      console.log(init)
-      return init
-    },
-    response: (rtn) => {
-      // 请根据需求编写响应拦截代码
-      console.log(rtn)
-      return rtn
-    }
-  }
-})
-`
+        (v) => {
+          switch (fetcher) {
+            case 'wx.request': 
+            case 'my.request': 
+            case 'tt.request': {
+              return `
+              $.${v} = new $Request(url)
+              $.${v}.setHttpClient({
+                fetcher: async (req) => {
+                  return new Promise((resolve, reject) => {
+                    ${fetcher}({
+                      method: "POST",
+                      url: req.url,
+                      data: req.body,
+                      header: req.headers,
+                      success (response) {
+                        resolve(response.data)
+                      },
+                      fail (err) {
+                        reject(err)
+                      }
+                    });
+                  })
+                },
+                interceptors:{
+                  request: (req) => {
+                    // 请根据需求编写请求拦截代码
+                    console.log(req)
+                    return req
+                  },
+                  response: (res) => {
+                    // 请根据需求编写响应拦截代码
+                    console.log(res)
+                    return res
+                  }
+                }
+              })
+              `
+            }
+            case 'uni.request':
+            case 'Taro.request': {
+              return `
+              $.${v} = new $Request(url)
+              $.${v}.setHttpClient({
+                fetcher: async (req) => {
+                  const response = await ${fetcher}({
+                    method: "POST",
+                    url: req.url,
+                    data: req.body,
+                    header: req.headers,
+                  });
+                  return response.data
+                },
+                interceptors:{
+                  request: (req) => {
+                    // 请根据需求编写请求拦截代码
+                    console.log(req)
+                    return req
+                  },
+                  response: (res) => {
+                    // 请根据需求编写响应拦截代码
+                    console.log(res)
+                    return res
+                  }
+                }
+              })
+              `
+            }
+            case 'fetch':
+            default: {
+              return `
+              $.${v} = new $Request(url)
+              $.${v}.setHttpClient({
+                interceptors:{
+                  request: (req) => {
+                    // 请根据需求编写请求拦截代码
+                    console.log(req)
+                    return req
+                  },
+                  response: (res) => {
+                    // 请根据需求编写响应拦截代码
+                    console.log(res)
+                    return res
+                  }
+                }
+              })
+              ` 
+            }
+          }
+        }
       )
       .join('\n\n')
 
   return `// This file can be modified as needed, and can be used by importing this file in other pages
 // This file is generated only once. Deleting this file will regenerate it
 import { $, $Request } from './aca'
-
+${fetcher === 'Taro.request' ? "import Taro from '@tarojs/taro'" : ''}
 /***************************************************************** */
 // Fill in the address of the back-end server.
 // Note: when deploying to the production environment, it must be changed to the address of the production environment
