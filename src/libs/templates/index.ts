@@ -218,15 +218,19 @@ export function apiIndexClient(dbs: string[], RPCs: string[]) {
       .map(
         (v) => `
 $.${v} = new $Request(url)
-$.${v}.interceptors.request((init:RequestInit) => {
-  // 请根据需求编写请求拦截代码
-  console.log(init)
-  return init
-})
-$.${v}.interceptors.response((rtn:any) => {
-  // 请根据需求编写响应拦截代码
-  console.log(rtn)
-  return rtn
+$.${v}.setHttpClient({
+  interceptors:{
+    request: (init) => {
+      // 请根据需求编写请求拦截代码
+      console.log(init)
+      return init
+    },
+    response: (rtn) => {
+      // 请根据需求编写响应拦截代码
+      console.log(rtn)
+      return rtn
+    }
+  }
 })
 `
       )
@@ -267,8 +271,10 @@ export const reqInitValueTpl = `{
   req(args: any) {
     return <any>{}
   },
-  interceptors: {
-    request: (callback: (init: RequestInit) => RequestInit) => {},
-    response: (callback: any) => {},
-  }
+  setHttpClient({
+    fetcher,
+    interceptors,
+  }: IHttpClient) {},
 }`
+
+
