@@ -209,7 +209,8 @@ export function addAppConfig(
   appName: string,
   kind: 'server' | 'client',
   expApi: string[],
-  apiDir
+  apiDir: string,
+  fetcher?: 'wx.request' | 'my.request' | 'tt.request' | 'uni.request' | 'Taro.request'
 ) {
   const acaRoot = path.resolve(acaDir)
   const config: Config = require(path.join(acaRoot, Cst.AcaConfig))
@@ -246,9 +247,11 @@ export function addAppConfig(
       MkdirsSync(resolveApiDir)
 
       config.clientApps[appName] = {
+        "~": "可以通过配置fetcher字段来生成不同的http客户端请求。支持的配置参数有 'wx.request' | 'my.request' | 'tt.request' | 'uni.request' | 'Taro.request'。也可以通过如下命令自动配置 aca add -c -f wx.request ",
         apiDir,
         allowRPCs: Object.keys(config.serverApps),
       }
+      fetcher && (config.clientApps[appName]['fetcher'] = fetcher)
   }
 
   fs.writeFileSync(

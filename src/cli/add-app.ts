@@ -13,6 +13,7 @@ export async function addApp(yargs: any) {
     )
   const acaDir = currDir === '.' ? '.' : '..'
   const argv = yargs.argv
+  
   const server = Cst.DefaultServerName,
     client = Cst.DefaultClientName
   const argvS = argv.server || argv.s ? server : ''
@@ -25,27 +26,28 @@ export async function addApp(yargs: any) {
     if (!appName)
       throw new Error(`No appName, usage: aca add [appName] <-s -c>`)
     if (!fs.existsSync(appName) || !fs.statSync(appName).isDirectory())
-      throw new Error(`The app '${name}' does not exist under this project`)
+      throw new Error(`The app '${appName}' does not exist under this project`)
   } else {
     // The command to create other app configurations under the current app directory
     if (appName) {
       // Determine if the app exists
       const namePath = path.join(acaDir, appName)
       if (!fs.existsSync(namePath) || !fs.statSync(namePath).isDirectory())
-        throw new Error(`The app '${name}' does not exist under this project`)
+        throw new Error(`The app '${appName}' does not exist under this project`)
     } else appName = currDir
   }
 
   const dbs = Object.keys((await orm(acaDir)).dbs)
   let expArr, DefaultApiDir
 
+  const argvF = argv.fetcher || argv.f || ''
   if (argvS && argvC) {
     expArr = dbs.concat(Cst.ServerApiExport)
     DefaultApiDir = path.join(Cst.DefaultTsDir, Cst.DefaultServerApiDir)
     addAppConfig(acaDir, appName, 'server', expArr, DefaultApiDir)
     expArr = dbs.concat(Cst.ClientApiExport)
     DefaultApiDir = path.join(Cst.DefaultTsDir, Cst.DefaultClientApiDir)
-    addAppConfig(acaDir, appName, 'client', expArr, DefaultApiDir)
+    addAppConfig(acaDir, appName, 'client', expArr, DefaultApiDir, argvF)
   } else {
     const kind = argvS || argvC
     expArr = dbs.concat(
@@ -56,7 +58,7 @@ export async function addApp(yargs: any) {
       { server: Cst.DefaultServerApiDir, client: Cst.DefaultClientApiDir }[kind]
     )
     const apiDir = argv.a || argv.apiDir || DefaultApiDir
-    addAppConfig(acaDir, appName, <any>kind, expArr, apiDir)
+    addAppConfig(acaDir, appName, <any>kind, expArr, apiDir, argvF)
   }
 
   console.log(

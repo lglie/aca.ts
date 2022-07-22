@@ -17,6 +17,7 @@ type Config = {
     kind: 'client'
   } & {
     [k: string]: {
+      "~"?: string
       apiDir?: string
       allowRPCs?: string[]
       fetcher?: 'wx.request' | 'my.request' | 'tt.request' | 'uni.request' | 'Taro.request'  | 'fetch'

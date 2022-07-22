@@ -29,12 +29,14 @@ export async function client(yargs: any) {
     path.join(acaRoot, name, Cst.DefaultTsDir, 'App.tsx'),
     reactPage(expArr.join(', '))
   )
+  const argvF = argv.fetcher || argv.f || ''
 
   addAppConfig(
     '.',
     name,
     'client',
     expArr,
-    path.join(Cst.DefaultTsDir, Cst.DefaultClientApiDir)
+    path.join(Cst.DefaultTsDir, Cst.DefaultClientApiDir),
+    argvF
   )
 }
