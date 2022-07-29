@@ -466,12 +466,12 @@ const generateTsType = (tables) => {
                   upsert?: ${
                     v.isArray
                       ? `$Enumerable<{
-                      where: uniqueWhere
+                      where: ${v.fieldType}.uniqueWhere
                       insert: Omit<${v.fieldType}.insertInput, ${v.relationKeys}>
                       update: Omit<${v.fieldType}.updateInput, ${v.relationKeys}>
                   }>`
                       : `{
-                      where: uniqueWhere
+                      where: ${v.fieldType}.uniqueWhere
                       insert: Omit<${v.fieldType}.insertInput, ${v.relationKeys}>
                       update: Omit<${v.fieldType}.updateInput, ${v.relationKeys}>
                   }`
