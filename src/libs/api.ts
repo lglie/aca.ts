@@ -365,7 +365,11 @@ const generateTsType = (tables) => {
             .map((v) => `${v.fieldName}?:  $Order`)
             .join('\n')
         case 'where':
-          return fields
+          return [
+            `AND?: where[]`,
+            `OR?: where[]`,
+            `NOT?: where[]`,
+            ...fields
             .map(
               (v) =>
                 `${v.fieldName}?: ${
@@ -383,7 +387,7 @@ const generateTsType = (tables) => {
                           : `$${titleCase(v.fieldType)}Filter<${v.isNull}>`
                       } | ${v.fieldType} ${v.isNull ? ' | null' : ''}`
                 }`
-            )
+            )]
             .join('\n')
         case 'select':
           return `
