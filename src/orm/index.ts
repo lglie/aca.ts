@@ -465,6 +465,7 @@ async function PickModel(acaDir: '.' | '..', ast: ts.SourceFile) {
     // Find table or enumeration
     const findModel = (namespace: string[], relName: string) => {
       let rtn
+      if (!relName) throw `Type definition: ${relName} not found`
       const qual = relName.split('.')
       const nsModels = (ns: string[]) =>
         ns.reduce((_, k) => (_ = (<Namespace>_[k]).models), db)

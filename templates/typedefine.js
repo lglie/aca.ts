@@ -74,6 +74,8 @@ type $StringFilter<TNull = true> = {
   lte?: string
   gt?: string
   gte?: string
+  AND?: $Enumerable<$StringFilter<TNull>>
+  OR?: $Enumerable<$StringFilter<TNull>>
 }
 
 type $EnumFilter<T, TNull = true> = {
@@ -92,6 +94,8 @@ type $EnumFilter<T, TNull = true> = {
   lte?: string
   gt?: string
   gte?: string
+  AND?: $Enumerable<$EnumFilter<T, TNull>>
+  OR?: $Enumerable<$EnumFilter<T, TNull>>
 }
 
 type $NumberFilter<TNull = true> = {
@@ -107,6 +111,8 @@ type $NumberFilter<TNull = true> = {
   gte?: number
   like?: number
   between?: Array<number>
+  AND?: $Enumerable<$NumberFilter<TNull>>
+  OR?: $Enumerable<$NumberFilter<TNull>>
 }
 
 type $DateFilter<TNull = true> = {
@@ -122,16 +128,22 @@ type $DateFilter<TNull = true> = {
   gte?: Date
   like?: Date
   between?: Array<Date>
+  AND?: $Enumerable<$DateFilter<TNull>>
+  OR?: $Enumerable<$DateFilter<TNull>>
 }
 type $BooleanFilter<TNull = true> = {
   eq?: TNull extends true ? boolean | null : boolean
   not?: TNull extends true
     ? $BooleanFilter<TNull> | boolean | null
     : $BooleanFilter<TNull> | boolean
+  AND?: $Enumerable<$BooleanFilter<TNull>>
+  OR?: $Enumerable<$BooleanFilter<TNull>>
 }
 
 type $ObjectFilter<TNull = true> = {
   eq?: TNull extends true ? string | null : string
   not?: TNull extends true ? Array<string> | null : Array<string>
+  AND?: $Enumerable<$ObjectFilter<TNull>>
+  OR?: $Enumerable<$ObjectFilter<TNull>>
 }
 `
