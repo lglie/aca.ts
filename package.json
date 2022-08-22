@@ -1,6 +1,6 @@
 {
   "name": "aca.ts",
-  "version": "0.0.74",
+  "version": "0.0.75",
   "description": "ACA.ts is a fullstack development toolkit, which can automatically synchronize databases and generate database query APIs according to a typescript ORM document; Automatically generate the frontend access backend APIs according to the backend functions and database query APIs, so that the backend code can be developed on the frontend.",
   "keywords": [
     "aca"

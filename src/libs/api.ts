@@ -460,12 +460,14 @@ const generateTsType = (tables) => {
                   disconnect?: ${
                     v.isArray
                       ? `$Enumerable<${v.fieldType}.uniqueWhere>`
-                      : `${v.fieldType}.uniqueWhere`
+                      // : `${v.fieldType}.uniqueWhere`
+                      : 'boolean'
                   }
                   delete?: ${
                     v.isArray
                       ? `$Enumerable<${v.fieldType}.uniqueWhere>`
-                      : `${v.fieldType}.uniqueWhere`
+                      // : `${v.fieldType}.uniqueWhere`
+                      : 'boolean'
                   }
                   upsert?: ${
                     v.isArray
