@@ -947,7 +947,7 @@ const $Queries = function (trx: any, sql: string[] = []) {
             await trxQuery(
               trx($Att[AttCol.type].dbName).where(foreignWhere).del()
             )
-          } else if (v.disconnect === true) {
+          } else if (v.disconnect) {
             await trxQuery(
               trx($Att[table].dbName)
                 .where(args.where)
