@@ -135,7 +135,7 @@ const keywords = {
     },
     timestamp: {
       create,
-      update,
+      update: create,
     },
     stmt: {
       primaryKey: ' primary key',
@@ -218,7 +218,7 @@ const keywords = {
     },
     timestamp: {
       create: create,
-      update,
+      update: create,
     },
     stmt: {
       primaryKey: ' primary key',
@@ -298,7 +298,7 @@ const keywords = {
     },
     timestamp: {
       create: create,
-      update,
+      update: create,
     },
     stmt: {
       primaryKey: ' primary key',
@@ -382,7 +382,7 @@ const keywords = {
     },
     timestamp: {
       create,
-      update: '',
+      update: create,
     },
     stmt: {
       primaryKey: ' primary key',
@@ -589,7 +589,13 @@ export default function (driver: Driver) {
             const quoteCols = `${columns
               .map((v) => `${qName}${v}${qName}`)
               .toString()}`
-
+            if ("betterSqlite3" === driver) {
+              if (action === 'DROP') {
+                return `DROP INDEX ${qName}UNIQUE_${table}_${key}${qName}`
+              } else if (action === 'ADD') {
+                return `CREATE UNIQUE INDEX ${qName}UNIQUE_${table}_${key}${qName} ON ${qName}${table}${qName}(${quoteCols})`
+              }
+            }
             return `${keyword.stmt.constraintPre(
               table,
               action

@@ -305,6 +305,7 @@ interface Annotate {
   uniques?: (string | string[])[]
   foreignKeys?: string[]
   scalarColumns?: string[]
+  updatedAtColumns?: string[]
   check?: string
   columns: Record<
     string,

@@ -703,6 +703,7 @@ async function PickModel(acaDir: '.' | '..', ast: ts.SourceFile) {
                       ) {
                         const tblF = FT.columns[keys[i]],
                           relF = PT.columns[refs[i]]
+   
                         if (tblF) {
                           tblF.type = relF.type
                           tblF.props.jsType = relF.props.jsType

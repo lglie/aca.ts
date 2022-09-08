@@ -344,7 +344,6 @@ async function betterSqlite3(
         (<any>connOption).filename
       }" already exists, or has been recorded by aca up, please back up and delete first`
     }
-
     const allSqls = DbDiffSqls(currdb, prevDb)
 
     if (allSqls) {
@@ -390,6 +389,7 @@ export async function up(yargs: any) {
   }
 
   const dbs = ast.dbs
+
   // Process the previous orm
   const lastOrm = logOrm()
   const prevAst = lastOrm && (await orm(acaDir, lastOrm))
@@ -455,145 +455,3 @@ export async function up(yargs: any) {
     )
   }
 }
-
-const aa = `
-CREATE TABLE "___ACA" ("version" varchar(18) PRIMARY KEY, "preverison" varchar(18), "status" boolean DEFAULT true, "schema" text, "createdAt" timestamp DEFAULT NOW());
-
-CREATE TABLE "user" (
-"id" CHAR(30) PRIMARY KEY,
-"firstName" VARCHAR(16),
-"lastName" VARCHAR(25),
-"gender" VARCHAR(20) DEFAULT 'A',
-"age" INT8 DEFAULT 25,
-"bigint" NUMERIC DEFAULT '120',
-"tags" INT8[],
-"married" BOOLEAN DEFAULT true,
-"description" TEXT DEFAULT 'optional description',
-"detail" JSON,
-"created_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-"updated_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-UNIQUE ("firstName","lastName"));
-
-CREATE TABLE "PROF" (
-"id" VARCHAR(8) PRIMARY KEY,
-"password" CHAR(8),
-"firstNameId" VARCHAR(16),
-"lastNameId" VARCHAR(25));
-
-CREATE TABLE "content__post" (
-"serial" SERIAL8 PRIMARY KEY,
-"isPublished" BOOLEAN,
-"enum" VARCHAR(20),
-"score" FLOAT8,
-"firstNameId" VARCHAR(16),
-"lastNameId" VARCHAR(25));
-
-CREATE TABLE "content__category" (
-"id" TEXT PRIMARY KEY,
-"name" TEXT,
-"categoriesId" TEXT);
-
-CREATE TABLE "comment" (
-"id" CHAR(30) PRIMARY KEY,
-"topEnum" VARCHAR(20) DEFAULT 'C',
-"content" TEXT,
-"createdAt" TIMESTAMP DEFAULT NOW(),
-"postsId" INT8);
-
-CREATE TABLE "_comment_commenter_$_user_comments" (
-"user_id" CHAR(30) NOT NULL,
-"comment_id" CHAR(30) NOT NULL, UNIQUE ("user_id","comment_id"));       
-
-CREATE TABLE "_content__category_posts_$_content__post_categories" (    
-"content__post_serial" SERIAL8 NOT NULL,
-"content__category_id" TEXT NOT NULL, UNIQUE ("content__post_serial","content__category_id"));
-
-CREATE TABLE "_comment_category_$_content__category_comments" (
-"content__category_id" TEXT NOT NULL,
-"comment_id" CHAR(30) NOT NULL, UNIQUE ("content__category_id","comment_id"));
-
-ALTER TABLE "PROF" ADD CONSTRAINT "FOREIGN_PROF_firstNameId_lastNameId" FOREIGN KEY ("firstNameId","lastNameId") REFERENCES "user" ("firstName","lastName") on update cascade on delete set null;
-
-ALTER TABLE "PROF" ADD CONSTRAINT "UNIQUE_PROF_firstNameId_lastNameId" UNIQUE ("firstNameId","lastNameId");
-
-ALTER TABLE "content__post" ADD CONSTRAINT "FOREIGN_content__post_firstNameId_lastNameId" FOREIGN KEY ("firstNameId","lastNameId") REFERENCES "user" ("firstName","lastName") on update cascade on delete set null;     
-
-ALTER TABLE "content__category" ADD CONSTRAINT "UNIQUE_content__category_name" UNIQUE ("name");
-
-CREATE INDEX "INDEX_content__category_name" ON "content__category" ("name");
-
-ALTER TABLE "content__category" ADD CONSTRAINT "FOREIGN_content__category_categoriesId" FOREIGN KEY ("categoriesId") REFERENCES "content__category" ("id") on update cascade on delete set null;
-
-ALTER TABLE "comment" ADD CONSTRAINT "FOREIGN_comment_postsId" FOREIGN KEY ("postsId") REFERENCES "content__post" ("serial")`
-
-const mssql1 = `
-CREATE TABLE "___ACA" ("version" varchar(18) PRIMARY KEY, "preverison" varchar(18), "status" boolean DEFAULT true, "orm" text, "createdAt" timestamp DEFAULT CURRENT_TIMESTAMP);       
-
-INSERT INTO "___ACA" ("version", "orm") VALUES ('1653286591208', '');
-
-CREATE TABLE "user" (
-"id" CHAR(25) PRIMARY KEY,
-"firstName" VARCHAR(16) NOT NULL,
-"lastName" VARCHAR(25) NOT NULL,
-"gender" VARCHAR(20) DEFAULT 'A',
-"age" INT DEFAULT 25,
-"bigint" BIGINT DEFAULT '120',
-"married" BOOLEAN DEFAULT true,
-"description" VARCHAR(768),
-"detail" JSON,
-"created_at" TIMESTAMP default current_timestamp,
-"updated_at" TIMESTAMP default current_timestamp on update current_timestamp);
-
-CREATE TABLE "PROF" (
-"id" VARCHAR(8) PRIMARY KEY NOT NULL,
-"password" CHAR(8) NOT NULL,
-"firstNameId" VARCHAR(16) NOT NULL,
-"lastNameId" VARCHAR(25) NOT NULL);
-
-CREATE TABLE "ns__post" (
-"serial" INT PRIMARY KEY IDENTITY,
-"isPublished" BOOLEAN NOT NULL,
-"enum" VARCHAR(20),
-"score" REAL NOT NULL,
-"firstNameId" VARCHAR(16) NOT NULL,
-"lastNameId" VARCHAR(25) NOT NULL);
-
-CREATE TABLE "ns__category" (
-"id" VARCHAR(768) PRIMARY KEY NOT NULL,
-"name" VARCHAR(768) NOT NULL,
-"categoriesId" VARCHAR(768));
-
-CREATE TABLE "comment" (
-"id" CHAR(25) PRIMARY KEY,
-"topEnum" VARCHAR(20) DEFAULT 'C',
-"content" VARCHAR(768) NOT NULL,
-"createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-"postsId" INT NOT NULL);
-
-CREATE TABLE "_comment_commenter_$_user_comments" (
-"user_id" CHAR(25) NOT NULL,
-"comment_id" CHAR(25) NOT NULL, UNIQUE ("user_id","comment_id"));
-
-CREATE TABLE "_ns__category_posts_$_ns__post_categories" (   
-"ns__post_serial" INT NOT NULL,
-"ns__category_id" VARCHAR(768) NOT NULL, UNIQUE ("ns__post_serial","ns__category_id"));
-
-CREATE TABLE "_comment_category_$_ns__category_comments" (   
-"ns__category_id" VARCHAR(768) NOT NULL,
-"comment_id" CHAR(25) NOT NULL, UNIQUE ("ns__category_id","comment_id"));
-
-ALTER TABLE "user" ADD CONSTRAINT "UNIQUE_user_firstName_lastName" UNIQUE ("firstName","lastName");
-
-ALTER TABLE "PROF" ADD CONSTRAINT "UNIQUE_PROF_firstNameId_lastNameId" UNIQUE ("firstNameId","lastNameId");
-
-ALTER TABLE "PROF" ADD CONSTRAINT "FOREIGN_PROF_firstNameId_lastNameId" FOREIGN KEY ("firstNameId","lastNameId") REFERENCES "user" ("firstName","lastName") on update cascade on delete cascade;
-
-ALTER TABLE "ns__post" ADD CONSTRAINT "FOREIGN_ns__post_firstNameId_lastNameId" FOREIGN KEY ("firstNameId","lastNameId") REFERENCES "user" ("firstName","lastName");
-
-CREATE INDEX "INDEX_ns__category_name" ON "ns__category" ("name");
-
-ALTER TABLE "ns__category" ADD CONSTRAINT "UNIQUE_ns__category_name" UNIQUE ("name");
-
-ALTER TABLE "ns__category" ADD CONSTRAINT "FOREIGN_ns__category_categoriesId" FOREIGN KEY ("categoriesId") REFERENCES "ns__category" ("id");
-
-ALTER TABLE "comment" ADD CONSTRAINT "FOREIGN_comment_postsId" FOREIGN KEY ("postsId") REFERENCES "ns__post" ("serial") `
