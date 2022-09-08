@@ -1,15 +1,16 @@
+
 // Convert the items of the array list to the boolean form of returning format
 const $ArrayTrue = (arrayItem: string[]) =>
-  arrayItem.reduce((_:any, v) => ((_[v] = true), _), {})
+  arrayItem.reduce((_: any, v) => ((_[v] = true), _), {})
 
 // Process the returned database record
-function $RtnSelect(table: string, rtnCols: any, select?: any):any {
+function $RtnSelect(table: string, rtnCols: any, select?: any): any {
   if (Array.isArray(rtnCols)) {
-    const rtn:any = []
+    const rtn: any = []
     for (const v of rtnCols) rtn.push($RtnSelect(table, v, select))
     return rtn
   } else {
-    const rtn:any = {}
+    const rtn: any = {}
     const scalarCols = $Att[table].scalarColumns
 
     const jsName = (name: string) => {
@@ -48,7 +49,7 @@ function $RtnSelect(table: string, rtnCols: any, select?: any):any {
     } else return rtnCols
   }
 }
-function isValidDate(value:any) {
+function isValidDate(value: any) {
   const date = new Date(value)
   return !isNaN(date.getTime())
 }
@@ -62,12 +63,13 @@ const $Queries = function (trx: any, sql: string[] = []) {
   function argsValidate(
     table: string,
     args: any,
-    query: 'select' | 'insert' | 'update' | 'delete'
+    query: 'select' | 'insert' | 'update' | 'delete',
+    trx: any
   ): any {
     const records = Array.isArray(args) ? args : [args]
-    const AttCols:any = $Att[table].columns
+    const AttCols: any = $Att[table].columns
     // Used to store added or modified columns
-    const addedColumns:any = records.map((v) => ({}))
+    const addedColumns: any = records.map((v) => ({}))
     for (let i = 0; i < records.length; i++) {
       for (const AttCol in AttCols) {
         if (AttCols[AttCol].relation) continue
@@ -106,9 +108,8 @@ const $Queries = function (trx: any, sql: string[] = []) {
               (AttCols[AttCol].dbType === 'uuid' ||
                 AttCols[AttCol].dbType === 'cuid')
             ) {
-              
               addedColumns[i][AttCol] = { uuid: uuidv4(), cuid: cuid() }[
-                <'uuid' | 'cuid'>AttCols[AttCol].dbType
+                AttCols[AttCol].dbType
               ]
             } else if ('required' !== AttCols[AttCol].optional) {
               if ($Att[table].foreignKeys.includes(AttCol))
@@ -116,6 +117,16 @@ const $Queries = function (trx: any, sql: string[] = []) {
             } else {
               throw `"${$Att[table].dbName}": missing required fieldmissing required field: "${AttCol}"`
             }
+          }
+        }
+      }
+      if (query === 'update') {
+        if (
+          $Att[table].updatedAtColumns &&
+          $Att[table].updatedAtColumns.length
+        ) {
+          for (const AttCol of $Att[table].updatedAtColumns) {
+            addedColumns[i][AttCol] = trx.raw('CURRENT_TIMESTAMP')
           }
         }
       }
@@ -135,7 +146,7 @@ const $Queries = function (trx: any, sql: string[] = []) {
     where: any,
     logic: $WhereLogic = 'AND'
   ) => {
-    const operator:any = {
+    const operator: any = {
       eq: '=',
       lt: '<',
       gt: '>',
@@ -376,7 +387,9 @@ const $Queries = function (trx: any, sql: string[] = []) {
         (_[
           $Att[table].columns[k]?.relation
             ? { primary: 1, foreign: 2, many: 3 }[
-                <'primary'|'foreign'|'many'>$Att[table].columns[k].relation.kind
+                <'primary' | 'foreign' | 'many'>(
+                  $Att[table].columns[k].relation.kind
+                )
               ]
             : 0
         ][k] = cols[k]),
@@ -386,13 +399,13 @@ const $Queries = function (trx: any, sql: string[] = []) {
     )
 
   // Convert columns into database columns
-  const dbCols = (table: string, cols: { [x: string]: any }):any => {
+  const dbCols = (table: string, cols: { [x: string]: any }): any => {
     if (Array.isArray(cols)) {
-      const rtn:any = []
+      const rtn: any = []
       for (const v of cols) rtn.push(dbCols(table, v))
       return rtn
     } else {
-      const rtn:any = {}
+      const rtn: any = {}
       for (const k in cols) {
         rtn[$Att[table].columns[k].dbName] = cols[k]
       }
@@ -402,7 +415,7 @@ const $Queries = function (trx: any, sql: string[] = []) {
 
   // Update arithmetric operator, only process scalar fields, and add where conditions when calling
   const updateOperator = (table: string, data: { [x: string]: any }) => {
-    const Kx = Object.keys(data || {}).reduce((_:any, v) => {
+    const Kx = Object.keys(data || {}).reduce((_: any, v) => {
       const col = $Att[table].columns[v]
       if (col.jsType === 'number' && typeof data[v] === 'object') {
         const [[oper, val]] = Object.entries(data[v])
@@ -416,8 +429,11 @@ const $Queries = function (trx: any, sql: string[] = []) {
   }
 
   // Find the unique value of a record
-  const recordUnique = (table: string | number, record: { [x: string]: any }) => {
-    let uniqueWhere:any = {}
+  const recordUnique = (
+    table: string | number,
+    record: { [x: string]: any }
+  ) => {
+    let uniqueWhere: any = {}
     for (const unique of $Att[table].uniques) {
       if (Array.isArray(unique)) {
         for (const item of unique) {
@@ -482,7 +498,7 @@ const $Queries = function (trx: any, sql: string[] = []) {
         )
 
         for (const key in relationCols) {
-          const where:any = relationCols[key].where ?? {}
+          const where: any = relationCols[key].where ?? {}
           let pKeys: any, fKeys: any, relIds
 
           switch (AttCols[key].relation.kind) {
@@ -493,14 +509,18 @@ const $Queries = function (trx: any, sql: string[] = []) {
               pKeys = rel.references
               fKeys = rel.keys
               where[fKeys] = {
-                in: result.map((v: { [x: string]: any }) => pKeys.map((v2: string | number) => v[v2])),
+                in: result.map((v: { [x: string]: any }) =>
+                  pKeys.map((v2: string | number) => v[v2])
+                ),
               }
               break
             case 'foreign':
               pKeys = AttCols[key].relation.references
               fKeys = AttCols[key].relation.keys
               where[pKeys] = {
-                in: result.map((v: { [x: string]: any }) => fKeys.map((v2: string | number) => v[v2])),
+                in: result.map((v: { [x: string]: any }) =>
+                  fKeys.map((v2: string | number) => v[v2])
+                ),
               }
               break
             case 'many':
@@ -513,9 +533,12 @@ const $Queries = function (trx: any, sql: string[] = []) {
                   .select()
                   .whereIn(
                     tableId,
-                    result.map((v: { [x: string]: any }) => $Att[table].id.map((v2: string | number) => v[v2]))
+                    result.map((v: { [x: string]: any }) =>
+                      $Att[table].id.map((v2: string | number) => v[v2])
+                    )
                   )
               )
+              // @ts-ignore
               where[id] = {
                 in: relIds.map((v: { [x: string]: any }) =>
                   id
@@ -537,7 +560,7 @@ const $Queries = function (trx: any, sql: string[] = []) {
             limit: relationCols[key].limit,
             offset: relationCols[key].offset,
             distinct: relationCols[key].distinct,
-						select: relationCols[key].select ?? select[key],
+            select: relationCols[key].select ?? select[key],
           })
 
           for (const v of result) {
@@ -550,13 +573,17 @@ const $Queries = function (trx: any, sql: string[] = []) {
                       ? fKeys
                       : pKeys
                     )
-                      .map((v2: string | number) => (r[v2] ? r[v2].trim() : null))
+                      .map((v2: string | number) =>
+                        r[v2] ? r[v2].trim() : null
+                      )
                       .join('_')}` ===
                     `${(AttCols[key].relation.kind === 'primary'
                       ? pKeys
                       : fKeys
                     )
-                      .map((v2: string | number) => (v[v2] ? v[v2].trim() : null))
+                      .map((v2: string | number) =>
+                        v[v2] ? v[v2].trim() : null
+                      )
                       .join('_')}`
                 )
                 if (
@@ -574,10 +601,14 @@ const $Queries = function (trx: any, sql: string[] = []) {
                   .filter(
                     (r: { [x: string]: string }) =>
                       tableId
-                        .map((v2: string | number) => (r[v2] ? r[v2].trim() : null))
+                        .map((v2: string | number) =>
+                          r[v2] ? r[v2].trim() : null
+                        )
                         .join('_') ==
                       $Att[table].id
-                        .map((v2: string | number) => (v[v2] ? v[v2].trim() : null))
+                        .map((v2: string | number) =>
+                          v[v2] ? v[v2].trim() : null
+                        )
                         .join('_')
                   )
                   .map((v3: { [x: string]: string }) =>
@@ -597,7 +628,11 @@ const $Queries = function (trx: any, sql: string[] = []) {
                   )
                 v[key] = relationResult.filter((r: { [x: string]: string }) =>
                   mapTableData.includes(
-                    id.map((v2: string | number) => (r[v2] ? r[v2].trim() : null)).join('_')
+                    id
+                      .map((v2: string | number) =>
+                        r[v2] ? r[v2].trim() : null
+                      )
+                      .join('_')
                   )
                 )
             }
@@ -642,9 +677,9 @@ const $Queries = function (trx: any, sql: string[] = []) {
           scalarRtn = await trxQuery(
             trx($Att[table].dbName)
               .insert(
-                argsValidate(table, dbCols(table, scalarRecords), 'insert')
+                argsValidate(table, dbCols(table, scalarRecords), 'insert', trx)
               )
-              .returning(args.select ? Object.keys(args.select) : '*')
+              .returning('*')
           )
         } else {
           scalarRtn = []
@@ -719,8 +754,10 @@ const $Queries = function (trx: any, sql: string[] = []) {
         // Create this table and get the uniqur field for foreign key table to use
         scalarRtn = await trxQuery(
           trx($Att[table].dbName)
-            .insert(argsValidate(table, dbCols(table, scalarCols), 'insert'))
-            .returning(args.select ? Object.keys(args.select) : '*')
+            .insert(
+              argsValidate(table, dbCols(table, scalarCols), 'insert', trx)
+            )
+            .returning('*')
         )
         // Create all foreign key tables and apply the unique key of this table to the corresponding table
         if (Object.keys(primaryCols).length) {
@@ -737,7 +774,9 @@ const $Queries = function (trx: any, sql: string[] = []) {
                 let rTable = await trxQuery(
                   trx($Att[AttCol.type].dbName)
                     .where(dbCols(AttCol.type, v.connect))
-                    .update(relationForeign)
+                    .update(
+                      argsValidate(AttCol.type, relationForeign, 'update', trx)
+                    )
                     .returning('*')
                 )
                 if (!rTable.length)
@@ -749,7 +788,9 @@ const $Queries = function (trx: any, sql: string[] = []) {
                 await trxQuery(
                   trx($Att[AttCol.type].dbName)
                     .where(dbCols(AttCol.type, v.connect))
-                    .update(relationForeign)
+                    .update(
+                      argsValidate(AttCol.type, relationForeign, 'update', trx)
+                    )
                     .returning('*')
                 )
               } else if (v.insert) {
@@ -766,7 +807,14 @@ const $Queries = function (trx: any, sql: string[] = []) {
                     v.connect
                       .reduce(
                         (_: any, v: any) => trxWhere(_, AttCol.type, v, 'OR'),
-                        trx($Att[AttCol.type].dbName).update(relationForeign)
+                        trx($Att[AttCol.type].dbName).update(
+                          argsValidate(
+                            AttCol.type,
+                            relationForeign,
+                            'update',
+                            trx
+                          )
+                        )
                       )
                       .toString()
                   )
@@ -775,7 +823,10 @@ const $Queries = function (trx: any, sql: string[] = []) {
               if (v.insert) {
                 await this.insert(AttCol.type, {
                   data: Array.isArray(v.insert)
-                    ? v.insert.map((val: any) => ({ ...val, ...relationForeign }))
+                    ? v.insert.map((val: any) => ({
+                        ...val,
+                        ...relationForeign,
+                      }))
                     : { ...v.insert, ...relationForeign },
                 })
               }
@@ -806,7 +857,7 @@ const $Queries = function (trx: any, sql: string[] = []) {
                 )
 
                 relMapTableId = Object.keys(relMapTableId).reduce(
-                  (_:any, v) => (
+                  (_: any, v) => (
                     (_[`${$Att[AttCol.type].dbName}_${v}`] = relMapTableId[v]),
                     _
                   ),
@@ -829,7 +880,7 @@ const $Queries = function (trx: any, sql: string[] = []) {
               })
               let relMapTableIds = ret.map((record) =>
                 Object.keys(record).reduce(
-                  (_:any, v) => (
+                  (_: any, v) => (
                     (_[`${$Att[AttCol.type].dbName}_${v}`] = record[v]), _
                   ),
                   {}
@@ -952,7 +1003,12 @@ const $Queries = function (trx: any, sql: string[] = []) {
               trx($Att[table].dbName)
                 .where(args.where)
                 .update(
-                  keys.reduce((_: any, v: string) => ((_[v] = null), _), {})
+                  argsValidate(
+                    table,
+                    keys.reduce((_: any, v: string) => ((_[v] = null), _), {}),
+                    'update',
+                    trx
+                  )
                 )
             )
           }
@@ -965,8 +1021,10 @@ const $Queries = function (trx: any, sql: string[] = []) {
         const trxTmp = await trxQuery(
           trx($Att[table].dbName)
             .where(args?.where)
-            .update(argsValidate(table, dbCols(table, scalarColumns), 'update'))
-            .returning(args.select ? Object.keys(args.select) : '*')
+            .update(
+              argsValidate(table, dbCols(table, scalarColumns), 'update', trx)
+            )
+            .returning('*')
         )
         tableRtn = trxTmp
       } else {
@@ -992,7 +1050,9 @@ const $Queries = function (trx: any, sql: string[] = []) {
               let rTable = await trxQuery(
                 trx($Att[AttCol.type].dbName)
                   .where(v.connect)
-                  .update(relationForeign)
+                  .update(
+                    argsValidate(AttCol.type, relationForeign, 'update', trx)
+                  )
                   .returning('*')
               )
 
@@ -1001,7 +1061,9 @@ const $Queries = function (trx: any, sql: string[] = []) {
               await trxQuery(
                 trx($Att[AttCol.type].dbName)
                   .where(v.connect)
-                  .update(relationForeign)
+                  .update(
+                    argsValidate(AttCol.type, relationForeign, 'update', trx)
+                  )
                   .returning('*')
               )
             } else if (v.insert) {
@@ -1013,7 +1075,7 @@ const $Queries = function (trx: any, sql: string[] = []) {
                 where: relationForeign,
                 data: v.update,
               })
-            } else if (v.delete) {
+            } else if (v.delete === true) {
               await trxQuery(
                 trx($Att[AttCol.type].dbName).where(relationForeign).del()
               )
@@ -1022,7 +1084,12 @@ const $Queries = function (trx: any, sql: string[] = []) {
                 trx($Att[AttCol.type].dbName)
                   .where(relationForeign)
                   .update(
-                    keys.reduce((_: any, v: any) => ((_[v] = null), _), {})
+                    argsValidate(
+                      AttCol.type,
+                      keys.reduce((_: any, v: any) => ((_[v] = null), _), {}),
+                      'update',
+                      trx
+                    )
                   )
               )
             }
@@ -1042,7 +1109,14 @@ const $Queries = function (trx: any, sql: string[] = []) {
                   v.set
                     .reduce(
                       (_: any, v: any) => trxWhere(_, AttCol.type, v, 'OR'),
-                      trx($Att[AttCol.type].dbName).update(relationForeign)
+                      trx($Att[AttCol.type].dbName).update(
+                        argsValidate(
+                          AttCol.type,
+                          relationForeign,
+                          'update',
+                          trx
+                        )
+                      )
                     )
                     .toString()
                 )
@@ -1055,7 +1129,14 @@ const $Queries = function (trx: any, sql: string[] = []) {
                     v.connect
                       .reduce(
                         (_: any, v: any) => trxWhere(_, AttCol.type, v, 'OR'),
-                        trx($Att[AttCol.type].dbName).update(relationForeign)
+                        trx($Att[AttCol.type].dbName).update(
+                          argsValidate(
+                            AttCol.type,
+                            relationForeign,
+                            'update',
+                            trx
+                          )
+                        )
                       )
                       .toString()
                   )
@@ -1064,7 +1145,10 @@ const $Queries = function (trx: any, sql: string[] = []) {
               if (v.insert) {
                 await this.insert(AttCol.type, {
                   data: Array.isArray(v.insert)
-                    ? v.insert.map((val: any) => ({ ...val, ...relationForeign }))
+                    ? v.insert.map((val: any) => ({
+                        ...val,
+                        ...relationForeign,
+                      }))
                     : { ...v.insert, ...relationForeign },
                 })
               }
@@ -1091,13 +1175,24 @@ const $Queries = function (trx: any, sql: string[] = []) {
                 }
               }
               if (v.updateMany) {
-                await trxWhere(
-                  trx($Att[AttCol.type].dbName).update(v.updateMany.data),
-                  AttCol.type,
-                  {
-                    ...v.updateMany.where,
-                    ...relationForeign,
-                  }
+                await trxQuery(
+                  trx.raw(
+                    trxWhere(
+                      trx($Att[AttCol.type].dbName).update(
+                        argsValidate(
+                          AttCol.type,
+                          v.updateMany.data,
+                          'update',
+                          trx
+                        )
+                      ),
+                      AttCol.type,
+                      {
+                        ...v.updateMany.where,
+                        ...relationForeign,
+                      }
+                    ).toString()
+                  )
                 )
               }
               if (v.delete) {
@@ -1118,13 +1213,13 @@ const $Queries = function (trx: any, sql: string[] = []) {
                 }
               }
               if (v.deleteMany) {
-                await trxWhere(
-                  trx($Att[AttCol.type].dbName).del(),
-                  AttCol.type,
-                  {
-                    ...v.deleteMany,
-                    ...relationForeign,
-                  }
+                await trxQuery(
+                  trx.raw(
+                    trxWhere(trx($Att[AttCol.type].dbName).del(), AttCol.type, {
+                      ...v.deleteMany,
+                      ...relationForeign,
+                    }).toString()
+                  )
                 )
               }
               if (v.disconnect) {
@@ -1134,9 +1229,14 @@ const $Queries = function (trx: any, sql: string[] = []) {
                       v.disconnect.reduce(
                         (_: any, v: any) => trxWhere(_, AttCol.type, v, 'OR'),
                         trx($Att[AttCol.type].dbName).update(
-                          keys.reduce(
-                            (_: any, v: any) => ((_[v] = null), _),
-                            {}
+                          argsValidate(
+                            AttCol.type,
+                            keys.reduce(
+                              (_: any, v: any) => ((_[v] = null), _),
+                              {}
+                            ),
+                            'update',
+                            trx
                           )
                         )
                       ),
@@ -1177,7 +1277,9 @@ const $Queries = function (trx: any, sql: string[] = []) {
           )
           const relTableIds = trxTmp.map((v: { [x: string]: any }) => {
             $Att[AttCol.type].id.reduce(
-              (_: { [x: string]: any }, v2: string | number) => ((_[v2] = v[`${$Att[AttCol.type].dbName}_${v2}`]), _),
+              (_: { [x: string]: any }, v2: string | number) => (
+                (_[v2] = v[`${$Att[AttCol.type].dbName}_${v2}`]), _
+              ),
               {}
             )
           })
@@ -1193,7 +1295,7 @@ const $Queries = function (trx: any, sql: string[] = []) {
                 )
               ) {
                 const columns = $Att[AttCol.type].columns
-                let requiredItem:any = []
+                let requiredItem: any = []
                 $Att[AttCol.type].uniques.some((v: any) => {
                   const items = Array.isArray(v) ? v : [v]
                   if (record[items.join('_')]) {
@@ -1217,7 +1319,9 @@ const $Queries = function (trx: any, sql: string[] = []) {
                   : // There is no required field, it may be a connection or a creation, you need to use upsert
                     await trxQuery(
                       trx($Att[AttCol.type].dbName)
-                        .insert(argsValidate(AttCol.type, record, 'insert'))
+                        .insert(
+                          argsValidate(AttCol.type, record, 'insert', trx)
+                        )
                         .onConflict(Object.keys(record))
                         .ignore()
                         .returning($Att[AttCol.type].id)
@@ -1245,7 +1349,9 @@ const $Queries = function (trx: any, sql: string[] = []) {
                 relTableId.map((v2) =>
                   Object.assign(
                     Object.keys(v2).reduce(
-                      (_:any, v3) => ((_[`${$Att[AttCol.type].dbName}_${v3}`] = v2[v3]), _),
+                      (_: any, v3) => (
+                        (_[`${$Att[AttCol.type].dbName}_${v3}`] = v2[v3]), _
+                      ),
                       {}
                     ),
                     mapTableId
@@ -1264,7 +1370,7 @@ const $Queries = function (trx: any, sql: string[] = []) {
                     .select($Att[AttCol.type].id)
                 )
                 relId = Object.keys(relId).reduce(
-                  (_:any, v) => (
+                  (_: any, v) => (
                     (_[`${$Att[AttCol.type].dbName}_${v}`] = relId[v]), _
                   ),
                   {}
@@ -1293,10 +1399,8 @@ const $Queries = function (trx: any, sql: string[] = []) {
                 for (const v3 of $Att[AttCol.type].id) {
                   tableId[`${$Att[AttCol.type].dbName}_${v3}`] = v2[v3]
                 }
-                await trxQuery(
-                  trx(AttCol.relation.mapTable).insert(tableId)
-                )
-              }  
+                await trxQuery(trx(AttCol.relation.mapTable).insert(tableId))
+              }
             }
             if (v.upsert) {
               const items = Array.isArray(v.upsert) ? v.upsert : [v.upsert]
@@ -1312,19 +1416,23 @@ const $Queries = function (trx: any, sql: string[] = []) {
             }
             if (v.updateMany) {
               const where = trxWhere(
-                trx($Att[AttCol.type].dbName).update(v.updateMany.data),
+                trx($Att[AttCol.type].dbName).update(
+                  argsValidate(AttCol.type, v.updateMany.data, 'update', trx)
+                ),
                 AttCol.type,
                 v.updateMany.where
               )
 
               await trxWhere(where, AttCol.type, {
+                // @ts-ignore
                 [$Att[AttCol.type].id]: '',
               })
             }
             if (v.delete) {
               const items = Array.isArray(v.delete) ? v.delete : [v.delete]
               await items.reduce(
-                (_: any, v: { where: any }) => trxWhere(_, AttCol.type, v.where, 'OR'),
+                (_: any, v: { where: any }) =>
+                  trxWhere(_, AttCol.type, v.where, 'OR'),
                 trx($Att[AttCol.type].dbName).del()
               )
               // Delete the corresponding records in the mapping table (subsequent improvement)
@@ -1337,6 +1445,7 @@ const $Queries = function (trx: any, sql: string[] = []) {
               )
 
               await trxWhere(where, AttCol.type, {
+                // @ts-ignore
                 [$Att[AttCol.type].id]: {
                   in: relTableIds.map((v: any) => Object.values(v)),
                 },
@@ -1346,7 +1455,7 @@ const $Queries = function (trx: any, sql: string[] = []) {
               const items = Array.isArray(v.disconnect)
                 ? v.disconnect
                 : [v.disconnect]
-              const relMapIds:any = []
+              const relMapIds: any = []
               for (const v2 of items) {
                 const [relRecId] = await trxQuery(
                   trx($Att[AttCol.type].dbName).where(
@@ -1356,7 +1465,7 @@ const $Queries = function (trx: any, sql: string[] = []) {
 
                 relMapIds.push(
                   Object.keys(relRecId).reduce(
-                    (_:any, v3) => (
+                    (_: any, v3) => (
                       (_[`${$Att[AttCol.type].dbName}_${v3}`] = relRecId[v3]), _
                     ),
                     {}
@@ -1378,39 +1487,23 @@ const $Queries = function (trx: any, sql: string[] = []) {
     },
 
     async updateMany(table: string, args: any) {
-      return (
-        await trx.raw(
-          trxWhere(
-            updateOperator(table, args.data).returning(
-              args.select ? Object.keys(args.select) : '*'
-            ),
-            table,
-            args?.where
-          ).toString()
-        )
-      ).rows
+      return await trxQuery(
+        trx($Att[table].dbName)
+          .where(args?.where)
+          .update(argsValidate(table, dbCols(table, args.data), 'update', trx))
+      )
     },
 
     async delete(table: string, args: any) {
       if (!args.where || !Object.keys(args.where).length)
         throw `where cannot be empty`
-      return await trxWhere(
-        trx($Att[table].dbName)
-          .del()
-          .returning(args.select ? Object.keys(args.select) : '*'),
-        table,
-        args.where
+      return await trxQuery(
+        trx($Att[table].dbName).where(args?.where).del().returning('*')
       )
     },
 
     async deleteMany(table: string, args: any) {
-      return await trxWhere(
-        trx($Att[table].dbName)
-          .del()
-          .returning(args?.select ? Object.keys(args.select) : '*'),
-        table,
-        args?.where
-      )
+      return await trxQuery(trx($Att[table].dbName).where(args?.where).del())
     },
 
     async aggregate(table: string, query: $AggregateQuery, args: any) {

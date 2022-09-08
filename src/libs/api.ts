@@ -170,7 +170,7 @@ const Orm = (tables: { [k: string]: Table | View }) => {
   // Initialize all tables
   for (const k in tables) {
     const tbl = tables[k]
-    Att[tbl.jsName] = { columns: {}, scalarColumns: [], foreignKeys: [] }
+    Att[tbl.jsName] = { columns: {}, scalarColumns: [], foreignKeys: [], updatedAtColumns: [] }
     for (const td in typeDefine)
       typeDefine[td][tbl.jsName] = typeDefine[td][tbl.jsName] || []
   }
@@ -301,8 +301,10 @@ const Orm = (tables: { [k: string]: Table | View }) => {
 
         switch (col.type) {
           case 'Date':
-            if (col.props.createdAt || col.props.updatedAt)
+            if (col.props.updatedAt) {
               typeDefine.onTime[tbl.jsName].push(colName)
+              Att[tbl.jsName].updatedAtColumns.push(colName)
+            }
             break
           case 'int':
           case 'float':
@@ -366,9 +368,9 @@ const generateTsType = (tables) => {
             .join('\n')
         case 'where':
           return [
-            `AND?: where[]`,
-            `OR?: where[]`,
-            `NOT?: where[]`,
+            `AND?: $Enumerable<where>`,
+            `OR?: $Enumerable<where>`,
+            `NOT?: $Enumerable<where>`,
             ...fields
             .map(
               (v) =>
@@ -767,7 +769,7 @@ async function DbApi(ast: Ast) {
     CU: <string[]>[],
     anno: {},
   }
-
+ 
   for (const k in ast.dbs) {
     const orm = Orm(FlatTables(ast.dbs[k].tables))
     const tmp: string[] = []

@@ -1,1 +1,28 @@
-const $Att: any
+const $Att: {
+  [k: string]: {
+    columns: {
+      [C: string]: {
+        name: string
+        dbName?: string
+        type: string
+        jsType?: string
+        dbType?: string
+        optional: string
+        relation?: {
+          kind: string
+          toOne?: boolean
+          relColumn: string
+          keys?: string[]
+          references?: string[]
+          mapTable?: string
+        }
+      }
+    }
+    scalarColumns: string[]
+    foreignKeys: string[]
+    updatedAtColumns: string[]
+    dbName: string
+    id: string[]
+    uniques: string[][]
+  }
+}
