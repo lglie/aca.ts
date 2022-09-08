@@ -56,7 +56,6 @@ export default function (curr: FlatTables, prev: FlatTables) {
     alter: {},
   }
   const contains = Fluctuate(curr, prev, rtn)
-
   contains.forEach((v) => {
     if (curr[v].map !== prev[v].map && curr[v].dbName !== prev[v].dbName) {
       rtn.alter[v] = rtn.alter[v] || {}
@@ -82,7 +81,6 @@ export default function (curr: FlatTables, prev: FlatTables) {
 function Column(column, curr, prev) {
   const colAlt = (column.alter = {})
   const colContains = Fluctuate(curr, prev, column)
-
   // If the added field is a relational field and is a foreign key field(for use in adding a foreign key later)
   if (column.add) {
     column.add = column.add.filter((v3) => {
@@ -105,6 +103,9 @@ function Column(column, curr, prev) {
     const cCol = curr[v],
       pCol = prev[v]
     // Return if it is a relational field
+    // Process the foreign key
+    if ((<Column>cCol).props.foreign || (<Column>pCol).props.foreign) {
+    }
     if (cCol.type.split('.').length > 1) continue
     colAlt[v] = {}
     if (cCol.map !== pCol.map && cCol.dbName !== pCol.dbName) {
@@ -136,9 +137,7 @@ function Column(column, curr, prev) {
       }
     })
 
-    // Process the foreign key
-    if ((<Column>cCol).props.foreign || (<Column>pCol).props.foreign) {
-    }
+    
     if (isEmpty(colAlt[v].props)) delete colAlt[v].props
     if (isEmpty(colAlt[v])) delete colAlt[v]
   }

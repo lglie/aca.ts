@@ -64,8 +64,9 @@ function CreateTblSql(config: DbConfig, tbls: FlatTables, jsName: string) {
     rtn.create.push(
       sqlDiff
         .tbl(tbls[jsName].dbName)
-        .create(create.concat(uniques).concat(foreigns).join(',\n'))
+        .create(create.concat(foreigns).join(',\n'))
     )
+    rtn.alter.push(uniques.join(';\n\n'))
   } else {
     rtn.create.push(sqlDiff.tbl(tbls[jsName].dbName).create(create.join(',\n')))
     rtn.alter.push(uniques.concat(foreigns).join(';\n\n'))
@@ -130,7 +131,6 @@ export function AlterTblSql(
   }
 
   for (const k in alter) {
-
     const tbl = <Table>tbls[k]
     if (alter[k].map) {
       rtn.alter.push(sqlDiff.tbl(alter[k].map.old).rename(alter[k].map.new))
@@ -349,7 +349,9 @@ function createColSql(
   }
   const splits = colObj.type.match(/[\w\.]+/)![0].split('.')
   if (colName.length > sqlDiff.keyword.maxColLen) {
-    throw new Error(`column ${colName} length more than the ${sqlDiff.keyword.maxColLen}`)
+    throw new Error(
+      `column ${colName} length more than the ${sqlDiff.keyword.maxColLen}`
+    )
   }
   if (splits.length === 1) {
     // Is scalar field
@@ -414,6 +416,12 @@ function createColSql(
     } // Is a foreign key. Whether or not setting foreign key constraint depends on the configuration
     else if (props.foreign) {
       if (config.foreignKeyConstraint) {
+        if (!props.foreign.onDelete) {
+          props.foreign.onDelete = config.onDelete
+        }
+        if (!props.foreign.onUpdate) {
+          props.foreign.onUpdate = config.onUpdate
+        }
         rtn.foreign.push(
           sqlDiff
             .tbl(tblName)
@@ -442,7 +450,9 @@ export function CreateMapTblSql(
 ) {
   const sqlDiff = SqlDiff(config.connectOption.driver)
   if (mapName.length > sqlDiff.keyword.maxTblLen) {
-    throw new Error(`table ${mapName} length more than the ${sqlDiff.keyword.maxTblLen}`)
+    throw new Error(
+      `table ${mapName} length more than the ${sqlDiff.keyword.maxTblLen}`
+    )
   }
   const typ = sqlDiff.keyword
   const qPrefix = typ.quote.prefix
@@ -507,7 +517,6 @@ export function DbDiffSqls(currdb, prevDb) {
   const curr = FlatTables(currdb.tables)
   const prev = FlatTables(prevDb.tables)
   const diff = <DbMigrate>ormDiff(curr, prev)
-
   const rtn = {
     create: [],
     alter: [],
