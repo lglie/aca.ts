@@ -103,9 +103,7 @@ function Column(column, curr, prev) {
     const cCol = curr[v],
       pCol = prev[v]
     // Return if it is a relational field
-    // Process the foreign key
-    if ((<Column>cCol).props.foreign || (<Column>pCol).props.foreign) {
-    }
+   
     if (cCol.type.split('.').length > 1) continue
     colAlt[v] = {}
     if (cCol.map !== pCol.map && cCol.dbName !== pCol.dbName) {
@@ -137,7 +135,25 @@ function Column(column, curr, prev) {
       }
     })
 
-    
+     // Process the foreign key
+    if ((<Column>cCol).props.foreign || (<Column>pCol).props.foreign) {
+      if (JSON.stringify((<Column>cCol).props.foreign?.references) !== JSON.stringify((<Column>pCol).props.foreign?.references)) {
+        colAlt[v].props.foreign = {
+          new: (<Column>cCol).props.foreign,
+          old: (<Column>pCol).props.foreign,
+        }
+      }
+      ;['onDelete', 'onUpdate'].forEach((v2) => {
+        colAlt[v].props = colAlt[v].props || {}
+        if ((<Column>cCol).props.foreign?.[v2] !== (<Column>pCol).props.foreign?.[v2]) {
+          colAlt[v].props.foreign = {
+            new: (<Column>cCol).props.foreign,
+            old: (<Column>pCol).props.foreign,
+          }
+        }
+      })
+    }
+
     if (isEmpty(colAlt[v].props)) delete colAlt[v].props
     if (isEmpty(colAlt[v])) delete colAlt[v]
   }

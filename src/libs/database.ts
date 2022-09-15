@@ -171,12 +171,19 @@ export function AlterTblSql(
         const columns = []
         alter[k].columns.add.forEach((v) => {
           // Add foreign key constraints(through the configuration of acaconfig.json)
-          if (v.props.foreign) {
-            const relTbl = <Table>tbls[v.props.jsType.split('.')[0]]
+          if (v.props.foreign && config.foreignKeyConstraint) {
+            const relTbl = <Table>tbls[v.props.foreign.jsType?.split('.')[0]]
+            if (!v.props.foreign.onDelete) {
+              v.props.foreign.onDelete = config.onDelete
+            }
+            if (!v.props.foreign.onUpdate) {
+              v.props.foreign.onUpdate = config.onUpdate
+            }
             constraint = sqlDiff
               .tbl(tbl.dbName)
               .constraint.foreign('ADD', v.props.foreign, relTbl)
-          } else if (v.type.split('.').length === 1) {
+          }
+          if (v.type.split('.').length === 1) {
             const dbType = tbl.columns[v.jsName].props.dbType.toLowerCase()
             const notNull =
               tbl.columns[v.jsName].optional === 'required' ? true : false
@@ -193,6 +200,17 @@ export function AlterTblSql(
       }
 
       if (alter[k].columns.remove) {
+        let constraint
+        alter[k].columns.remove.forEach((v) => {
+          // DROP foreign key constraints(through the configuration of acaconfig.json)
+          if (v.props.foreign && config.foreignKeyConstraint) {
+            const relTbl = <Table>tbls[v.props.foreign.jsType?.split('.')[0]]
+            constraint = sqlDiff
+              .tbl(tbl.dbName)
+              .constraint.foreign('DROP', v.props.foreign, relTbl)
+          }
+        })
+        if (constraint) rtn.alter.push(constraint)
         const cols = alter[k].columns['remove'].map((v) => v.dbName)
         rtn.alter.push(sqlDiff.tbl(tbl.dbName).mutate.drop(cols))
       }
@@ -312,10 +330,39 @@ export function AlterTblSql(
                 )
               }
             }
-            if (alterCol.props.foreign) {
-              throw new Error(
-                `field '${tbl.name}.${colName}' changes to foreign keys are not allowed`
-              )
+            if (alterCol.props.foreign && config.foreignKeyConstraint) {
+              if (alterCol.props.foreign.old) {
+                const relTbl = <Table>(
+                  tbls[alterCol.props.foreign.old.jsType?.split('.')[0]]
+                )
+                rtn.alter.push(
+                  sqlDiff
+                    .tbl(tbl.dbName)
+                    .constraint.foreign(
+                      'DROP',
+                      alterCol.props.foreign.old,
+                      relTbl
+                    )
+                )
+              }
+              if (alterCol.props.foreign.new) {
+                const relTbl = <Table>(
+                  tbls[alterCol.props.foreign.new.jsType?.split('.')[0]]
+                )
+                rtn.alter.push(
+                  sqlDiff
+                    .tbl(tbl.dbName)
+                    .constraint.foreign(
+                      'ADD',
+                      alterCol.props.foreign.new,
+                      relTbl
+                    )
+                )
+              }
+
+              // throw new Error(
+              //   `field '${tbl.name}.${colName}' changes to foreign keys are not allowed`
+              // )
             }
           }
         }
