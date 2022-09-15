@@ -530,6 +530,9 @@ export default function (driver: Driver) {
                 return `ALTER TABLE ${qPrefix}${table}${qName} RENAME ${qName}${column}${qName} TO ${qName}${newCol}${qName}`
               },
               type(dbName: string) {
+                if (['cuid','uuid','enum'].includes(dbName)) {
+                  dbName = keyword.dbType[dbName]
+                }
                 return `ALTER TABLE ${qPrefix}${table}${qName} ALTER COLUMN ${qName}${column}${qName} TYPE ${dbName}`
               },
               notNull(action: 'SET' | 'DROP') {
@@ -567,21 +570,33 @@ export default function (driver: Driver) {
             }[driver]
           },
           foreign(action: 'ADD' | 'DROP', foreign: Foreign, relTbl: Table) {
-            return `${keyword.stmt.constraintPre(
-              table,
-              action
-            )}CONSTRAINT ${qName}FOREIGN_${table}_${foreign.keys.join(
-              '_'
-            )}${qName} FOREIGN KEY (${foreign.keys
-              .map((v) => `${qName}${v}${qName}`)
-              .toString()}) REFERENCES ${qName}${
-              relTbl.dbName
-            }${qName} (${foreign.references
-              .map((v) => relTbl.columns[v].dbName)
-              .map((v) => `${qName}${v}${qName}`)
-              .toString()})${
-              foreign.onUpdate ? ` on update ${foreign.onUpdate}` : ''
-            }${foreign?.onDelete ? ` on delete ${foreign.onDelete}` : ''}`
+            if (driver === 'betterSqlite3') {
+              return ``
+            }
+            if (action === 'ADD') {
+              return `${keyword.stmt.constraintPre(
+                table,
+                action
+              )}CONSTRAINT ${qName}FOREIGN_${table}_${foreign.keys.join(
+                '_'
+              )}${qName} FOREIGN KEY (${foreign.keys
+                .map((v) => `${qName}${v}${qName}`)
+                .toString()}) REFERENCES ${qName}${
+                relTbl.dbName
+              }${qName} (${foreign.references
+                .map((v) => relTbl.columns[v].dbName)
+                .map((v) => `${qName}${v}${qName}`)
+                .toString()})${
+                foreign.onUpdate ? ` on update ${foreign.onUpdate}` : ''
+              }${foreign?.onDelete ? ` on delete ${foreign.onDelete}` : ''}`
+            } else {
+              return `${keyword.stmt.constraintPre(
+                table,
+                action
+              )}CONSTRAINT ${qName}FOREIGN_${table}_${foreign.keys.join(
+                '_'
+              )}${qName}`
+            }
           },
           unique(action: 'ADD' | 'DROP', columns: string | string[]) {
             if (typeof columns === 'string') columns = [columns]
@@ -589,7 +604,7 @@ export default function (driver: Driver) {
             const quoteCols = `${columns
               .map((v) => `${qName}${v}${qName}`)
               .toString()}`
-            if ("betterSqlite3" === driver) {
+            if ('betterSqlite3' === driver) {
               if (action === 'DROP') {
                 return `DROP INDEX ${qName}UNIQUE_${table}_${key}${qName}`
               } else if (action === 'ADD') {

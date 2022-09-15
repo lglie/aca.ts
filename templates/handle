@@ -1487,23 +1487,26 @@ const $Queries = function (trx: any, sql: string[] = []) {
     },
 
     async updateMany(table: string, args: any) {
-      return await trxQuery(
-        trx($Att[table].dbName)
-          .where(args?.where)
-          .update(argsValidate(table, dbCols(table, args.data), 'update', trx))
-      )
+      let Kx = trx($Att[table].dbName)
+      const wKnex = trxWhere(Kx, table, args.where)
+      return await trxQuery(wKnex.update(argsValidate(table, dbCols(table, args.data), 'update', trx)))
     },
 
     async delete(table: string, args: any) {
       if (!args.where || !Object.keys(args.where).length)
         throw `where cannot be empty`
+      let Kx = trx($Att[table].dbName)
+      const wKnex = trxWhere(Kx, table, args.where)
       return await trxQuery(
-        trx($Att[table].dbName).where(args?.where).del().returning('*')
+        wKnex.del().returning('*')
       )
     },
 
     async deleteMany(table: string, args: any) {
-      return await trxQuery(trx($Att[table].dbName).where(args?.where).del())
+      let Kx = trx($Att[table].dbName)
+      const wKnex = trxWhere(Kx, table, args.where)
+      return await trxQuery(wKnex.del())
+      // return await trxQuery(trx($Att[table].dbName).where(args?.where).del())
     },
 
     async aggregate(table: string, query: $AggregateQuery, args: any) {

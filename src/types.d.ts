@@ -246,7 +246,7 @@ interface Props {
   default?: any
   createdAt?: boolean
   updatedAt?: boolean
-  foreign?: Foreign
+  foreign?: Foreign & {jsType?: string}
 }
 
 type TableView = Table | View

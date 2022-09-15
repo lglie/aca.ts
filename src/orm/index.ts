@@ -719,6 +719,10 @@ async function PickModel(acaDir: '.' | '..', ast: ts.SourceFile) {
                             props: {
                               jsType: relF.props.jsType,
                               dbType: relF.props.dbType,
+                              foreign: {
+                                ...FR,
+                                jsType: FF.props.jsType
+                              }
                             },
                             type: relF.type,
                           }
