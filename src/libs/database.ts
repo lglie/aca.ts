@@ -64,9 +64,8 @@ function CreateTblSql(config: DbConfig, tbls: FlatTables, jsName: string) {
     rtn.create.push(
       sqlDiff
         .tbl(tbls[jsName].dbName)
-        .create(create.concat(foreigns).join(',\n'))
+        .create(create.concat(uniques).concat(foreigns).join(',\n'))
     )
-    rtn.alter.push(uniques.join(';\n\n'))
   } else {
     rtn.create.push(sqlDiff.tbl(tbls[jsName].dbName).create(create.join(',\n')))
     rtn.alter.push(uniques.concat(foreigns).join(';\n\n'))

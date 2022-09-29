@@ -314,7 +314,7 @@ async function betterSqlite3(
     const db: any = sqlDiff.db.createSqliteDb(acaDir, config, connOption)
     const allSql = CreateAllTblSqls(currdb.config, currdb.tables)
     allSql.sqls =
-      sqlDiff.aca.create + sqlDiff.aca.insert(timestamp) + '\n' + allSql.sqls
+      sqlDiff.aca.create + sqlDiff.aca.insert(timestamp) + '\n' + allSql.sqls + ';'
     console.log(allSql.sqls)
     try {
       db.exec(allSql.sqls)

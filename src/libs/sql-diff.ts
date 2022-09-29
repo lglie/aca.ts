@@ -570,9 +570,9 @@ export default function (driver: Driver) {
             }[driver]
           },
           foreign(action: 'ADD' | 'DROP', foreign: Foreign, relTbl: Table) {
-            if (driver === 'betterSqlite3') {
-              return ``
-            }
+            // if (driver === 'betterSqlite3') {
+            //   return ``
+            // }
             if (action === 'ADD') {
               return `${keyword.stmt.constraintPre(
                 table,
@@ -604,13 +604,13 @@ export default function (driver: Driver) {
             const quoteCols = `${columns
               .map((v) => `${qName}${v}${qName}`)
               .toString()}`
-            if ('betterSqlite3' === driver) {
-              if (action === 'DROP') {
-                return `DROP INDEX ${qName}UNIQUE_${table}_${key}${qName}`
-              } else if (action === 'ADD') {
-                return `CREATE UNIQUE INDEX ${qName}UNIQUE_${table}_${key}${qName} ON ${qName}${table}${qName}(${quoteCols})`
-              }
-            }
+            // if ('betterSqlite3' === driver) {
+            //   if (action === 'DROP') {
+            //     return `DROP INDEX ${qName}UNIQUE_${table}_${key}${qName}`
+            //   } else if (action === 'ADD') {
+            //     return `CREATE UNIQUE INDEX ${qName}UNIQUE_${table}_${key}${qName} ON ${qName}${table}${qName}(${quoteCols})`
+            //   }
+            // }
             return `${keyword.stmt.constraintPre(
               table,
               action
