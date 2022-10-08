@@ -530,15 +530,24 @@ export default function (driver: Driver) {
                 return `ALTER TABLE ${qPrefix}${table}${qName} RENAME ${qName}${column}${qName} TO ${qName}${newCol}${qName}`
               },
               type(dbName: string) {
-                if (['cuid','uuid','enum'].includes(dbName)) {
+                if (['cuid', 'uuid', 'enum'].includes(dbName)) {
                   dbName = keyword.dbType[dbName]
+                }
+                if (driver === 'betterSqlite3') {
+                  throw new Error('betterSqlite3 暂不支持修改')
                 }
                 return `ALTER TABLE ${qPrefix}${table}${qName} ALTER COLUMN ${qName}${column}${qName} TYPE ${dbName}`
               },
               notNull(action: 'SET' | 'DROP') {
+                if (driver === 'betterSqlite3') {
+                  throw new Error('betterSqlite3 暂不支持修改')
+                }
                 return `ALTER TABLE ${qPrefix}${table}${qName} ALTER COLUMN ${qName}${column}${qName} ${action} NOT NULL`
               },
               check(value?: string) {
+                if (driver === 'betterSqlite3') {
+                  throw new Error('betterSqlite3 暂不支持修改')
+                }
                 return `ALTER TABLE ${qPrefix}${table}${qName} ALTER COLUMN ${qName}${column}${qName} ${
                   value !== undefined
                     ? `SET CHECK ${qValue}${value}${qValue}`
@@ -546,6 +555,9 @@ export default function (driver: Driver) {
                 }`
               },
               default(value?: string) {
+                if (driver === 'betterSqlite3') {
+                  throw new Error('betterSqlite3 暂不支持修改')
+                }
                 return `ALTER TABLE ${qPrefix}${table}${qName} ALTER COLUMN ${qName}${column}${qName} ${
                   value !== undefined ? `SET DEFAULT ${value}` : 'DROP DEFAULT'
                 }`
@@ -570,9 +582,7 @@ export default function (driver: Driver) {
             }[driver]
           },
           foreign(action: 'ADD' | 'DROP', foreign: Foreign, relTbl: Table) {
-            // if (driver === 'betterSqlite3') {
-            //   return ``
-            // }
+    
             if (action === 'ADD') {
               return `${keyword.stmt.constraintPre(
                 table,
@@ -604,13 +614,13 @@ export default function (driver: Driver) {
             const quoteCols = `${columns
               .map((v) => `${qName}${v}${qName}`)
               .toString()}`
-            // if ('betterSqlite3' === driver) {
-            //   if (action === 'DROP') {
-            //     return `DROP INDEX ${qName}UNIQUE_${table}_${key}${qName}`
-            //   } else if (action === 'ADD') {
-            //     return `CREATE UNIQUE INDEX ${qName}UNIQUE_${table}_${key}${qName} ON ${qName}${table}${qName}(${quoteCols})`
-            //   }
-            // }
+            if ('betterSqlite3' === driver) {
+              if (action === 'DROP') {
+                return `DROP INDEX ${qName}UNIQUE_${table}_${key}${qName}`
+              } else if (action === 'ADD') {
+                return `CREATE UNIQUE INDEX ${qName}UNIQUE_${table}_${key}${qName} ON ${qName}${table}${qName}(${quoteCols})`
+              }
+            }
             return `${keyword.stmt.constraintPre(
               table,
               action

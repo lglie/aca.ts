@@ -64,8 +64,9 @@ function CreateTblSql(config: DbConfig, tbls: FlatTables, jsName: string) {
     rtn.create.push(
       sqlDiff
         .tbl(tbls[jsName].dbName)
-        .create(create.concat(uniques).concat(foreigns).join(',\n'))
+        .create(create.concat(foreigns).join(',\n'))
     )
+    rtn.alter.push(uniques.join(';\n\n'))
   } else {
     rtn.create.push(sqlDiff.tbl(tbls[jsName].dbName).create(create.join(',\n')))
     rtn.alter.push(uniques.concat(foreigns).join(';\n\n'))
@@ -195,7 +196,12 @@ export function AlterTblSql(
         })
 
         rtn.alter.push(sqlDiff.tbl(tbl.dbName).mutate.add(columns))
-        if (constraint) rtn.alter.push(constraint)
+        if (constraint) {
+          if (config.connectOption.driver === 'betterSqlite3') {
+            throw new Error("betterSqlite3 暂不支持修改外键");
+          }
+          rtn.alter.push(constraint)
+        }
       }
 
       if (alter[k].columns.remove) {
@@ -209,7 +215,12 @@ export function AlterTblSql(
               .constraint.foreign('DROP', v.props.foreign, relTbl)
           }
         })
-        if (constraint) rtn.alter.push(constraint)
+        if (constraint) {
+          if (config.connectOption.driver === 'betterSqlite3') {
+            throw new Error("betterSqlite3 暂不支持修改外键");
+          }
+          rtn.alter.push(constraint)
+        } 
         const cols = alter[k].columns['remove'].map((v) => v.dbName)
         rtn.alter.push(sqlDiff.tbl(tbl.dbName).mutate.drop(cols))
       }
@@ -330,6 +341,9 @@ export function AlterTblSql(
               }
             }
             if (alterCol.props.foreign && config.foreignKeyConstraint) {
+              if (config.connectOption.driver === 'betterSqlite3') {
+                throw new Error("betterSqlite3 暂不支持修改外键");
+              }
               if (alterCol.props.foreign.old) {
                 const relTbl = <Table>(
                   tbls[alterCol.props.foreign.old.jsType?.split('.')[0]]
