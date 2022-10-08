@@ -191,7 +191,7 @@ const NodeParse = {
     }
     return rtn
   },
-  decorator(objs: ts.Node['decorators']) {
+  decorator(objs: any) {
     if (!objs || !objs.length) return {}
     const props = objs.reduce((_, v) => {
       const exp = v.expression
@@ -355,7 +355,7 @@ async function PickModel(acaDir: '.' | '..', ast: ts.SourceFile) {
           const classV = <ts.ClassDeclaration>v
           name = classV.name.text
           let props = NodeParse.decorator(
-            <ts.Node['decorators']>(classV.decorators || [])
+            <ts.Node['decorators']>(ts.canHaveDecorators ? ts.getDecorators(classV) : (classV.decorators || []))
           )
           let MR = MapRename(props)
           const body = {
@@ -388,7 +388,7 @@ async function PickModel(acaDir: '.' | '..', ast: ts.SourceFile) {
           body['columns'] = classV.members.reduce((_2, v2) => {
             const V2 = <ts.PropertyDeclaration>v2
             props = NodeParse.decorator(
-              <ts.Node['decorators']>(V2.decorators || [])
+              <ts.Node['decorators']>(ts.canHaveDecorators ? ts.getDecorators(V2) : (V2.decorators || []))
             )
             MR = MapRename(props)
             let colKey = (<ts.Identifier>V2.name).text
@@ -440,7 +440,6 @@ async function PickModel(acaDir: '.' | '..', ast: ts.SourceFile) {
   }
 
   const dbs: DbModels = Iter(ast)
-
   // Find the configuration information of the database correspondong to variable kD
   const DbConfig = (db: DbVar) => {
     // Using by default the database field(.)in config as an instantiation
