@@ -81,6 +81,7 @@ export default function (curr: FlatTables, prev: FlatTables) {
 function Column(column, curr, prev) {
   const colAlt = (column.alter = {})
   const colContains = Fluctuate(curr, prev, column)
+
   // If the added field is a relational field and is a foreign key field(for use in adding a foreign key later)
   if (column.add) {
     column.add = column.add.filter((v3) => {
@@ -102,58 +103,63 @@ function Column(column, curr, prev) {
   for (const v of colContains) {
     const cCol = curr[v],
       pCol = prev[v]
-    // Return if it is a relational field
-   
-    if (cCol.type.split('.').length > 1) continue
     colAlt[v] = {}
-    if (cCol.map !== pCol.map && cCol.dbName !== pCol.dbName) {
-      colAlt[v].map = { new: cCol.dbName, old: pCol.dbName }
-    }
-    ;['optional', 'type'].forEach((v4) => {
-      if (cCol[v4] !== pCol[v4]) {
-        colAlt[v][v4] = { new: cCol[v4], old: pCol[v4] }
+    // Return if it is a relational field
+    // if (cCol.type.split('.').length > 1) continue
+    if (cCol.type.split('.').length > 1) {
+      if (cCol.type !== pCol.type) {
+        colAlt[v]['relation'] = {new: cCol, old: pCol}
       }
-    })
-    ;[
-      'idType',
-      'isArray',
-      'dbType',
-      'jsType',
-      'unique',
-      'index',
-      'check',
-      'default',
-      'createdAt',
-      'updatedAt',
-    ].forEach((v2) => {
-      colAlt[v].props = colAlt[v].props || {}
-      if ((<Column>cCol).props[v2] !== (<Column>pCol).props[v2]) {
-        colAlt[v].props[v2] = {
-          new: (<Column>cCol).props[v2],
-          old: (<Column>pCol).props[v2],
-        }
-      }
-    })
+    } else {
 
-     // Process the foreign key
-    if ((<Column>cCol).props.foreign || (<Column>pCol).props.foreign) {
-      if (JSON.stringify((<Column>cCol).props.foreign?.references) !== JSON.stringify((<Column>pCol).props.foreign?.references)) {
-        colAlt[v].props.foreign = {
-          new: (<Column>cCol).props.foreign,
-          old: (<Column>pCol).props.foreign,
-        }
+      if (cCol.map !== pCol.map && cCol.dbName !== pCol.dbName) {
+        colAlt[v].map = { new: cCol.dbName, old: pCol.dbName }
       }
-      ;['onDelete', 'onUpdate'].forEach((v2) => {
-        colAlt[v].props = colAlt[v].props || {}
-        if ((<Column>cCol).props.foreign?.[v2] !== (<Column>pCol).props.foreign?.[v2]) {
+      ;['optional'].forEach((v4) => {
+        if (cCol[v4] !== pCol[v4]) {
+          colAlt[v][v4] = { new: cCol[v4], old: pCol[v4] }
+        }
+      })
+        ;[
+          'idType',
+          'isArray',
+          'dbType',
+          'jsType',
+          'unique',
+          'index',
+          'check',
+          'default',
+          'createdAt',
+          'updatedAt',
+        ].forEach((v2) => {
+          colAlt[v].props = colAlt[v].props || {}
+          if ((<Column>cCol).props[v2] !== (<Column>pCol).props[v2]) {
+            colAlt[v].props[v2] = {
+              new: (<Column>cCol).props[v2],
+              old: (<Column>pCol).props[v2],
+            }
+          }
+        })
+
+      // Process the foreign key
+      if ((<Column>cCol).props.foreign || (<Column>pCol).props.foreign) {
+        if (JSON.stringify((<Column>cCol).props.foreign?.references) !== JSON.stringify((<Column>pCol).props.foreign?.references)) {
           colAlt[v].props.foreign = {
             new: (<Column>cCol).props.foreign,
             old: (<Column>pCol).props.foreign,
           }
         }
-      })
+        ;['onDelete', 'onUpdate'].forEach((v2) => {
+          colAlt[v].props = colAlt[v].props || {}
+          if ((<Column>cCol).props.foreign?.[v2] !== (<Column>pCol).props.foreign?.[v2]) {
+            colAlt[v].props.foreign = {
+              new: (<Column>cCol).props.foreign,
+              old: (<Column>pCol).props.foreign,
+            }
+          }
+        })
+      }
     }
-
     if (isEmpty(colAlt[v].props)) delete colAlt[v].props
     if (isEmpty(colAlt[v])) delete colAlt[v]
   }
