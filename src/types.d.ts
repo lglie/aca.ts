@@ -286,6 +286,7 @@ interface DbAlter {
               old: any
             }
           }
+          relation?: any
         }
       }
     }

@@ -129,7 +129,6 @@ export function AlterTblSql(
     remove: <string[]>[],
     alter: <string[]>[],
   }
-
   for (const k in alter) {
     const tbl = <Table>tbls[k]
     if (alter[k].map) {
@@ -220,7 +219,7 @@ export function AlterTblSql(
             throw new Error("betterSqlite3 暂不支持修改外键");
           }
           rtn.alter.push(constraint)
-        } 
+        }
         const cols = alter[k].columns['remove'].map((v) => v.dbName)
         rtn.alter.push(sqlDiff.tbl(tbl.dbName).mutate.drop(cols))
       }
@@ -249,14 +248,36 @@ export function AlterTblSql(
                 )
             )
           }
-          // if (alterCol.type) {
-          //   rtn.alter.push(
-          //     sqlDiff
-          //       .tbl(tbl.dbName)
-          //       .mutate.alter(colName)
-          //       .type(alterCol.type.new)
-          //   )
-          // }
+          if (alterCol.relation) {
+            if (!alterCol.relation.new.props.foreign && alterCol.relation.new.type.endsWith(']') && !alterCol.relation.isAlter) {
+              // Find the id of the relational table
+              const spt = alterCol.relation.new.props.jsType.split('.')
+              const relTblName = spt[0]
+              const relTbl = <Table>tbls[relTblName]
+              const relColName = spt[1].match(/\w+/)[0]
+              const relCol = relTbl.columns[relColName]
+              if (relCol.type.endsWith(']')) {
+                const mapName = MapTblName(relTbl.dbName, relCol.dbName, tbl.dbName, alterCol.relation.new.dbName)
+                const mapTable: any = [relTbl, tbl]
+                rtn.alter.push(CreateMapTblSql(config, mapName, mapTable))
+                if (alter[relTblName]?.columns?.alter?.[relColName]?.relation) {
+                  alter[relTblName].columns.alter[relColName].relation.isAlter = true
+                }
+              }
+            }
+
+            if (!alterCol.relation.old.props.foreign && alterCol.relation.old.type.endsWith(']') && !alterCol.relation.isAlter) {
+              const spt = alterCol.relation.old.props.jsType.split('.')
+              const relTblName = spt[0]
+              const relTbl = <Table>tbls[relTblName]
+              const relColName = spt[1].match(/\w+/)[0]
+              const relCol = relTbl.columns[relColName]
+                const mapName = MapTblName(relTbl.dbName, relCol.dbName, tbl.dbName, alterCol.relation.old.dbName)
+                rtn.alter.push(sqlDiff
+                  .tbl(mapName)
+                  .drop())
+            }
+          }
           if (alterCol.props) {
             if (alterCol.props.isId) {
               throw new Error(
@@ -521,9 +542,8 @@ export function CreateMapTblSql(
     table.id.map((v) => {
       const col = table.columns[v]
       const dbType = typ.dbType[col.props.dbType] || col.props.dbType
-      return `${qPrefix}${
-        table.dbName
-      }_${v}${qName} ${dbType.toUpperCase()} NOT NULL`
+      return `${qPrefix}${table.dbName
+        }_${v}${qName} ${dbType.toUpperCase()} NOT NULL`
     })
   const U = (table: Table) => table.id.map((v) => table.dbName + '_' + v)
 

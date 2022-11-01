@@ -100,7 +100,6 @@ async function pg(
         (<any>connOption).database
       }" exists, please backup and delete first`
     }
-
     const allSqls = DbDiffSqls(currdb, prevDb)
 
     if (allSqls) {
