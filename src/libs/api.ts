@@ -305,6 +305,9 @@ const Orm = (tables: { [k: string]: Table | View }) => {
               typeDefine.onTime[tbl.jsName].push(colName)
               Att[tbl.jsName].updatedAtColumns.push(colName)
             }
+            colDefine = `${col.jsName}${
+              'required' === col.optional ? '' : '?'
+            }: Date | string`
             break
           case 'int':
           case 'float':
@@ -386,7 +389,7 @@ const generateTsType = (tables) => {
                     : `${
                         v.isEnum
                           ? `$EnumFilter<${v.fieldType}, ${v.isNull}>`
-                          : `$${titleCase(v.fieldType)}Filter<${v.isNull}>`
+                          : `$${v.fieldType === 'Date | string' ? 'Date' :titleCase(v.fieldType)}Filter<${v.isNull}>`
                       } | ${v.fieldType} ${v.isNull ? ' | null' : ''}`
                 }`
             )]
@@ -644,6 +647,7 @@ const generateTsType = (tables) => {
       const col = tbl.columns[k]
       let [typeTbl, relColOpt] = col.props.jsType.split('.')
       if (col.type === 'enum') typeTbl = `$Enum['${typeTbl}']`
+      if (col.type === 'Date') typeTbl = `Date | string`
       columns[col.jsName] = {
         fieldName: col.jsName,
         isEnum: col.type === 'enum' ? true : false,

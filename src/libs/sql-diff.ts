@@ -583,7 +583,7 @@ export default function (driver: Driver) {
           },
           foreign(action: 'ADD' | 'DROP', foreign: Foreign, relTbl: Table) {
     
-            if (action === 'ADD') {
+            if (action === 'ADD' && relTbl) {
               return `${keyword.stmt.constraintPre(
                 table,
                 action

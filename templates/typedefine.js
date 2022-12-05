@@ -113,17 +113,17 @@ type $NumberFilter<TNull = true> = {
 }
 
 type $DateFilter<TNull = true> = {
-  eq?: TNull extends true ? Date | null : Date
-  in?: TNull extends true ? Array<Date> | null : Array<Date>
+  eq?: TNull extends true ? Date | string | null : Date | string
+  in?: TNull extends true ? Array<Date|string> | null : Array<Date|string>
   not?: TNull extends true
-    ? $DateFilter<TNull> | Date | null
-    : $DateFilter<TNull> | Date
-  lt?: Date
-  lte?: Date
-  gt?: Date
-  gte?: Date
-  like?: Date
-  between?: Array<Date>
+    ? $DateFilter<TNull> | Date| string | null
+    : $DateFilter<TNull> | Date| string
+  lt?: Date | string
+  lte?: Date | string
+  gt?: Date | string
+  gte?: Date | string
+  like?: Date | string
+  between?: Array<Date | string>
   AND?: $Enumerable<$DateFilter<TNull>>
   OR?: $Enumerable<$DateFilter<TNull>>
 }
