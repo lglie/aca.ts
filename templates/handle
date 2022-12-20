@@ -1365,32 +1365,25 @@ const $Queries = function (trx: any, sql: string[] = []) {
             
             let ids: any[] = []
             if (v.disconnect) {
-              const items = Array.isArray(v.disconnect)
-                ? v.disconnect
-                : [v.disconnect]
-              const relMapIds: any = []
-              for (const v2 of items) {
-                const [relRecId] = await trxQuery(
-                  trx($Att[AttCol.type].dbName).where(
-                    v2.select($Att[AttCol.type].id)
-                  )
+              const items = Array.isArray(v.disconnect) ? v.disconnect : [v.disconnect]
+              for (const v of items) {
+                let [relId] = await trxQuery(
+                  trx($Att[AttCol.type].dbName)
+                    .where(v)
+                    .select($Att[AttCol.type].id)
                 )
-
-                relMapIds.push(
-                  Object.keys(relRecId).reduce(
-                    (_: any, v3) => (
-                      (_[`${$Att[AttCol.type].dbName}_${v3}`] = relRecId[v3]), _
-                    ),
-                    {}
-                  )
+                relId = Object.keys(relId).reduce(
+                  (_: any, v) => (
+                    (_[`${$Att[AttCol.type].dbName}_${v}`] = relId[v]), _
+                  ),
+                  {}
+                )
+                const mapRecord = { ...mapTableId, ...relId }
+                await trxQuery(
+                  trx(AttCol.relation.mapTable)
+                    .where(mapRecord).del()
                 )
               }
-
-              await relMapIds.reduce(
-                (_, v4) =>
-                  trxWhere(_, AttCol.type, { ...mapTableId, ...v4 }, 'OR'),
-                trx($Att[AttCol.type].dbName).del()
-              )
             }
             if (v.deleteMany) {
               const where = trxWhere(

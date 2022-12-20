@@ -14,7 +14,8 @@
     "postgresql",
     "mssql",
     "mysql",
-    "sqlite"
+    "sqlite",
+    "prisma"
   ],
   "author": {
     "name": "Guolie Liao",
