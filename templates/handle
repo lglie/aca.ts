@@ -164,7 +164,7 @@ const $Queries = function (trx: any, sql: string[] = []) {
     for (const key in where) {
       const AttCol = $Att[table].columns[key]
       // is relational field
-      if (AttCol?.relation) {
+      if (AttCol?.relation && where[key] && typeof where[key] === 'object' && Object.keys(where[key]).length) {
         // Determine if it is a primary key table or a foreign key table
         switch (AttCol.relation.kind) {
           case 'primary':
@@ -253,108 +253,137 @@ const $Queries = function (trx: any, sql: string[] = []) {
             }
         }
       } else if (['AND', 'OR', 'NOT'].includes(key)) {
-        if (Array.isArray(where[key])) {
-          for (const v of where[key]) {
-            trxWhere(Kx, table, v, <$WhereLogic>key)
-          }
-        } else if (where[key]) {
-          trxWhere(Kx, table, where[key])
+        switch (key) {
+          case 'AND':
+            if (Array.isArray(where[key])) {
+              Kx = Kx['where']((builder) => {
+                for (const v of where[key]) {
+                  trxWhere(builder, table, v, <$WhereLogic>key)
+                }
+              })
+            } else if (where[key]) {
+              Kx = Kx['where']((builder) => {
+                trxWhere(builder, table, where[key], <$WhereLogic>key)
+              })
+            }
+            break
+          case 'OR':
+            if (Array.isArray(where[key])) {
+              Kx = Kx['orWhere']((builder) => {
+                for (const v of where[key]) {
+                  trxWhere(builder, table, v)
+                }
+              })
+            } else if (where[key]) {
+              Kx = Kx['orWhere']((builder) => {
+                trxWhere(builder, table, where[key])
+              })
+            }
+            break
+          case 'NOT':
+            if (Array.isArray(where[key])) {
+              Kx = Kx['whereNot']((builder) => {
+                for (const v of where[key]) {
+                  trxWhere(builder, table, v)
+                }
+              })
+            } else if (where[key]) {
+              Kx = Kx['whereNot']((builder) => {
+                trxWhere(builder, table, where[key])
+              })
+            }
+            break
         }
       } else {
         let newKey = `${$Att[table].dbName}.${key}`
         if (where[key] && typeof where[key] === 'object') {
-          const operators = Object.keys(where[key])
-          for (const op of operators) {
-            let newOp = op,
-              newWhere = where[key][op]
-            switch (op) {
-              case 'contains':
-              case 'startsWith':
-              case 'endsWith':
-                newWhere = `${op === 'startsWith' ? '' : '%'}${newWhere}${
-                  op === 'endsWith' ? '' : '%'
-                }`
-                newOp = 'like'
-              case 'eq':
-                if (newWhere === null) {
-                  Kx = Kx[whereLogic + 'Null'](newKey)
-                  break
-                }
-              case 'lt':
-              case 'gt':
-              case 'lte':
-              case 'gte':
-              case 'like':
-                Kx = Kx[whereLogic](newKey, operator[newOp], newWhere)
-                break
-              case 'in':
-                Kx = key.includes(',')
-                  ? Kx[whereLogic + 'In'](
-                      key.split(',').map((v) => `${$Att[table].dbName}.${v}`),
-                      newWhere
-                    )
-                  : Kx[whereLogic + 'In'](
-                      newKey,
-                      newWhere.map((v: any) => v)
-                    )
-                break
-              case 'between':
-                Kx = Kx[whereLogic + 'Between'](newKey, newWhere)
-                break
-              case 'not':
-                if (newWhere !== null && typeof newWhere === 'object')
-                  for (const key2 in newWhere) {
-                    switch (key2) {
-                      case 'eq':
-                        newWhere.eq === null
-                          ? (Kx =
-                              Kx[
-                                whereLogic === 'whereNot'
-                                  ? 'whereNull'
-                                  : whereLogic + 'NotNull'
-                              ](newKey))
-                          : (Kx = Kx[
-                              whereLogic === 'whereNot'
-                                ? 'where'
-                                : whereLogic + 'Not'
-                            ](newKey, newWhere.eq))
+          Kx = Kx[whereLogic]((builder) => {
+            switchScalarCol(builder, where[key], newKey)
+          })
+        } else {
+          Kx =
+            where[key] === null
+              ? Kx[whereLogic + 'Null'](newKey)
+              : Kx[whereLogic](newKey, where[key])
+        }
+      }
+    }
 
-                        break
-                      case 'like':
-                        Kx = Kx[
-                          whereLogic === 'whereNot'
-                            ? 'where'
-                            : whereLogic + 'Not'
-                        ](newKey, 'like', newWhere.like)
-                        break
-                      case 'in':
-                        Kx = key.includes(',')
-                          ? Kx[
-                              whereLogic === 'whereNot'
-                                ? 'whereIn'
-                                : whereLogic + 'NotIn'
-                            ](
-                              key
-                                .split(',')
-                                .map((v) => `${$Att[table].dbName}.${v}`),
-                              newWhere.in
-                            )
-                          : Kx[
-                              whereLogic === 'whereNot'
-                                ? 'whereIn'
-                                : whereLogic + 'NotIn'
-                            ](newKey, newWhere.in)
 
-                        break
-                      case 'between':
-                        Kx = Kx[
-                          whereLogic === 'whereNot'
-                            ? 'whereBetween'
-                            : whereLogic + 'NotBetween'
-                        ](newKey, newWhere.between)
-                    }
+    async function switchScalarCol (Kx, scalarWhere, newKey) {
+        const operators = Object.keys(scalarWhere)
+        for (const op of operators) {
+          let newOp = op,
+            newWhere = scalarWhere[op]
+          switch (op) {
+            case 'contains':
+            case 'startsWith':
+            case 'endsWith':
+              newWhere = `${op === 'startsWith' ? '' : '%'}${newWhere}${
+                op === 'endsWith' ? '' : '%'
+              }`
+              newOp = 'like'
+            case 'eq':
+              if (newWhere === null) {
+                Kx = Kx[whereLogic + 'Null'](newKey)
+                break
+              }
+            case 'lt':
+            case 'gt':
+            case 'lte':
+            case 'gte':
+            case 'like':
+              Kx = Kx[whereLogic](newKey, operator[newOp], newWhere)
+              break
+            case 'in':
+              Kx = Kx[whereLogic + 'In'](
+                newKey,
+                newWhere.map((v: any) => v)
+              )
+              break
+            case 'between':
+              Kx = Kx[whereLogic + 'Between'](newKey, newWhere)
+              break
+            case 'OR':
+              if (Array.isArray(newWhere)) {
+                Kx = Kx['orWhere']((builder) => {
+                  for (const v of newWhere) {
+                    switchScalarCol(builder, v, newKey)
                   }
-                else {
+                })
+              } else if (newWhere) {
+                Kx = Kx['orWhere']((builder) => {
+                  switchScalarCol(builder, newWhere, newKey)
+                })
+              }
+              break
+            case 'AND':
+              if (Array.isArray(newWhere)) {
+                Kx = Kx['where']((builder) => {
+                  for (const v of newWhere) {
+                    switchScalarCol(builder, v, newKey)
+                  }
+                })
+              } else if (newWhere) {
+                Kx = Kx['where']((builder) => {
+                  switchScalarCol(builder, newWhere, newKey)
+                })
+              }
+              break
+            case 'not':
+                if (newWhere !== null && typeof newWhere === 'object'){
+                  if (Array.isArray(newWhere)) {
+                    Kx = Kx['whereNot']((builder) => {
+                      for (const v of newWhere) {
+                        switchScalarCol(builder, v, newKey)
+                      }
+                    })
+                  } else if (newWhere) {
+                    Kx = Kx['whereNot']((builder) => {
+                      switchScalarCol(builder, newWhere, newKey)
+                    })
+                  }
+                } else {
                   newWhere === null
                     ? (Kx =
                         Kx[
@@ -366,15 +395,9 @@ const $Queries = function (trx: any, sql: string[] = []) {
                         whereLogic === 'whereNot' ? 'where' : whereLogic + 'Not'
                       ](newKey, newWhere))
                 }
-            }
           }
-        } else {
-          Kx =
-            where[key] === null
-              ? Kx[whereLogic + 'Null'](newKey)
-              : Kx[whereLogic](newKey, where[key])
         }
-      }
+      
     }
 
     return Kx
