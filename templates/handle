@@ -1534,11 +1534,11 @@ const $Queries = function (trx: any, sql: string[] = []) {
       if (!args?.select || args.select === '*')
         (<any>args).select = { count: '*' }
 
-      return await trxWhere(
+      return await trxQuery(trxWhere(
         trx($Att[table].dbName)[query](args.select),
         table,
         args?.where
-      )
+      ))
     },
   }
 }
