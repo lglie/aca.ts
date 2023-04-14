@@ -71,7 +71,7 @@ const tblQueries = (
                 ? `Array<{[P in keyof ${tblType}]?: ${tblType}[P]}>`
                 : `{[P in keyof ${tblType}]?: ${tblType}[P]}`
             }`
-      } , sql?: string[], error?: string}> => ${
+      } , sql?: string[], error?: string, ${'findMany' === Q ? `count?: number`: ''}}> => ${
         'server' === api
           ? tableQuery(Q, tblName)
           : `await ${api.endsWith('client') ? `$.${dbVar}.req` : '$Handle'}${
@@ -532,6 +532,7 @@ const generateTsType = (tables) => {
                     offset?: number
                     select?: {[P in keyof select]?: select[P]}
 										distinct?: '*' | $Enumerable<scalar>
+                    count?: boolean
                     sql?: boolean
                 `
         case 'insert':

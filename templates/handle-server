@@ -13,6 +13,7 @@ function $Handle(trx: any) {
     // remove undefined
     args = args && JSON.parse(JSON.stringify(args))
     let data
+    let count
 
     const mutatedSelect = async (
       data: any[],
@@ -129,6 +130,15 @@ function $Handle(trx: any) {
           limit: args?.limit,
           offset: args?.offset,
         })
+        if (args.count) {
+          count = await $Queries(trx, sql).aggregate(table, 'count', {
+            where: args?.where,
+            select: '*'
+          })
+          count = Number(count[0]['count'])
+        }
+        
+        
         break
 
       case 'insert':
@@ -195,6 +205,6 @@ function $Handle(trx: any) {
 
     data = data ?? null
 
-    return args?.sql ? { data, sql } : { data }
+    return args?.sql ? { data, sql } : args?.count ? { data, count } : { data }
   }
 }
