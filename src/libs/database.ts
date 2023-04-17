@@ -129,44 +129,17 @@ export function AlterTblSql(
     remove: <string[]>[],
     alter: <string[]>[],
   }
+  console.log(333, JSON.stringify(alter))
   for (const k in alter) {
     const tbl = <Table>tbls[k]
     if (alter[k].map) {
       rtn.alter.push(sqlDiff.tbl(alter[k].map.old).rename(alter[k].map.new))
     }
 
-    // Block properties
-    if (alter[k].props) {
-      const cst = sqlDiff.tbl(tbl.dbName).constraint
-      for (const k2 in alter[k].props) {
-        switch (k2) {
-          case 'uniques':
-            const U = alter[k].props[k2]
-            if (U.add) {
-              U.add.forEach((v) => rtn.alter.push(cst.unique('ADD', v)))
-            }
-            if (U.remove) {
-              U.remove.forEach((v) => rtn.alter.push(cst.unique('DROP', v)))
-            }
-            break
-          case 'indexes':
-            const I = alter[k].props[k2]
-            if (I.add) {
-              I.add.forEach((v) => rtn.alter.push(cst.index('CREATE', v)))
-            }
-            if (I.remove) {
-              I.remove.forEach((v) => rtn.alter.push(cst.index('DROP', v)))
-            }
-            break
-          case 'id':
-            throw `id '${tbl.name}' cannot be changed`
-        }
-      }
-    }
-
     if (alter[k].columns) {
       if (alter[k].columns.add) {
         let constraint
+        let uniqueOrIndex
         const columns = []
         alter[k].columns.add.forEach((v) => {
           // Add foreign key constraints(through the configuration of acaconfig.json)
@@ -192,9 +165,18 @@ export function AlterTblSql(
               notNull,
             })
           }
+          if (v.props.unique) {
+            uniqueOrIndex = sqlDiff.tbl(tbl.dbName).constraint.unique('ADD', v.dbName)
+          }
+          if (v.props.index) {
+            uniqueOrIndex = sqlDiff.tbl(tbl.dbName).constraint.index('CREATE', v.dbName)
+          }
         })
 
         rtn.alter.push(sqlDiff.tbl(tbl.dbName).mutate.add(columns))
+        if (uniqueOrIndex) {
+          rtn.alter.push(uniqueOrIndex)
+        }
         if (constraint) {
           if (config.connectOption.driver === 'betterSqlite3') {
             throw new Error("betterSqlite3 暂不支持修改外键");
@@ -205,6 +187,7 @@ export function AlterTblSql(
 
       if (alter[k].columns.remove) {
         let constraint
+        let uniqueOrIndex
         alter[k].columns.remove.forEach((v) => {
           // DROP foreign key constraints(through the configuration of acaconfig.json)
           if (v.props.foreign && config.foreignKeyConstraint) {
@@ -213,12 +196,21 @@ export function AlterTblSql(
               .tbl(tbl.dbName)
               .constraint.foreign('DROP', v.props.foreign, relTbl)
           }
+          if (v.props.unique) {
+            uniqueOrIndex = sqlDiff.tbl(tbl.dbName).constraint.unique('DROP', v.dbName)
+          }
+          if (v.props.index) {
+            uniqueOrIndex = sqlDiff.tbl(tbl.dbName).constraint.index('DROP', v.dbName)
+          }
         })
         if (constraint) {
           if (config.connectOption.driver === 'betterSqlite3') {
             throw new Error("betterSqlite3 暂不支持修改外键");
           }
           rtn.alter.push(constraint)
+        }
+        if (uniqueOrIndex) {
+          rtn.alter.push(uniqueOrIndex)
         }
         const cols = alter[k].columns['remove'].map((v) => v.dbName)
         rtn.alter.push(sqlDiff.tbl(tbl.dbName).mutate.drop(cols))
@@ -399,6 +391,35 @@ export function AlterTblSql(
               // )
             }
           }
+        }
+      }
+    }
+
+    // Block properties
+    if (alter[k].props) {
+      const cst = sqlDiff.tbl(tbl.dbName).constraint
+      for (const k2 in alter[k].props) {
+        switch (k2) {
+          case 'uniques':
+            const U = alter[k].props[k2]
+            if (U.add) {
+              U.add.forEach((v) => rtn.alter.push(cst.unique('ADD', v)))
+            }
+            if (U.remove) {
+              U.remove.forEach((v) => rtn.alter.push(cst.unique('DROP', v)))
+            }
+            break
+          case 'indexes':
+            const I = alter[k].props[k2]
+            if (I.add) {
+              I.add.forEach((v) => rtn.alter.push(cst.index('CREATE', v)))
+            }
+            if (I.remove) {
+              I.remove.forEach((v) => rtn.alter.push(cst.index('DROP', v)))
+            }
+            break
+          case 'id':
+            throw `id '${tbl.name}' cannot be changed`
         }
       }
     }

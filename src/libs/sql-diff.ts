@@ -536,7 +536,11 @@ export default function (driver: Driver) {
                 if (driver === 'betterSqlite3') {
                   throw new Error('betterSqlite3 暂不支持修改')
                 }
-                return `ALTER TABLE ${qPrefix}${table}${qName} ALTER COLUMN ${qName}${column}${qName} TYPE ${dbName}`
+                let sql = `ALTER TABLE ${qPrefix}${table}${qName} ALTER COLUMN ${qName}${column}${qName} TYPE ${dbName}`
+                if (driver === 'pg') {
+                  sql += ` USING ${qName}${column}${qName}::${dbName}`
+                }
+                return sql
               },
               notNull(action: 'SET' | 'DROP') {
                 if (driver === 'betterSqlite3') {

@@ -10,7 +10,6 @@
     "removeComments": true,
     "downlevelIteration": true,
     "resolveJsonModule": true,
-    "experimentalDecorators": true,
-    "suppressImplicitAnyIndexErrors": true
+    "experimentalDecorators": true
   }
 }
