@@ -129,7 +129,7 @@ export function AlterTblSql(
     remove: <string[]>[],
     alter: <string[]>[],
   }
-  console.log(333, JSON.stringify(alter))
+
   for (const k in alter) {
     const tbl = <Table>tbls[k]
     if (alter[k].map) {
