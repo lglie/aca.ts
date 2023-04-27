@@ -295,7 +295,12 @@ const $Queries = function (trx: any, sql: string[] = []) {
             break
         }
       } else {
-        let newKey = `${$Att[table].dbName}.${key}`
+        let newKey
+        if (key.split(',').length > 1) {
+          newKey = key.split(',').map(v => `${$Att[table].dbName}.${v}`)
+        } else {
+          newKey = `${$Att[table].dbName}.${key}`
+        }
         if (where[key] && typeof where[key] === 'object') {
           Kx = Kx[whereLogic]((builder) => {
             switchScalarCol(builder, where[key], newKey)
