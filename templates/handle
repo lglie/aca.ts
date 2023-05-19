@@ -746,13 +746,13 @@ const $Queries = function (trx: any, sql: string[] = []) {
                   .where(dbCols(AttCol.type, v.connect))
                   .select('*')
               )
-
+              
               ;[pTable] = pTable.length
                 ? pTable
                 : await this.insert(AttCol.type, {
                     data: v.insert,
                   })
-
+              pTable = $RtnSelect(AttCol.type, pTable, {"*":true})
               for (let i = 0; i < keys.length; i++)
                 scalarCols[keys[i]] = pTable[references[i]]
             } else if (v.connect) {
@@ -766,7 +766,7 @@ const $Queries = function (trx: any, sql: string[] = []) {
                 throw `table found "${
                   $Att[AttCol.type].dbName
                 }" record "${JSON.stringify(v.connect)}" does not exist`
-
+              pTable = $RtnSelect(AttCol.type, pTable, {"*":true})
               for (let i = 0; i < keys.length; i++)
                 scalarCols[keys[i]] = pTable[references[i]]
             } else if (v.insert) {
@@ -993,7 +993,7 @@ const $Queries = function (trx: any, sql: string[] = []) {
               : await this.insert(AttCol.type, {
                   data: v.insert,
                 })
-
+            pTable = $RtnSelect(AttCol.type, pTable, {"*":true})
             for (let i = 0; i < keys.length; i++)
               scalarColumns[keys[i]] = pTable[references[i]]
           } else if (v.connect) {
@@ -1006,6 +1006,7 @@ const $Queries = function (trx: any, sql: string[] = []) {
               throw `query table "${
                 $Att[AttCol.type].dbName
               }" record "${JSON.stringify(v.connect)}" does not exist`
+            pTable = $RtnSelect(AttCol.type, pTable, {"*":true})
             for (let i = 0; i < keys.length; i++)
               scalarColumns[keys[i]] = pTable[references[i]]
           } else if (v.insert) {
