@@ -671,26 +671,70 @@ const $Queries = function (trx: any, sql: string[] = []) {
 
       if (Array.isArray(args.data)) {
         // is an array, filter each record in the array, and seperate out if there is a relational field
-        const [scalarRecords, relationRecords] = args.data.reduce(
-          (_: any, v: any) => {
-            let truth = true
-            for (const col in v) {
-              if ($Att[table].columns[col]?.relation) {
-                _[1].push(v)
-                truth = false
-                break
+        
+        const scalarRecords = []
+        const relationRecords = []
+        for (const val of args.data){
+          const [scalarCols, primaryCols, foreignCols, manyCols] = splitCols(table, val)
+          if (Object.keys(foreignCols).length) {
+            const relColumns: any = Object.entries(foreignCols)
+            // If there exists a foreign key field, you must create a primary key table to obtain the referenced field value
+            for (const [k, v] of relColumns) {
+              const AttCol = $Att[table].columns[k]
+              const { references, keys } = AttCol.relation
+              if (v.connectOrInsert) {
+                // Find if the connection exists
+                let pTable = await trxQuery(
+                  trx($Att[AttCol.type].dbName)
+                    .where(dbCols(AttCol.type, v.connectOrInsert.connect))
+                    .select('*')
+                )
+  
+                ;[pTable] = pTable.length
+                  ? pTable
+                  : await this.insert(AttCol.type, {
+                      data: v.connectOrInsert.insert
+                    })
+                pTable = $RtnSelect(AttCol.type, pTable, { '*': true })
+                for (let i = 0; i < keys.length; i++) scalarCols[keys[i]] = pTable[references[i]]
+              }
+              if (v.connect) {
+                // Find the connection
+                let [pTable] = await trxQuery(
+                  trx($Att[AttCol.type].dbName).where(dbCols(AttCol.type, v.connect)).select('*')
+                )
+                if (!pTable)
+                  throw `table found "${$Att[AttCol.type].dbName}" record "${JSON.stringify(
+                    v.connect
+                  )}" does not exist`
+                pTable = $RtnSelect(AttCol.type, pTable, { '*': true })
+                for (let i = 0; i < keys.length; i++) scalarCols[keys[i]] = pTable[references[i]]
+              }
+              if (v.insert) {
+                let [pTable] = await this.insert(AttCol.type, {
+                  data: v.insert
+                })
+                pTable = $RtnSelect(AttCol.type, pTable, { '*': true })
+                for (let i = 0; i < keys.length; i++) scalarCols[keys[i]] = pTable[references[i]]
               }
             }
-            if (truth) _[0].push(v)
-            return _
-          },
-          [[], []]
-        )
+          }
+          if (Object.keys(scalarCols).length) {
+            scalarRecords.push(scalarCols)
+          }
+          
+          if (Object.keys(primaryCols).length) {
+            relationRecords.push(primaryCols)
+          }
+          if (Object.keys(manyCols).length) {
+            relationRecords.push(manyCols)
+          }
+        }
         // Create pure scalar record
         if (scalarRecords.length) {
           scalarRtn = await trxQuery(
             trx($Att[table].dbName)
-              .insert(argsValidate(table, dbCols(table, scalarRecords), 'insert', trx))
+              .insert(dbCols(table, argsValidate(table, scalarRecords, 'insert', trx)))
               .returning('*')
           )
         } else {
@@ -763,6 +807,7 @@ const $Queries = function (trx: any, sql: string[] = []) {
             .insert(dbCols(table, argsValidate(table, scalarCols, 'insert', trx)))
             .returning('*')
         )
+        scalarRtn = $RtnSelect(table, scalarRtn, { '*': true })
         // Create all foreign key tables and apply the unique key of this table to the corresponding table
         if (Object.keys(primaryCols).length) {
           const relColumns: any = Object.entries(primaryCols)
@@ -839,13 +884,16 @@ const $Queries = function (trx: any, sql: string[] = []) {
                       .reduce(
                         (_: any, v: any) => trxWhere(_, AttCol.type, v, 'OR'),
                         trx($Att[AttCol.type].dbName).update(
-                          dbCols(AttCol.type, argsValidate(AttCol.type, relationForeign, 'update', trx))
+                          dbCols(
+                            AttCol.type,
+                            argsValidate(AttCol.type, relationForeign, 'update', trx)
+                          )
                         )
                       )
                       .toString()
                   )
                 )
-              } 
+              }
               if (v.insert) {
                 await this.insert(AttCol.type, {
                   data: Array.isArray(v.insert)
@@ -970,7 +1018,11 @@ const $Queries = function (trx: any, sql: string[] = []) {
           }
           if (v.connectOrInsert) {
             // Find if the connection exists
-            let pTable = await trxQuery(trx($Att[AttCol.type].dbName).where(dbCols(AttCol.type, v.connectOrInsert.connect)).select('*'))
+            let pTable = await trxQuery(
+              trx($Att[AttCol.type].dbName)
+                .where(dbCols(AttCol.type, v.connectOrInsert.connect))
+                .select('*')
+            )
 
             ;[pTable] = pTable.length
               ? pTable
@@ -979,7 +1031,7 @@ const $Queries = function (trx: any, sql: string[] = []) {
                 })
             pTable = $RtnSelect(AttCol.type, pTable, { '*': true })
             for (let i = 0; i < keys.length; i++) scalarColumns[keys[i]] = pTable[references[i]]
-          } 
+          }
           if (v.connect) {
             // Find the connection
             let [pTable] = await trxQuery(
@@ -1003,31 +1055,22 @@ const $Queries = function (trx: any, sql: string[] = []) {
           if (v.upsert) {
             await this.upsert(AttCol.type, {
               ...v.upsert,
-              where: foreignWhere,
+              where: foreignWhere
             })
-          } 
+          }
           if (v.update) {
             await this.update(AttCol.type, {
               where: foreignWhere,
               data: v.update
             })
-          } 
+          }
           if (v.delete === true) {
-            await trxQuery(trx($Att[AttCol.type].dbName).where(dbCols(AttCol.type, foreignWhere)).del())
-          } 
-          if (v.disconnect === true) {
             await trxQuery(
-              trx($Att[table].dbName)
-                .where(dbCols(table, args.where))
-                .update(
-                  dbCols(table,argsValidate(
-                    table,
-                    keys.reduce((_: any, v: string) => ((_[v] = null), _), {}),
-                    'update',
-                    trx
-                  ))
-                )
+              trx($Att[AttCol.type].dbName).where(dbCols(AttCol.type, foreignWhere)).del()
             )
+          }
+          if (v.disconnect === true) {
+            await keys.reduce((_: any, v: string) => ((_[v] = null), _), scalarColumns)
           }
         }
       }
@@ -1049,6 +1092,7 @@ const $Queries = function (trx: any, sql: string[] = []) {
           args?.where
         )
       }
+      tableRtn = $RtnSelect(table, tableRtn, { '*': true })
 
       if (Object.keys(primaryColumns).length) {
         const relColumns: any = Object.entries(primaryColumns)
@@ -1063,55 +1107,69 @@ const $Queries = function (trx: any, sql: string[] = []) {
               let rTable = await trxQuery(
                 trx($Att[AttCol.type].dbName)
                   .where(dbCols(AttCol.type, v.connectOrInsert.connect))
-                  .update(dbCols(AttCol.type, argsValidate(AttCol.type, relationForeign, 'update', trx)))
+                  .update(
+                    dbCols(AttCol.type, argsValidate(AttCol.type, relationForeign, 'update', trx))
+                  )
                   .returning('*')
               )
 
-              if (!rTable.length) await this.insert(AttCol.type, { data: {
-                ...v.connectOrInsert.insert,
-                ...relationForeign
-              } })
+              if (!rTable.length)
+                await this.insert(AttCol.type, {
+                  data: {
+                    ...v.connectOrInsert.insert,
+                    ...relationForeign
+                  }
+                })
             }
             if (v.connect) {
               await trxQuery(
                 trx($Att[AttCol.type].dbName)
-                .where(dbCols(AttCol.type, v.connect))
-                  .update(dbCols(AttCol.type, argsValidate(AttCol.type, relationForeign, 'update', trx)))
+                  .where(dbCols(AttCol.type, v.connect))
+                  .update(
+                    dbCols(AttCol.type, argsValidate(AttCol.type, relationForeign, 'update', trx))
+                  )
                   .returning('*')
               )
             }
             if (v.insert) {
-              await this.insert(AttCol.type, { data: {
-                ...v.insert,
-                ...relationForeign
-              } })
-            } 
+              await this.insert(AttCol.type, {
+                data: {
+                  ...v.insert,
+                  ...relationForeign
+                }
+              })
+            }
             if (v.upsert) {
               await this.upsert(AttCol.type, {
                 ...v.upsert,
-                where: relationForeign,
+                where: relationForeign
               })
-            } 
+            }
             if (v.update) {
               await this.update(AttCol.type, {
                 where: relationForeign,
                 data: v.update
               })
-            }  
+            }
             if (v.delete === true) {
-              await trxQuery(trx($Att[AttCol.type].dbName).where(dbCols(AttCol.type, relationForeign)).del())
-            } 
+              await trxQuery(
+                trx($Att[AttCol.type].dbName).where(dbCols(AttCol.type, relationForeign)).del()
+              )
+            }
             if (v.disconnect === true) {
               await trxQuery(
                 trx($Att[AttCol.type].dbName)
                   .where(dbCols(AttCol.type, relationForeign))
                   .update(
-                    dbCols(AttCol.type, argsValidate(
+                    dbCols(
                       AttCol.type,
-                      keys.reduce((_: any, v: any) => ((_[v] = null), _), {}),
-                      'update',
-                      trx
-                    ))
+                      argsValidate(
+                        AttCol.type,
+                        keys.reduce((_: any, v: any) => ((_[v] = null), _), {}),
+                        'update',
+                        trx
+                      )
+                    )
                   )
               )
             }
@@ -1124,12 +1182,15 @@ const $Queries = function (trx: any, sql: string[] = []) {
                     v.disconnect.reduce(
                       (_: any, v: any) => trxWhere(_, AttCol.type, v, 'OR'),
                       trx($Att[AttCol.type].dbName).update(
-                        dbCols(AttCol.type, argsValidate(
+                        dbCols(
                           AttCol.type,
-                          keys.reduce((_: any, v: any) => ((_[v] = null), _), {}),
-                          'update',
-                          trx
-                        ))
+                          argsValidate(
+                            AttCol.type,
+                            keys.reduce((_: any, v: any) => ((_[v] = null), _), {}),
+                            'update',
+                            trx
+                          )
+                        )
                       )
                     ),
                     AttCol.type,
@@ -1153,7 +1214,12 @@ const $Queries = function (trx: any, sql: string[] = []) {
               await trxQuery(
                 trx($Att[AttCol.type].dbName)
                   .where(dbCols(AttCol.type, relationForeign))
-                  .update(dbCols(AttCol.type, keys.reduce((_: any, v: any) => ((_[v] = null), _), {})))
+                  .update(
+                    dbCols(
+                      AttCol.type,
+                      keys.reduce((_: any, v: any) => ((_[v] = null), _), {})
+                    )
+                  )
               )
               if (!Array.isArray(v.set)) v.set = [v.set]
               await trxQuery(
@@ -1162,7 +1228,10 @@ const $Queries = function (trx: any, sql: string[] = []) {
                     .reduce(
                       (_: any, v: any) => trxWhere(_, AttCol.type, v, 'OR'),
                       trx($Att[AttCol.type].dbName).update(
-                        dbCols(AttCol.type ,argsValidate(AttCol.type, relationForeign, 'update', trx))
+                        dbCols(
+                          AttCol.type,
+                          argsValidate(AttCol.type, relationForeign, 'update', trx)
+                        )
                       )
                     )
                     .toString()
@@ -1176,10 +1245,7 @@ const $Queries = function (trx: any, sql: string[] = []) {
                   trx($Att[AttCol.type].dbName)
                     .where(dbCols(AttCol.type, val.connect))
                     .update(
-                      dbCols(
-                        AttCol.type,
-                        argsValidate(AttCol.type, relationForeign, 'update', trx)
-                      )
+                      dbCols(AttCol.type, argsValidate(AttCol.type, relationForeign, 'update', trx))
                     )
                     .returning('*')
                 )
@@ -1200,7 +1266,10 @@ const $Queries = function (trx: any, sql: string[] = []) {
                     .reduce(
                       (_: any, v: any) => trxWhere(_, AttCol.type, v, 'OR'),
                       trx($Att[AttCol.type].dbName).update(
-                        dbCols(AttCol.type, argsValidate(AttCol.type, relationForeign, 'update', trx))
+                        dbCols(
+                          AttCol.type,
+                          argsValidate(AttCol.type, relationForeign, 'update', trx)
+                        )
                       )
                     )
                     .toString()
@@ -1244,7 +1313,10 @@ const $Queries = function (trx: any, sql: string[] = []) {
                 trx.raw(
                   trxWhere(
                     trx($Att[AttCol.type].dbName).update(
-                      dbCols(AttCol.type, argsValidate(AttCol.type, v.updateMany.data, 'update', trx))
+                      dbCols(
+                        AttCol.type,
+                        argsValidate(AttCol.type, v.updateMany.data, 'update', trx)
+                      )
                     ),
                     AttCol.type,
                     {
@@ -1268,7 +1340,6 @@ const $Queries = function (trx: any, sql: string[] = []) {
                 )
               }
             }
-            
           }
         }
       }
@@ -1383,11 +1454,7 @@ const $Queries = function (trx: any, sql: string[] = []) {
               }
             }
             if (v.deleteMany) {
-              const where = trxWhere(
-                trx($Att[AttCol.type].dbName).del(),
-                AttCol.type,
-                v.deleteMany.where
-              )
+              const where = trxWhere(trx($Att[AttCol.type].dbName).del(), AttCol.type, v.deleteMany)
 
               await trxWhere(where, AttCol.type, {
                 // @ts-ignore
@@ -1446,23 +1513,12 @@ const $Queries = function (trx: any, sql: string[] = []) {
               }
             }
             if (v.updateMany) {
-              const where = trxWhere(
-                trx($Att[AttCol.type].dbName).update(
-                  argsValidate(AttCol.type, v.updateMany.data, 'update', trx)
-                ),
-                AttCol.type,
-                v.updateMany.where
-              )
-
-              await trxWhere(where, AttCol.type, {
-                // @ts-ignore
-                [$Att[AttCol.type].id]: ''
-              })
+              await this.updateMany(AttCol.type, v.updateMany)
             }
             if (v.delete) {
               const items = Array.isArray(v.delete) ? v.delete : [v.delete]
               await items.reduce(
-                (_: any, v: { where: any }) => trxWhere(_, AttCol.type, v.where, 'OR'),
+                (_: any, v) => trxWhere(_, AttCol.type, v, 'OR'),
                 trx($Att[AttCol.type].dbName).del()
               )
               // Delete the corresponding records in the mapping table (subsequent improvement)
