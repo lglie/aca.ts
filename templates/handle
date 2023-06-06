@@ -19,10 +19,10 @@ function $RtnSelect(table: string, rtnCols: any, select?: any): any {
       switch ($Att[table].columns[name].type) {
         case 'int':
         case 'bigint':
-          rtn[name] = Math.round(Number(rtn[name]))
+          rtn[name] = (rtn[name] || rtn[name] === 0) ? Math.round(Number(rtn[name])) : undefined
           break
         case 'float':
-          rtn[name] = Number(rtn[name])
+          rtn[name] = (rtn[name] || rtn[name] === 0) ? Number(rtn[name]) : undefined
       }
     }
 
@@ -39,8 +39,7 @@ function $RtnSelect(table: string, rtnCols: any, select?: any): any {
 
     if (Object.keys(rtnCols).length) {
       if (select && Object.keys(select).length) {
-        if (Object.keys(select).includes('*'))
-          scalarRtn([...scalarCols, ...Object.keys(select)])
+        if (Object.keys(select).includes('*')) scalarRtn([...scalarCols, ...Object.keys(select)])
         else scalarRtn(select)
       } // Return all scalar fields of the scalar
       else scalarRtn(scalarCols)
@@ -512,7 +511,7 @@ const $Queries = function (trx: any, sql: string[] = []) {
             const dataKey = $Att[table].id
               .map((v) => (fieldKey ? val[`${fieldKey}.${v}`] : val[v]))
               .join('_')
-            if (!item[dataKey]) {
+            if (dataKey && !item[dataKey]) {
               item[dataKey] = $RtnSelect(
                 table,
                 Object.keys(scalarCols).reduce((attrs, v) => {
