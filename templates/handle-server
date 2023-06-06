@@ -1,3 +1,4 @@
+
 function $Handle(trx: any) {
   const sql: string[] = []
   return async function Iter({ query, args, table }: { query: any; args?: any; table: string }) {
