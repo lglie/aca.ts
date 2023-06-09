@@ -437,6 +437,17 @@ const generateTsType = (tables) => {
                             ? `$Enumerable<${v.fieldType}.uniqueWhere>`
                             : `${v.fieldType}.uniqueWhere`
                         }
+                        connectOrInsert?: ${
+                          v.isArray
+                            ? `$Enumerable<{
+                              connect: ${v.fieldType}.uniqueWhere
+                              insert: Omit<${v.fieldType}.insertInput, ${v.relationKeys}>
+                            }>`
+                            : `{
+                              connect: ${v.fieldType}.uniqueWhere
+                              insert: Omit<${v.fieldType}.insertInput, ${v.relationKeys}>
+                            }`
+                        }
                     }`
                               : v.fieldType
                           }`
@@ -461,6 +472,17 @@ const generateTsType = (tables) => {
                     v.isArray
                       ? `$Enumerable<${v.fieldType}.uniqueWhere>`
                       : `${v.fieldType}.uniqueWhere`
+                  }
+                  connectOrInsert?: ${
+                    v.isArray
+                      ? `$Enumerable<{
+                        connect: ${v.fieldType}.uniqueWhere
+                        insert: Omit<${v.fieldType}.insertInput, ${v.relationKeys}>
+                      }>`
+                      : `{
+                        connect: ${v.fieldType}.uniqueWhere
+                        insert: Omit<${v.fieldType}.insertInput, ${v.relationKeys}>
+                      }`
                   }
                   disconnect?: ${
                     v.isArray
