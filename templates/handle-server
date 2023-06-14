@@ -1,19 +1,10 @@
 
 function $Handle(trx: any) {
   const sql: string[] = []
-  return async function Iter({
-    query,
-    args,
-    table,
-  }: {
-    query: any
-    args?: any
-    table: string
-  }) {
+  return async function Iter({ query, args, table }: { query: any; args?: any; table: string }) {
     // remove undefined
     args = args && JSON.parse(JSON.stringify(args))
     let data
-    let count
 
     const mutatedSelect = async (
       data: any[],
@@ -28,21 +19,18 @@ function $Handle(trx: any) {
             if (yes) {
               // Extract the id field of data and perform where in query
               const whereIn = data.map((record) =>
-                $Att[table].id.reduce(
-                  (_: any[], v: string | number) => (_.push(record[v]), _),
-                  []
-                )
+                $Att[table].id.reduce((_: any[], v: string | number) => (_.push(record[v]), _), [])
               )
               // @ts-ignore
               rtn = await $Handle(trx)({
                 query: 'findMany',
                 args: {
                   where: {
-                    [$Att[table].id.join(',')]: { in: whereIn },
+                    [$Att[table].id.join(',')]: { in: whereIn }
                   },
-                  select,
+                  select
                 },
-                table,
+                table
               })
 
               rtn = rtn.data
@@ -51,11 +39,11 @@ function $Handle(trx: any) {
             }
           } else {
             // Passing an empty object returns all scalar fields
-            rtn = data
+            rtn = $RtnSelect(table, data, select)
           }
         } else {
           // Not passing select returns the number of rows affected
-          rtn = data
+          rtn = $RtnSelect(table, data, select)
         }
       } else {
         if (select) {
@@ -71,31 +59,29 @@ function $Handle(trx: any) {
                   where:
                     $Att[table].id.length === 1
                       ? {
-                          [$Att[table].id[0]]: data[$Att[table].id[0]],
+                          [$Att[table].id[0]]: data[$Att[table].id[0]]
                         }
                       : {
                           [$Att[table].id.join('_')]: $Att[table].id.reduce(
-                            (_: { [x: string]: any }, v: string | number) => (
-                              (_[v] = data[v]), _
-                            ),
+                            (_: { [x: string]: any }, v: string | number) => ((_[v] = data[v]), _),
                             {}
-                          ),
+                          )
                         },
-                  select,
+                  select
                 },
-                table,
+                table
               })
               rtn = rtn.data
             } else {
-              ;[rtn] = $RtnSelect(table, [data], select)
+              rtn = $RtnSelect(table, data, select)
             }
           } else {
             // Passing an expty onject returns all scalar fields
-            rtn = data
+            rtn = $RtnSelect(table, data, select)
           }
         } else {
           // Not passing select returns affected rows
-          rtn = data
+          rtn = $RtnSelect(table, data, select)
         }
       }
       return rtn
@@ -106,7 +92,7 @@ function $Handle(trx: any) {
         if (Object.keys(args?.where).length) {
           data = await $Queries(trx, sql).finder(table, {
             where: args?.where,
-            select: args?.select,
+            select: args?.select
           })
           data = data[0]
         }
@@ -117,7 +103,7 @@ function $Handle(trx: any) {
           where: args?.where,
           select: args?.select,
           orderBy: args?.orderBy,
-          limit: 1,
+          limit: 1
         })
         data = data[0]
         break
@@ -128,30 +114,30 @@ function $Handle(trx: any) {
           select: args?.select,
           orderBy: args?.orderBy,
           limit: args?.limit,
-          offset: args?.offset,
+          offset: args?.offset
         })
         if (args.count) {
-          count = await $Queries(trx, sql).aggregate(table, 'count', {
+          let count:any = await $Queries(trx, sql).aggregate(table, {
             where: args?.where,
-            select: '*'
+            count: {
+              '*': true
+            }
           })
-          count = Number(count[0]['count'])
+          count = count['count']['*']
+          return args?.sql ? { data, sql, count } : { data, count }
         }
-        
-        
         break
 
       case 'insert':
         data = await $Queries(trx, sql).insert(table, args)
-        if (typeof data === 'object')
-          data = Array.isArray(args.data) ? data : data[0]
+        if (typeof data === 'object') data = Array.isArray(args.data) ? data : data[0]
         break
 
       case 'upsert':
         data = await $Queries(trx, sql).upsert(table, {
           where: args.where,
           insert: args.insert,
-          update: args.update,
+          update: args.update
         })
 
         data = data[0]
@@ -160,7 +146,7 @@ function $Handle(trx: any) {
       case 'update':
         data = await $Queries(trx, sql).update(table, {
           where: args.where,
-          data: args.data,
+          data: args.data
         })
         data = data[0]
         break
@@ -168,43 +154,32 @@ function $Handle(trx: any) {
       case 'updateMany':
         data = await $Queries(trx, sql).updateMany(table, {
           where: args.where,
-          data: args.data,
+          data: args.data
         })
         break
 
       case 'delete':
         data = await $Queries(trx, sql).delete(table, {
-          where: args.where,
+          where: args.where
         })
         data = data[0]
         break
 
       case 'deleteMany':
         data = await $Queries(trx, sql).deleteMany(table, {
-          where: args.where,
+          where: args.where
         })
         break
 
-      case 'count':
-      case 'countDistinct':
-      case 'sum':
-      case 'sumDistinct':
-      case 'avg':
-      case 'avgDistinct':
-      case 'max':
-      case 'mix':
-        data = await $Queries(trx, sql).aggregate(table, query, args)
-        data = Number(data[0][query.replace('Distinct', '')])
+      case 'aggregate':
+        data = await $Queries(trx, sql).aggregate(table, args)
         break
       default:
     }
-    if ($FindQuery[<$FindQuery>query] && data)
-      data = await $RtnSelect(table, data, args.select)
-    if ($MutationQuery[<$MutationQuery>query])
-      data = await mutatedSelect(data, args.select)
+    if ($MutationQuery[<$MutationQuery>query]) data = await mutatedSelect(data, args.select)
 
     data = data ?? null
 
-    return args?.sql ? { data, sql } : args?.count ? { data, count } : { data }
+    return args?.sql ? { data, sql } : { data }
   }
 }
