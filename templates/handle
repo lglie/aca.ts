@@ -409,7 +409,9 @@ const $Queries = function (trx: any, sql: string[] = []) {
     } else {
       const rtn: any = {}
       for (const k in cols) {
-        rtn[$Att[table].columns[k].dbName] = cols[k]
+        if ($Att[table].columns[k]) {
+          rtn[$Att[table].columns[k].dbName] = cols[k]
+        }
       }
       return rtn
     }
@@ -1551,12 +1553,65 @@ const $Queries = function (trx: any, sql: string[] = []) {
       // return await trxQuery(trx($Att[table].dbName).where(args?.where).del())
     },
 
-    async aggregate(table: string, query: $AggregateQuery, args: any) {
-      if (!args?.select || args.select === '*') (<any>args).select = { count: '*' }
-
-      return await trxQuery(
-        trxWhere(trx($Att[table].dbName)[query](args.select), table, args?.where)
-      )
+    async aggregate(table: string, args: any) {
+      // if (!args?.select || args.select === '*') (<any>args).select = { count: '*' }
+      const aggregates = [
+        'count',
+        'countDistinct',
+        'sum',
+        'sumDistinct',
+        'avg',
+        'avgDistinct',
+        'max',
+        'min'
+      ]
+      let Kx = trx.from(`${$Att[table].dbName} as ${$Att[table].dbName}`)
+      if (typeof args.limit === 'number') Kx = Kx.limit(args.limit)
+      if (typeof args.offset === 'number') Kx = Kx.offset(args.offset)
+      const wKnex = trxWhere(Kx, table, args.where)
+      for (const key in args) {
+        if (
+          aggregates.includes(key) &&
+          args[key] &&
+          typeof args[key] === 'object' &&
+          Object.keys(args[key])
+        ) {
+          Object.keys(args[key]).forEach((k) => {
+            if (args[key][k]) {
+              if (k === '*' && ['count', 'countDistinct'].includes(key)) {
+                wKnex[key](`* as ${key}->${k}`)
+              } else if ($Att[table].columns[k]) {
+                wKnex[key](`${$Att[table].columns[k].dbName} as ${key}->${k}`)
+              }
+            }
+          })
+        }
+      }
+      sql.push(wKnex.toString())
+      let result = await wKnex
+      result = result[0]
+      const returning = {}
+      for (const key in args) {
+        if (
+          aggregates.includes(key) &&
+          args[key] &&
+          typeof args[key] === 'object' &&
+          Object.keys(args[key])
+        ) {
+          Object.keys(args[key]).forEach((k) => {
+            if (args[key][k]) {
+              if (returning[key]) {
+                returning[key][k] = Number(result[`${key}->${k}`])
+              } else {
+                returning[key] = {
+                  [k]: Number(result[`${key}->${k}`])
+                }
+              }
+            }
+          })
+        }
+      }
+      return returning
     }
   }
 }

@@ -71,7 +71,7 @@ export async function RPCProxy(serverName: string, RPCDir: string) {
         switch (node.kind) {
           case ts.SyntaxKind.VariableStatement:
           case ts.SyntaxKind.TypeAliasDeclaration:
-            rtn2 += '\n export ' + tsContent.slice(node.pos, node.end)
+            rtn2 += '\n  ' + tsContent.slice(node.pos, node.end)
             break
           case ts.SyntaxKind.ExportDeclaration:
             break
