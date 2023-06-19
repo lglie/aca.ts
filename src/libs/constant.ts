@@ -52,6 +52,13 @@ export const queries = [
   'aggregate',
 ]
 
+export const viewQueries = [
+  'findOne',
+  'findFirst',
+  'findMany',
+  'aggregate',
+]
+
 export const argOpts = ['findFirst', 'findMany', 'deleteMany'].concat(
   aggregates
 )

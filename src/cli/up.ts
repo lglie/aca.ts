@@ -180,7 +180,7 @@ async function mssql(
     }
 
     const allSqls = DbDiffSqls(currdb, prevDb)
-
+    
     if (allSqls) {
       console.log(allSqls)
       try {
@@ -344,7 +344,6 @@ async function betterSqlite3(
       }" already exists, or has been recorded by aca up, please back up and delete first`
     }
     const allSqls = DbDiffSqls(currdb, prevDb)
-
     if (allSqls) {
       console.log(allSqls)
       try {
@@ -388,7 +387,6 @@ export async function up(yargs: any) {
   }
 
   const dbs = ast.dbs
-
   // Process the previous orm
   const lastOrm = logOrm()
   const prevAst = lastOrm && (await orm(acaDir, lastOrm))

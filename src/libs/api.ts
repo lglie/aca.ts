@@ -71,7 +71,9 @@ const tblQueries = (tables: Tables, dbVar: string, api: 'server' | 'transaction'
   ${Cst.aggregates.map((v) => `${v}: ${query(v)}`).join(`,\n`)}
     }`
 
-    return Cst.queries.map((v) => `${v}: ${v === '$' ? aggr() : query(v)}`).join(`,\n`)
+    return ((tbl.kind as any) === 'view' ? Cst.viewQueries : Cst.queries)
+      .map((v) => `${v}: ${v === '$' ? aggr() : query(v)}`)
+      .join(`,\n`)
   }
   const tblIter = (subTbls: Tables) =>
     Object.keys(subTbls).reduce((_, v) => {
@@ -120,7 +122,7 @@ const classClient = (db: Db, dbVar: string) => {
 }
 
 // Generate table annotations and types
-const Orm = (tables: { [k: string]: Table | View }) => {
+const Orm = (tables: { [k: string]: any }) => {
   // Annotations of tables
   const Att: Annotates = {}
   // Definitions for all required types of each table
@@ -145,9 +147,9 @@ const Orm = (tables: { [k: string]: Table | View }) => {
 
   for (const k in tables) {
     const tbl = tables[k]
-    if ('view' === tbl.kind) {
-      continue
-    }
+    // if ('view' === tbl.kind) {
+    //   continue
+    // }
 
     Object.assign(Att[tbl.jsName], {
       dbName: tbl.dbName,
@@ -291,9 +293,9 @@ const generateTsType = (tables) => {
     const newStr = str.slice(0, 1).toUpperCase() + str.slice(1)
     return newStr
   }
-  const TblType = (columns, uniques) => {
+  const TblType = (tbl, uniques) => {
     const query = (Q) => {
-      const fields: any = Object.values(columns)
+      const fields: any = Object.values(tbl.columns)
       switch (Q) {
         case 'scalar':
           return fields
@@ -639,20 +641,27 @@ const generateTsType = (tables) => {
     `
     const uniqueWhere =
       `export type uniqueWhere =` +
-      uniques
-        .map(
-          (u) => `{
-            ${u.map((v) => `${v}: ${columns[v].fieldType}`)}
+      (uniques?.length
+        ? uniques
+            .map(
+              (u) => `{
+            ${u.map((v) => `${v}: ${tbl.columns[v].fieldType}`)}
           }`
-        )
-        .join(' | ')
-    const queries = ['where', 'scalar', 'orderBy', 'select', 'aggregateReturning', 'insertInput', 'updateInput', ...Cst.queries]
+            )
+            .join(' | ')
+        : `{}`)
+    const queries = (
+      tbl.kind === 'view'
+        ? ['where', 'scalar', 'orderBy', 'select', 'aggregateReturning', ...Cst.viewQueries]
+        : ['where', 'scalar', 'orderBy', 'select', 'aggregateReturning', 'insertInput', 'updateInput', ...Cst.queries]
+    )
       .map(
         (v) => `export ${v === '$' ? 'namespace' : 'type'} ${v === 'delete' ? 'del' : v} ${v === '$' ? '' : '='} {
          ${v === '$' ? aggr() : query(v)}
         }`
       )
       .join(`\n`)
+
     return [uniqueWhere, queries].join(`\n`)
   }
   const tblIter = (subTbls) =>
@@ -741,7 +750,7 @@ const generateTsType = (tables) => {
             : ''
         }
         export namespace ${key} {
-        ${typeof tbl.kind === 'string' ? TblType(columns, tbl.uniques) : tblIter(tbl)}
+        ${typeof tbl.kind === 'string' ? TblType({ kind: tbl.kind, columns }, tbl.uniques) : tblIter(tbl)}
     }`
   }
   return Object.keys(tables)

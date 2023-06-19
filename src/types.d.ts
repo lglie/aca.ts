@@ -297,6 +297,7 @@ interface DbMigrate {
   add?: TableView[]
   remove?: TableView[]
   alter?: DbAlter
+  alterView?: DbAlter
 }
 
 // model annotations

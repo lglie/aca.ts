@@ -1,11 +1,6 @@
 
 module.exports = `\n
-/* eslint-disable @typescript-eslint/no-namespace */
-/* eslint-disable @typescript-eslint/no-use-before-define */
-/* eslint-disable @typescript-eslint/no-unused-expressions */
-/* eslint-disable @typescript-eslint/no-redeclare */
-/* eslint-disable @typescript-eslint/no-unused-vars */
-// @ts-nocheck
+
 type $EnumKeys = keyof $Enum
 
 type $Enumerable<T> = T | Array<T>

@@ -454,10 +454,7 @@ const $Queries = function (trx: any, sql: string[] = []) {
   }
 
   return {
-    async finder(
-      table: string,
-      { where = {}, distinct, orderBy, limit, offset, select = { '*': true } }: any = {}
-    ) {
+    async finder(table: string, { where = {}, distinct, orderBy, limit, offset, select = { '*': true } }: any = {}) {
       // Process where condition
       let Kx = trx.from(`${$Att[table].dbName} as ${$Att[table].dbName}`)
       if (typeof limit === 'number') Kx = Kx.limit(limit)
@@ -503,16 +500,21 @@ const $Queries = function (trx: any, sql: string[] = []) {
               return { ...attr, [v]: true }
             }, {})
           }
-          for (const v of $Att[table].id) {
-            if (!Object.keys(scalarCols).includes(v)) {
-              scalarCols[v] = true
+          if ($Att[table].id) {
+            for (const v of $Att[table].id) {
+              if (!Object.keys(scalarCols).includes(v)) {
+                scalarCols[v] = true
+              }
             }
           }
           const item = {}
           for (const val of rows) {
-            const dataKey = $Att[table].id
-              .map((v) => (fieldKey ? val[`${fieldKey}.${v}`] : val[v]))
-              .join('_')
+            let dataKey
+            if ($Att[table].id) {
+              dataKey = $Att[table].id.map((v) => (fieldKey ? val[`${fieldKey}.${v}`] : val[v])).join('_')
+            } else {
+              dataKey = Object.keys(val).map(v => (fieldKey ? val[`${fieldKey}.${v}`] : val[v])).join('_')
+            }
             if (dataKey && !item[dataKey]) {
               item[dataKey] = $RtnSelect(
                 table,
@@ -529,10 +531,7 @@ const $Queries = function (trx: any, sql: string[] = []) {
                   AttCols[key].type,
                   select[key].select ?? select[key],
                   rows.filter(
-                    (v) =>
-                      $Att[table].id
-                        .map((vv) => (fieldKey ? v[`${fieldKey}.${vv}`] : v[vv]))
-                        .join('_') === dataKey
+                    (v) => $Att[table].id.map((vv) => (fieldKey ? v[`${fieldKey}.${vv}`] : v[vv])).join('_') === dataKey
                   ),
                   fieldKey ? `${fieldKey}.${key}` : key
                 )
@@ -563,9 +562,11 @@ const $Queries = function (trx: any, sql: string[] = []) {
               return { ...attr, [v]: v }
             }, {})
           }
-          for (const v of $Att[table].id) {
-            if (!Object.keys(scalarCols).includes(v)) {
-              scalarCols[v] = v
+          if ($Att[table].id) {
+            for (const v of $Att[table].id) {
+              if (!Object.keys(scalarCols).includes(v)) {
+                scalarCols[v] = v
+              }
             }
           }
           returning = returning.concat(
@@ -586,13 +587,10 @@ const $Queries = function (trx: any, sql: string[] = []) {
             pAlias = pAlias.replaceAll('.', '->')
             switch (AttCols[key].relation.kind) {
               case 'primary':
-                const rel =
-                  $Att[AttCols[key].type].columns[AttCols[key].relation.relColumn].relation
+                const rel = $Att[AttCols[key].type].columns[AttCols[key].relation.relColumn].relation
                 pKeys = rel.references
                 fKeys = rel.keys
-                joinRaw = `left outer join "${
-                  $Att[AttCols[key].type].dbName
-                }" as "${alias}" on ${fKeys
+                joinRaw = `left outer join "${$Att[AttCols[key].type].dbName}" as "${alias}" on ${fKeys
                   .map(
                     (v, index) =>
                       `"${alias}"."${$Att[AttCols[key].type].columns[v].dbName}" = "${pAlias}"."${
@@ -605,9 +603,7 @@ const $Queries = function (trx: any, sql: string[] = []) {
                 pKeys = AttCols[key].relation.references
                 fKeys = AttCols[key].relation.keys
 
-                joinRaw = `left outer join "${
-                  $Att[AttCols[key].type].dbName
-                }" as "${alias}" on ${pKeys
+                joinRaw = `left outer join "${$Att[AttCols[key].type].dbName}" as "${alias}" on ${pKeys
                   .map(
                     (v, index) =>
                       `"${alias}"."${$Att[AttCols[key].type].columns[v].dbName}" = "${pAlias}"."${
@@ -629,9 +625,9 @@ const $Queries = function (trx: any, sql: string[] = []) {
                     )
                   })
                 })
-                joinRaw = `left outer join "${
-                  $Att[AttCols[key].type].dbName
-                }" as "${alias}" on ${$Att[AttCols[key].type].id
+                joinRaw = `left outer join "${$Att[AttCols[key].type].dbName}" as "${alias}" on ${$Att[
+                  AttCols[key].type
+                ].id
                   .map(
                     (v, index) =>
                       `"${alias}"."${$Att[AttCols[key].type].columns[v].dbName}" = "${
@@ -650,18 +646,13 @@ const $Queries = function (trx: any, sql: string[] = []) {
                 where
               ).select(
                 $Att[AttCols[key].type].id.map(
-                  (v) =>
-                    `${$Att[AttCols[key].type].dbName}.${$Att[AttCols[key].type].columns[v].dbName}`
+                  (v) => `${$Att[AttCols[key].type].dbName}.${$Att[AttCols[key].type].columns[v].dbName}`
                 )
               )})`
             }
             wKnex.joinRaw(joinRaw)
 
-            leftJoin(
-              AttCols[key].type,
-              select[key].select ?? select[key],
-              fieldKey ? `${fieldKey}.${key}` : key
-            )
+            leftJoin(AttCols[key].type, select[key].select ?? select[key], fieldKey ? `${fieldKey}.${key}` : key)
           }
         }
       }

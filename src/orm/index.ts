@@ -239,7 +239,6 @@ const NodeParse = {
             }
           }, {})[0]
       }
-
       if (['$.unique', '$.index'].includes(key)) {
         const k = { '$.unique': 'uniques', '$.index': 'indexes' }[key]!
         _[k] = _[k] || []
@@ -375,6 +374,12 @@ async function PickModel(acaDir: '.' | '..', ast: ts.SourceFile) {
           )
           if (props['view']) {
             body.kind = 'view'
+            body['sql'] = props['view']
+            body['uniques'] = []
+            body['indexes'] = []
+            if (props['id'])
+              (body['id'] = props['id']), body['uniques'].push(props['id'])
+            if (props['uniques']) body['uniques'].push(...props['uniques'])
             delete props['view']
           } else {
             body['uniques'] = []
@@ -404,6 +409,10 @@ async function PickModel(acaDir: '.' | '..', ast: ts.SourceFile) {
               if (props['unique']) body['uniques'].push([colKey])
               if (props['index']) body['indexes'].push([colKey])
             }
+            if (body.kind === 'view') {
+              col['props'] = props
+              if (props['unique']) body['uniques'].push([colKey])
+            }
             // Handle initial values
             let init
             if (V2.initializer) {
@@ -415,7 +424,8 @@ async function PickModel(acaDir: '.' | '..', ast: ts.SourceFile) {
             if (V2.type) {
               col['type'] = NodeParse.type(V2.type)
               const idType = col['type'].match(/^id(\[\w+\])?$/)
-              if (idType) {
+              
+              if (idType && col['props']) {
                 col['props'].isId = true
                 // body['id'] = col.name
               }
@@ -520,7 +530,6 @@ async function PickModel(acaDir: '.' | '..', ast: ts.SourceFile) {
             IterFill((<Namespace>subModels[k]).models)
             break
           case 'view':
-            break
           case 'table':
             // Get the database engine corresponding to the variable
             const tbl = <Table>subModels[k]
