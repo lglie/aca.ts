@@ -356,7 +356,7 @@ const generateTsType = (tables) => {
           `
         case 'aggregateReturning':
           return `
-                  count?: {[P in keyof scalar]?: number}
+                  count?: {'*'?: number} & {[P in keyof scalar]?: number}
                   countDistinct?: {[P in keyof scalar]?: number}
                   ${
                     fields.filter((v) => v.fieldType === 'number').length
@@ -582,7 +582,7 @@ const generateTsType = (tables) => {
         case 'aggregate':
           return `
                 where?: where
-                count?: {[P in keyof scalar]?: boolean}
+                count?: {'*'?: boolean} & {[P in keyof scalar]?: boolean}
                 countDistinct?: {[P in keyof scalar]?: boolean}
                 ${
                   fields.filter((v) => v.fieldType === 'number').length

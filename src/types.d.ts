@@ -207,6 +207,7 @@ interface AddColumn {
   name: string
   dbType: string
   notNull: boolean
+  default: any
 }
 
 type Column = Name & {

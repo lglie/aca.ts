@@ -137,7 +137,8 @@ export function AlterTblSql(config: DbConfig, tbls: FlatTables, alter: DbAlter) 
             columns.push(<AddColumn>{
               name: v.dbName,
               dbType: (sqlDiff.keyword.dbType[dbType] || dbType).toUpperCase(),
-              notNull
+              notNull,
+              default: v.props.default
             })
           }
           if (v.props.unique) {

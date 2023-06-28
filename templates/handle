@@ -19,10 +19,10 @@ function $RtnSelect(table: string, rtnCols: any, select?: any): any {
       switch ($Att[table].columns[name].type) {
         case 'int':
         case 'bigint':
-          rtn[name] = (rtn[name] || rtn[name] === 0) ? Math.round(Number(rtn[name])) : undefined
+          rtn[name] = (rtn[name] || rtn[name] === 0) ? Math.round(Number(rtn[name])) : null
           break
         case 'float':
-          rtn[name] = (rtn[name] || rtn[name] === 0) ? Number(rtn[name]) : undefined
+          rtn[name] = (rtn[name] || rtn[name] === 0) ? Number(rtn[name]) : null
       }
     }
 
@@ -521,7 +521,7 @@ const $Queries = function (trx: any, sql: string[] = []) {
                 Object.keys(scalarCols).reduce((attrs, v) => {
                   return {
                     ...attrs,
-                    [v]: fieldKey ? val[`${fieldKey}.${v}`] || undefined : val[v] || undefined
+                    [v]: fieldKey ? val[`${fieldKey}.${v}`] : val[v]
                   }
                 }, {}),
                 select
