@@ -8,3 +8,7 @@ import { Blog } from '..'
 export async function example(ctx: any, name: Blog.user.uniqueWhere) {
   return await Blog.user.findOne({ where: name, select: { id: true } })
 }
+
+export async function ViewExample(ctx: any, userid: string) {
+  return await Blog.userProfile.findFirst({ where: { userid }, select: { '*': true } })
+}

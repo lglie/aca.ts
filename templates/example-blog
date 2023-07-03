@@ -50,6 +50,17 @@ namespace Blog {
     user: user
   }
 
+  @$.view('select "user"."id" as "userid", "user"."firstName", "user"."lastName", "user"."gender","user"."age", "profile"."password" from "user" left join "PROF" as "profile" on "user"."id" = "profile"."userId"')
+  class userProfile {
+    userid: id
+    firstName: string
+    lastName: string
+    gender = Gender.Male
+    age: int = 25
+    created_at?: Date
+    password?: string
+  }
+
   // Supports multi-level namespaces
   namespace ns {
     enum KindEnum {
