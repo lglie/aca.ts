@@ -326,7 +326,7 @@ const generateTsType = (tables) => {
                     : `${
                         v.isEnum
                           ? `$EnumFilter<${v.fieldType}, ${v.isNull}>`
-                          : `$${v.fieldType === 'Date | string' ? 'Date' : titleCase(v.fieldType)}Filter<${v.isNull}>`
+                          : `$${v.fieldType === 'Date | string' ? 'Date' : titleCase(v.fieldType.endsWith(']') ? v.fieldType.slice(0, -2) : v.fieldType)}Filter<${v.isNull}>`
                       } | ${v.fieldType} ${v.isNull ? ' | null' : ''}`
                 }`
             )
@@ -678,11 +678,11 @@ const generateTsType = (tables) => {
       const col = tbl.columns[k]
       let [typeTbl, relColOpt] = col.props.jsType.split('.')
       if (col.type === 'enum') typeTbl = `$Enum['${typeTbl}']`
-      if (col.type === 'Date') typeTbl = `Date | string`
+      if (col.type === 'Date') typeTbl = `Date | string`      
       columns[col.jsName] = {
         fieldName: col.jsName,
         isEnum: col.type === 'enum' ? true : false,
-        fieldType: typeTbl.endsWith(']') && col.type !== 'enum' ? typeTbl.slice(0, -2) : typeTbl,
+        fieldType: typeTbl.endsWith(']') && col.type !== 'enum' && !['number[]','string[]','boolean[]','Date[]'].includes(typeTbl) ? typeTbl.slice(0, -2) : typeTbl,
         required: col.optional === 'required' ? '' : '?',
         isRelation: false,
         isAuto: false,

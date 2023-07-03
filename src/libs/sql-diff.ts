@@ -458,7 +458,7 @@ export default function (driver: Driver) {
               .map(
                 (v) =>
                   `ADD COLUMN ${qName}${v.name}${qName} ${v.dbType.toUpperCase()}${v.notNull ? ' NOT NULL' : ''}${
-                    v.default !== undefined ? ` DEFAULT ${v.default}` : ''
+                    v.default !== undefined ? ` DEFAULT ${typeof v.default === 'string' ? v.default ? v.default : '' : v.default}` : ''
                   }`
               )
               .join(', ')

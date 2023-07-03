@@ -75,9 +75,13 @@ const $Queries = function (trx: any, sql: string[] = []) {
           // Determine jsType
           if (
             AttCols[AttCol].type === 'enum'
-              ? !(<any>$Enum[<$EnumKeys>AttCols[AttCol].jsType]).includes(records[i][AttCol])
+              ? !(<any>$Enum[<$EnumKeys>AttCols[AttCol].jsType]).includes(
+                  records[i][AttCol]
+                )
               : AttCols[AttCol].type === 'Date'
               ? !isValidDate(records[i][AttCol])
+              : AttCols[AttCol].jsType.endsWith(']')
+              ? typeof records[i][AttCol] !== 'object'
               : typeof records[i][AttCol] !== AttCols[AttCol].jsType
           ) {
             throw `table "${$Att[table].dbName}" field "${AttCol}" data type mismatch`
