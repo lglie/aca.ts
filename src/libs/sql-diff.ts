@@ -22,7 +22,7 @@ const keywords = {
       cuid: { jsType: 'string', dbType: 'cuid' },
       uuid: { jsType: 'string', dbType: 'uuid' },
       string: { jsType: 'string', dbType: stringType },
-      int: { jsType: 'number', dbType: 'int8' },
+      int: { jsType: 'number', dbType: 'int8' }
     },
     scalarType: {
       int: { jsType: 'number', dbType: 'int8' },
@@ -31,12 +31,12 @@ const keywords = {
       bigint: { jsType: 'bigint', dbType: 'bigint' },
       string: { jsType: 'string', dbType: stringType },
       boolean: { jsType: 'boolean', dbType: 'boolean' },
-      Date: { jsType: 'Date', dbType: 'timestamp' },
+      Date: { jsType: 'Date', dbType: 'timestamp' }
     },
     dbType: {
       enum: 'varchar(30)',
       cuid: 'char(25)',
-      uuid: 'uuid',
+      uuid: 'uuid'
     },
     dbTypes: {
       boolean: ['boolean'],
@@ -45,11 +45,11 @@ const keywords = {
       int: ['int2', 'int4', 'int8', 'money'],
       autoincrement: ['serial2', 'serial4', 'serial8'],
       Date: ['timestamp', 'date', 'time', 'interval'],
-      string: [],
+      string: []
     },
     timestamp: {
       create,
-      update: create,
+      update: create
     },
     stmt: {
       primaryKey: ' primary key',
@@ -64,20 +64,12 @@ const keywords = {
         propagateCreateError: false,
       },`,
       connectionOpts: `typeof connection == 'string' ? require('pg-connection-string').parse(connection) : connection,`,
-      async connect(
-        acaDir: AcaDir,
-        config: Config,
-        options: string | RelConn | SqliteConn
-      ) {
+      async connect(acaDir: AcaDir, config: Config, options: string | RelConn | SqliteConn) {
         const resolveAcaDir = path.resolve(acaDir)
         const app = Object.keys(config.serverApps)[0]
         let Db, db
         if (typeof options === 'string') {
-          const connStr = path.join(
-            resolveAcaDir,
-            app,
-            'node_modules/pg-connection-string'
-          )
+          const connStr = path.join(resolveAcaDir, app, 'node_modules/pg-connection-string')
           options = require(connStr).parse(options)
         }
         Db = require(path.join(resolveAcaDir, app, 'node_modules/pg')).Client
@@ -87,14 +79,14 @@ const keywords = {
         } catch (e) {
           db = new Db({
             ...(<RelConn>options),
-            database: 'postgres',
+            database: 'postgres'
           })
           await db.connect()
         }
 
         return db
-      },
-    },
+      }
+    }
   },
   mssql: {
     fullName: 'mssql',
@@ -108,7 +100,7 @@ const keywords = {
       cuid: { jsType: 'string', dbType: 'cuid' },
       uuid: { jsType: 'string', dbType: 'uuid' },
       string: { jsType: 'string', dbType: stringType },
-      int: { jsType: 'number', dbType: 'int' },
+      int: { jsType: 'number', dbType: 'int' }
     },
     scalarType: {
       int: { jsType: 'number', dbType: 'int' },
@@ -117,12 +109,12 @@ const keywords = {
       bigint: { jsType: 'bigint', dbType: 'bigint' },
       string: { jsType: 'string', dbType: stringType },
       boolean: { jsType: 'number', dbType: 'bit' },
-      Date: { jsType: 'Date', dbType: 'datetime' },
+      Date: { jsType: 'Date', dbType: 'datetime' }
     },
     dbType: {
       enum: 'varchar(30)',
       cuid: 'char(25)',
-      uuid: 'char(36)',
+      uuid: 'char(36)'
     },
     dbTypes: {
       boolean: ['boolean'],
@@ -131,11 +123,11 @@ const keywords = {
       int: ['int2', 'int4', 'int8', 'money'],
       autoincrement: ['serial2', 'serial4', 'serial8'],
       Date: ['timestamp', 'date', 'time', 'interval'],
-      string: [],
+      string: []
     },
     timestamp: {
       create,
-      update: create,
+      update: create
     },
     stmt: {
       primaryKey: ' primary key',
@@ -146,11 +138,7 @@ const keywords = {
         `ALTER TABLE ${keywords.mssql.quote.prefix}${table}${keywords.mssql.quote.name} ${action} `,
       additionalConnectOpts: ``,
       connectionOpts: `connection,`,
-      async connect(
-        acaDir: AcaDir,
-        config: Config,
-        options: string | RelConn | SqliteConn
-      ) {
+      async connect(acaDir: AcaDir, config: Config, options: string | RelConn | SqliteConn) {
         const resolveAcaDir = path.resolve(acaDir)
         const app = Object.keys(config.serverApps)[0]
         let Db, db
@@ -158,8 +146,8 @@ const keywords = {
         const opts: any = {
           ...(<RelConn>options),
           options: {
-            encrypt: false,
-          },
+            encrypt: false
+          }
         }
         opts.server = opts.host
         delete opts.host
@@ -169,12 +157,12 @@ const keywords = {
         } catch (e) {
           db = await Db.connect({
             ...opts,
-            database: 'master',
+            database: 'master'
           })
         }
         return db
-      },
-    },
+      }
+    }
   },
   mysql2: {
     fullName: 'mysql2',
@@ -186,12 +174,12 @@ const keywords = {
     idType: {
       autoincrement: {
         jsType: 'number',
-        dbType: 'int',
+        dbType: 'int'
       },
       cuid: { jsType: 'string', dbType: 'cuid' },
       uuid: { jsType: 'string', dbType: 'uuid' },
       string: { jsType: 'string', dbType: 'varchar(200)' },
-      int: { jsType: 'number', dbType: 'int' },
+      int: { jsType: 'number', dbType: 'int' }
     },
     scalarType: {
       int: { jsType: 'number', dbType: 'int' },
@@ -200,12 +188,12 @@ const keywords = {
       bigint: { jsType: 'bigint', dbType: 'numeric' },
       string: { jsType: 'string', dbType: stringType },
       boolean: { jsType: 'boolean', dbType: 'boolean' },
-      Date: { jsType: 'Date', dbType: 'timestamp' },
+      Date: { jsType: 'Date', dbType: 'timestamp' }
     },
     dbType: {
       enum: 'varchar(30)',
       cuid: 'char(25)',
-      uuid: 'char(36)',
+      uuid: 'char(36)'
     },
     dbTypes: {
       boolean: ['boolean'],
@@ -214,11 +202,11 @@ const keywords = {
       int: ['int2', 'int4', 'int8', 'money'],
       autoincrement: ['int'],
       Date: ['timestamp', 'date', 'time', 'interval'],
-      string: [],
+      string: []
     },
     timestamp: {
       create: create,
-      update: create,
+      update: create
     },
     stmt: {
       primaryKey: ' primary key',
@@ -229,32 +217,24 @@ const keywords = {
         `ALTER TABLE ${keywords.mysql2.quote.prefix}${table}${keywords.mysql2.quote.name} ${action} `,
       additionalConnectOpts: ``,
       connectionOpts: `connection,`,
-      async connect(
-        acaDir: AcaDir,
-        config: Config,
-        options: string | RelConn | SqliteConn
-      ) {
+      async connect(acaDir: AcaDir, config: Config, options: string | RelConn | SqliteConn) {
         const resolveAcaDir = path.resolve(acaDir)
         const app = Object.keys(config.serverApps)[0]
         let db, pool
-        const mysql2 = require(path.join(
-          resolveAcaDir,
-          app,
-          'node_modules/mysql2/promise'
-        ))
+        const mysql2 = require(path.join(resolveAcaDir, app, 'node_modules/mysql2/promise'))
 
         try {
           db = await mysql2.createConnection(options)
         } catch (e) {
           db = await mysql2.createConnection({
             ...(<RelConn>options),
-            database: undefined,
+            database: undefined
           })
         }
 
         return db
-      },
-    },
+      }
+    }
   },
   mysql: {
     fullName: 'mysql',
@@ -266,12 +246,12 @@ const keywords = {
     idType: {
       autoincrement: {
         jsType: 'number',
-        dbType: 'int',
+        dbType: 'int'
       },
       cuid: { jsType: 'string', dbType: 'cuid' },
       uuid: { jsType: 'string', dbType: 'uuid' },
       string: { jsType: 'string', dbType: 'varchar(200)' },
-      int: { jsType: 'number', dbType: 'int' },
+      int: { jsType: 'number', dbType: 'int' }
     },
     scalarType: {
       int: { jsType: 'number', dbType: 'int' },
@@ -280,12 +260,12 @@ const keywords = {
       bigint: { jsType: 'bigint', dbType: 'numeric' },
       string: { jsType: 'string', dbType: stringType },
       boolean: { jsType: 'boolean', dbType: 'boolean' },
-      Date: { jsType: 'Date', dbType: 'timestamp' },
+      Date: { jsType: 'Date', dbType: 'timestamp' }
     },
     dbType: {
       enum: 'varchar(30)',
       cuid: 'char(25)',
-      uuid: 'char(36)',
+      uuid: 'char(36)'
     },
     dbTypes: {
       boolean: ['boolean'],
@@ -294,11 +274,11 @@ const keywords = {
       int: ['int2', 'int4', 'int8', 'money'],
       autoincrement: ['int'],
       Date: ['timestamp', 'date', 'time', 'interval'],
-      string: [],
+      string: []
     },
     timestamp: {
       create: create,
-      update: create,
+      update: create
     },
     stmt: {
       primaryKey: ' primary key',
@@ -309,19 +289,11 @@ const keywords = {
         `ALTER TABLE ${keywords.mysql.quote.prefix}${table}${keywords.mysql.quote.name} ${action} `,
       additionalConnectOpts: ``,
       connectionOpts: `connection,`,
-      async connect(
-        acaDir: AcaDir,
-        config: Config,
-        options: string | RelConn | SqliteConn
-      ) {
+      async connect(acaDir: AcaDir, config: Config, options: string | RelConn | SqliteConn) {
         const resolveAcaDir = path.resolve(acaDir)
         const app = Object.keys(config.serverApps)[0]
         let db
-        const mysql = require(path.join(
-          resolveAcaDir,
-          app,
-          'node_modules/mysql'
-        ))
+        const mysql = require(path.join(resolveAcaDir, app, 'node_modules/mysql'))
         db = mysql.createConnection(options)
 
         try {
@@ -330,15 +302,15 @@ const keywords = {
         } catch (e) {
           db = mysql.createConnection({
             ...(<RelConn>options),
-            database: undefined,
+            database: undefined
           })
           const conn = promisify((cb) => db.connect(cb))
           await conn()
         }
 
         return db
-      },
-    },
+      }
+    }
   },
   betterSqlite3: {
     fullName: 'better-sqlite3',
@@ -350,12 +322,12 @@ const keywords = {
     idType: {
       autoincrement: {
         jsType: 'number',
-        dbType: 'integer',
+        dbType: 'integer'
       },
       cuid: { jsType: 'string', dbType: 'cuid' },
       uuid: { jsType: 'string', dbType: 'uuid' },
       string: { jsType: 'string', dbType: stringType },
-      int: { jsType: 'number', dbType: 'integer' },
+      int: { jsType: 'number', dbType: 'integer' }
     },
     scalarType: {
       int: { jsType: 'number', dbType: 'integer' },
@@ -364,12 +336,12 @@ const keywords = {
       bigint: { jsType: 'bigint', dbType: 'integer' },
       string: { jsType: 'string', dbType: stringType },
       boolean: { jsType: 'boolean', dbType: 'integer' },
-      Date: { jsType: 'Date', dbType: 'timestamp' },
+      Date: { jsType: 'Date', dbType: 'timestamp' }
     },
     dbType: {
       enum: 'varchar(30)',
       cuid: 'char(25)',
-      uuid: 'char(36)',
+      uuid: 'char(36)'
     },
     dbTypes: {
       boolean: ['integer'],
@@ -378,11 +350,11 @@ const keywords = {
       int: ['integer', 'smallint'],
       autoincrement: ['integer'],
       Date: ['timestamp', 'date', 'time'],
-      string: [],
+      string: []
     },
     timestamp: {
       create,
-      update: create,
+      update: create
     },
     stmt: {
       primaryKey: ' primary key',
@@ -392,38 +364,25 @@ const keywords = {
       constraintPre: (table: string, action: 'ADD' | 'DROP') => ``,
       additionalConnectOpts: `useNullAsDefault: false,`,
       connectionOpts: `connection,`,
-      async connect(
-        acaDir: AcaDir,
-        config: Config,
-        options: string | RelConn | SqliteConn
-      ) {
+      async connect(acaDir: AcaDir, config: Config, options: string | RelConn | SqliteConn) {
         const resolveAcaDir = path.resolve(acaDir)
         const app = Object.keys(config.serverApps)[0]
         let Db, db
-        db = require(path.join(
-          resolveAcaDir,
-          app,
-          'node_modules/better-sqlite3'
-        ))
-        const dbName = path.join(
-          resolveAcaDir,
-          app,
-          (<SqliteConn>options).filename
-        )
+        db = require(path.join(resolveAcaDir, app, 'node_modules/better-sqlite3'))
+        const dbName = path.join(resolveAcaDir, app, (<SqliteConn>options).filename)
         return fs.existsSync(dbName)
           ? new db(dbName, {
               ...(<SqliteConn>options),
-              filename: undefined,
+              filename: undefined
             })
           : null
-      },
-    },
-  },
+      }
+    }
+  }
 }
 
 export default function (driver: Driver) {
-  if (!Object.keys(keywords).includes(driver))
-    throw new Error(`Database driver '${driver}' is not supported`)
+  if (!Object.keys(keywords).includes(driver)) throw new Error(`Database driver '${driver}' is not supported`)
   const keyword = keywords[driver]
   const qPrefix = keyword.quote.prefix
   const qName = keyword.quote.name
@@ -435,7 +394,7 @@ export default function (driver: Driver) {
       exist(dbName: string) {
         // if the database exists
         return {
-          pg: ` SELECT * FROM pg_database WHERE datname = ${qPrefix}${dbName}${qName}`,
+          pg: ` SELECT * FROM pg_database WHERE datname = ${qPrefix}${dbName}${qName}`
         }[driver]
       },
       all() {
@@ -444,18 +403,14 @@ export default function (driver: Driver) {
           pg: `SELECT tablename FROM pg_tables
           WHERE tablename NOT LIKE 'pg_%'
           AND tablename NOT LIKE 'sql_%'
-          ORDER BY tablename`,
+          ORDER BY tablename`
         }[driver]
       },
       create(dbName: string) {
-        return `CREATE DATABASE ${qPrefix}${dbName}${qName}${
-          driver === 'pg' ? ' template=template0' : ''
-        }`
+        return `CREATE DATABASE ${qPrefix}${dbName}${qName}${driver === 'pg' ? ' template=template0' : ''}`
       },
       drop(dbName: string) {
-        return `DROP DATABASE ${qPrefix}${dbName}${qName}${
-          driver === 'pg' ? 'template=template0' : ''
-        }`
+        return `DROP DATABASE ${qPrefix}${dbName}${qName}${driver === 'pg' ? 'template=template0' : ''}`
       },
       rename(dbName: string) {
         return `RENAME DATABASE ${qPrefix}${dbName}${qName}`
@@ -467,22 +422,16 @@ export default function (driver: Driver) {
         const apps = Object.keys(config.serverApps)
 
         if (apps.length !== 1) {
-          throw new Error(
-            `Only one backend app containing a sqlite file can be created`
-          )
+          throw new Error(`Only one backend app containing a sqlite file can be created`)
         }
-        const db = require(path.join(
-          resolveAcaDir,
-          apps[0],
-          'node_modules/better-sqlite3'
-        ))
+        const db = require(path.join(resolveAcaDir, apps[0], 'node_modules/better-sqlite3'))
         const filename = path.join(resolveAcaDir, apps[0], option.filename)
 
         return new db(filename, {
           ...(<SqliteConn>option),
-          filename: undefined,
+          filename: undefined
         })
-      },
+      }
     },
     tbl(table: string) {
       return {
@@ -490,7 +439,7 @@ export default function (driver: Driver) {
         all() {
           return {
             pg: `select * from information_schema.columns
-              where table_schema = 'public' and table_name='${table}'`,
+              where table_schema = 'public' and table_name='${table}'`
           }[driver]
         },
         create(sql: string) {
@@ -508,10 +457,8 @@ export default function (driver: Driver) {
             const cols = columns
               .map(
                 (v) =>
-                  `ADD COLUMN ${qName}${
-                    v.name
-                  }${qName} ${v.dbType.toUpperCase()}${
-                    v.notNull ? ' NOT NULL' : ''
+                  `ADD COLUMN ${qName}${v.name}${qName} ${v.dbType.toUpperCase()}${v.notNull ? ' NOT NULL' : ''}${
+                    v.default !== undefined ? ` DEFAULT ${typeof v.default === 'string' ? v.default ? v.default : '' : v.default}` : ''
                   }`
               )
               .join(', ')
@@ -553,9 +500,7 @@ export default function (driver: Driver) {
                   throw new Error('betterSqlite3 暂不支持修改')
                 }
                 return `ALTER TABLE ${qPrefix}${table}${qName} ALTER COLUMN ${qName}${column}${qName} ${
-                  value !== undefined
-                    ? `SET CHECK ${qValue}${value}${qValue}`
-                    : 'DROP CHECK'
+                  value !== undefined ? `SET CHECK ${qValue}${value}${qValue}` : 'DROP CHECK'
                 }`
               },
               default(value?: string) {
@@ -565,9 +510,9 @@ export default function (driver: Driver) {
                 return `ALTER TABLE ${qPrefix}${table}${qName} ALTER COLUMN ${qName}${column}${qName} ${
                   value !== undefined ? `SET DEFAULT ${value}` : 'DROP DEFAULT'
                 }`
-              },
+              }
             }
-          },
+          }
         },
         // Table constraint
         constraint: {
@@ -582,42 +527,33 @@ export default function (driver: Driver) {
               information_schema.table_constraints AS tc 
               JOIN information_schema.key_column_usage AS kcu ON tc.constraint_name = kcu.constraint_name
               JOIN information_schema.constraint_column_usage AS ccu ON ccu.constraint_name = tc.constraint_name
-              WHERE constraint_type = '${type}' AND tc.table_name = '${table}'`,
+              WHERE constraint_type = '${type}' AND tc.table_name = '${table}'`
             }[driver]
           },
           foreign(action: 'ADD' | 'DROP', foreign: Foreign, relTbl: Table) {
-    
             if (action === 'ADD' && relTbl) {
               return `${keyword.stmt.constraintPre(
                 table,
                 action
-              )}CONSTRAINT ${qName}FOREIGN_${table}_${foreign.keys.join(
-                '_'
-              )}${qName} FOREIGN KEY (${foreign.keys
+              )}CONSTRAINT ${qName}FOREIGN_${table}_${foreign.keys.join('_')}${qName} FOREIGN KEY (${foreign.keys
                 .map((v) => `${qName}${v}${qName}`)
-                .toString()}) REFERENCES ${qName}${
-                relTbl.dbName
-              }${qName} (${foreign.references
+                .toString()}) REFERENCES ${qName}${relTbl.dbName}${qName} (${foreign.references
                 .map((v) => relTbl.columns[v].dbName)
                 .map((v) => `${qName}${v}${qName}`)
-                .toString()})${
-                foreign.onUpdate ? ` on update ${foreign.onUpdate}` : ''
-              }${foreign?.onDelete ? ` on delete ${foreign.onDelete}` : ''}`
+                .toString()})${foreign.onUpdate ? ` on update ${foreign.onUpdate}` : ''}${
+                foreign?.onDelete ? ` on delete ${foreign.onDelete}` : ''
+              }`
             } else {
               return `${keyword.stmt.constraintPre(
                 table,
                 action
-              )}CONSTRAINT ${qName}FOREIGN_${table}_${foreign.keys.join(
-                '_'
-              )}${qName}`
+              )}CONSTRAINT ${qName}FOREIGN_${table}_${foreign.keys.join('_')}${qName}`
             }
           },
           unique(action: 'ADD' | 'DROP', columns: string | string[]) {
             if (typeof columns === 'string') columns = [columns]
             const key = columns.join('_')
-            const quoteCols = `${columns
-              .map((v) => `${qName}${v}${qName}`)
-              .toString()}`
+            const quoteCols = `${columns.map((v) => `${qName}${v}${qName}`).toString()}`
             if ('betterSqlite3' === driver) {
               if (action === 'DROP') {
                 return `DROP INDEX ${qName}UNIQUE_${table}_${key}${qName}`
@@ -625,26 +561,19 @@ export default function (driver: Driver) {
                 return `CREATE UNIQUE INDEX ${qName}UNIQUE_${table}_${key}${qName} ON ${qName}${table}${qName}(${quoteCols})`
               }
             }
-            return `${keyword.stmt.constraintPre(
-              table,
-              action
-            )}CONSTRAINT ${qName}UNIQUE_${table}_${key}${qName}${
+            return `${keyword.stmt.constraintPre(table, action)}CONSTRAINT ${qName}UNIQUE_${table}_${key}${qName}${
               action === 'ADD' ? ` UNIQUE (${quoteCols})` : ''
             }`
           },
           index(action: 'CREATE' | 'DROP', columns: string | string[]) {
-            const key =
-              typeof columns === 'string' ? columns : columns.join('_')
+            const key = typeof columns === 'string' ? columns : columns.join('_')
             let quoteCols = `${qName}${columns}${qName}`
-            quoteCols =
-              typeof columns === 'string' ? quoteCols : quoteCols.toString()
+            quoteCols = typeof columns === 'string' ? quoteCols : quoteCols.toString()
             return `${action} INDEX ${qName}INDEX_${table}_${key}${qName}${
-              action === 'CREATE'
-                ? ` ON ${qName}${table}${qName} (${quoteCols})`
-                : ''
+              action === 'CREATE' ? ` ON ${qName}${table}${qName} (${quoteCols})` : ''
             }`
-          },
-        },
+          }
+        }
       }
     },
     view(view: string) {
@@ -660,9 +589,9 @@ export default function (driver: Driver) {
             async create(column: string) {},
             async drop(column: string) {},
             async rename(column: string) {},
-            async alter(column: string) {},
+            async alter(column: string) {}
           }
-        },
+        }
       }
     },
     aca: {
@@ -671,7 +600,7 @@ export default function (driver: Driver) {
         `\nINSERT INTO ${qPrefix}___ACA${qName} (${qName}version${qName}, ${qName}orm${qName}) VALUES (${qValue}${version}${qValue}, ${qValue}${
           orm || ''
         }${qValue});\n`,
-      select: `\nSELECT * FROM ${qPrefix}___ACA${qName};\n`,
-    },
+      select: `\nSELECT * FROM ${qPrefix}___ACA${qName};\n`
+    }
   }
 }

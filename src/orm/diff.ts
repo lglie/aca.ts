@@ -13,9 +13,7 @@ function Fluctuate(curr: any, prev: any, rtn: any): any[] {
     // Elements may be array, characterize all elements
     JSON.stringify(v)
   )
-  const prevArr = (Array.isArray(prev) ? prev : Object.keys(prev)).map((v) =>
-    JSON.stringify(v)
-  )
+  const prevArr = (Array.isArray(prev) ? prev : Object.keys(prev)).map((v) => JSON.stringify(v))
   let contains = [...currArr]
   // added
   let add = currArr.reduce((_, v) => {
@@ -54,21 +52,37 @@ export default function (curr: FlatTables, prev: FlatTables) {
     create: <TableView[]>[],
     remove: <TableView[]>[],
     alter: {},
+    alterView: {}
   }
   const contains = Fluctuate(curr, prev, rtn)
   contains.forEach((v) => {
-    if (curr[v].map !== prev[v].map && curr[v].dbName !== prev[v].dbName) {
-      rtn.alter[v] = rtn.alter[v] || {}
-      rtn.alter[v].map = { new: curr[v].dbName, old: prev[v].dbName }
-    }
+    if (curr[v].kind === 'view') {
+      if (curr[v].map !== prev[v].map && curr[v].dbName !== prev[v].dbName) {
+        rtn.alterView[v] = rtn.alterView[v] || {}
+        rtn.alterView[v].map = { new: {
+          name: curr[v].dbName,
+          sql: curr[v]['sql']
+        }, old: prev[v].dbName }
+      }
+      if (curr[v]['sql'] !== prev[v]['sql']) {
+        rtn.alterView[v] = rtn.alterView[v] || {}
+        rtn.alterView[v].sql = { new: curr[v]['sql'], old: prev[v].dbName }
+      }
+      if (isEmpty(rtn.alterView[v])) delete rtn.alterView[v]
+    } else {
+      if (curr[v].map !== prev[v].map && curr[v].dbName !== prev[v].dbName) {
+        rtn.alter[v] = rtn.alter[v] || {}
+        rtn.alter[v].map = { new: curr[v].dbName, old: prev[v].dbName }
+      }
 
-    rtn.alter[v] = rtn.alter[v] || {}
-    rtn.alter[v]['columns'] = rtn.alter[v]['columns'] || {}
-    Column(rtn.alter[v]['columns'], curr[v]['columns'], prev[v]['columns'])
-    if (isEmpty(rtn.alter[v]['columns'])) delete rtn.alter[v]['columns']
-    rtn.alter[v]['props'] = BlockProps(curr[v]['props'], prev[v]['props'])
-    if (isEmpty(rtn.alter[v]['props'])) delete rtn.alter[v]['props']
-    if (isEmpty(rtn.alter[v])) delete rtn.alter[v]
+      rtn.alter[v] = rtn.alter[v] || {}
+      rtn.alter[v]['columns'] = rtn.alter[v]['columns'] || {}
+      Column(rtn.alter[v]['columns'], curr[v]['columns'], prev[v]['columns'])
+      if (isEmpty(rtn.alter[v]['columns'])) delete rtn.alter[v]['columns']
+      rtn.alter[v]['props'] = BlockProps(curr[v]['props'], prev[v]['props'])
+      if (isEmpty(rtn.alter[v]['props'])) delete rtn.alter[v]['props']
+      if (isEmpty(rtn.alter[v])) delete rtn.alter[v]
+    }
   })
 
   for (const k in rtn) {
@@ -108,10 +122,9 @@ function Column(column, curr, prev) {
     // if (cCol.type.split('.').length > 1) continue
     if (cCol.type.split('.').length > 1) {
       if (cCol.type !== pCol.type) {
-        colAlt[v]['relation'] = {new: cCol, old: pCol}
+        colAlt[v]['relation'] = { new: cCol, old: pCol }
       }
     } else {
-
       if (cCol.map !== pCol.map && cCol.dbName !== pCol.dbName) {
         colAlt[v].map = { new: cCol.dbName, old: pCol.dbName }
       }
@@ -120,33 +133,36 @@ function Column(column, curr, prev) {
           colAlt[v][v4] = { new: cCol[v4], old: pCol[v4] }
         }
       })
-        ;[
-          'idType',
-          'isArray',
-          'dbType',
-          'jsType',
-          'unique',
-          'index',
-          'check',
-          'default',
-          'createdAt',
-          'updatedAt',
-        ].forEach((v2) => {
-          colAlt[v].props = colAlt[v].props || {}
-          if ((<Column>cCol).props[v2] !== (<Column>pCol).props[v2]) {
-            colAlt[v].props[v2] = {
-              new: (<Column>cCol).props[v2],
-              old: (<Column>pCol).props[v2],
-            }
+      ;[
+        'idType',
+        'isArray',
+        'dbType',
+        'jsType',
+        'unique',
+        'index',
+        'check',
+        'default',
+        'createdAt',
+        'updatedAt'
+      ].forEach((v2) => {
+        colAlt[v].props = colAlt[v].props || {}
+        if ((<Column>cCol).props[v2] !== (<Column>pCol).props[v2]) {
+          colAlt[v].props[v2] = {
+            new: (<Column>cCol).props[v2],
+            old: (<Column>pCol).props[v2]
           }
-        })
+        }
+      })
 
       // Process the foreign key
       if ((<Column>cCol).props.foreign || (<Column>pCol).props.foreign) {
-        if (JSON.stringify((<Column>cCol).props.foreign?.references) !== JSON.stringify((<Column>pCol).props.foreign?.references)) {
+        if (
+          JSON.stringify((<Column>cCol).props.foreign?.references) !==
+          JSON.stringify((<Column>pCol).props.foreign?.references)
+        ) {
           colAlt[v].props.foreign = {
             new: (<Column>cCol).props.foreign,
-            old: (<Column>pCol).props.foreign,
+            old: (<Column>pCol).props.foreign
           }
         }
         ;['onDelete', 'onUpdate'].forEach((v2) => {
@@ -154,7 +170,7 @@ function Column(column, curr, prev) {
           if ((<Column>cCol).props.foreign?.[v2] !== (<Column>pCol).props.foreign?.[v2]) {
             colAlt[v].props.foreign = {
               new: (<Column>cCol).props.foreign,
-              old: (<Column>pCol).props.foreign,
+              old: (<Column>pCol).props.foreign
             }
           }
         })
