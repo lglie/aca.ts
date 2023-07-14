@@ -576,7 +576,7 @@ const $Queries = function (trx: any, sql: string[] = []) {
           returning = returning.concat(
             Object.values(scalarCols).map((v: any) => {
               if (fieldKey) {
-                return `${fieldKey.replaceAll('.', '->')}.${AttCols[v].dbName} as ${fieldKey}.${v}`
+                return `${fieldKey.replace(/[.]/g, '->')}.${AttCols[v].dbName} as ${fieldKey}.${v}`
               } else {
                 return `${$Att[table].dbName}.${AttCols[v].dbName}`
               }
@@ -586,9 +586,9 @@ const $Queries = function (trx: any, sql: string[] = []) {
             const where: any = relationCols[key].where ?? {}
             let pKeys: string[], fKeys: string[], relIds, joinRaw: string
             let alias = fieldKey ? `${fieldKey}.${key}` : key
-            alias = alias.replaceAll('.', '->')
+            alias = alias.replace(/[.]/g, '->')
             let pAlias = fieldKey ? fieldKey : $Att[table].dbName
-            pAlias = pAlias.replaceAll('.', '->')
+            pAlias = pAlias.replace(/[.]/g, '->')
             switch (AttCols[key].relation.kind) {
               case 'primary':
                 const rel = $Att[AttCols[key].type].columns[AttCols[key].relation.relColumn].relation
