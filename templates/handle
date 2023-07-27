@@ -1370,69 +1370,28 @@ const $Queries = function (trx: any, sql: string[] = []) {
           })
 
           if (v.set) {
-            const updateSet = async (record: { [x: string]: any }) => {
-              // If the record has only 1 item, is unique, and the relational table has other required fields, it is considered to be connect
-              // If the record has only 1 item, is unique, and the relational table does not havr other required fields, it is considered to be upsert
-              if (
-                Object.keys(record).length === 1 &&
-                $Att[AttCol.type].uniques.some(
-                  (v: any[]) => record[Array.isArray(v) ? v.join('_') : v]
-                )
-              ) {
-                const columns = $Att[AttCol.type].columns
-                let requiredItem: any = []
-                $Att[AttCol.type].uniques.some((v: any) => {
-                  const items = Array.isArray(v) ? v : [v]
-                  if (record[items.join('_')]) {
-                    requiredItem = Object.keys(columns).filter((v) =>
-                      items.includes(v) ? false : 'required' === columns[v].optional
-                    )
-                    return true
-                  } else return false
-                })
-
-                return requiredItem.length
-                  ? await trxWhere(
-                      trx($Att[AttCol.type].dbName).select($Att[AttCol.type].id),
-                      AttCol.type,
-                      record
-                    )
-                  : // There is no required field, it may be a connection or a creation, you need to use upsert
-                    await trxQuery(
-                      trx($Att[AttCol.type].dbName)
-                        .insert(argsValidate(AttCol.type, record, 'insert', trx))
-                        .onConflict(Object.keys(record))
-                        .ignore()
-                        .returning($Att[AttCol.type].id)
-                    )
-              }
-              // is to creat
-              else
-                return await this.insert(AttCol.type, {
-                  data: record
-                })
-            }
-
-            let relTableId: any[] = []
             const items = Array.isArray(v.set) ? v.set : [v.set]
-            for (const item of items) relTableId = relTableId.concat(await updateSet(item))
+            // for (const item of items) relTableId = relTableId.concat(await updateSet(item))
 
             // Delete the old relationships in the mapping table and store the new relationships
             await trxQuery(trx(AttCol.relation.mapTable).where(mapTableId).del())
 
-            await trxQuery(
-              trx(AttCol.relation.mapTable).insert(
-                relTableId.map((v2) =>
-                  Object.assign(
-                    Object.keys(v2).reduce(
-                      (_: any, v3) => ((_[`${$Att[AttCol.type].dbName}_${v3}`] = v2[v3]), _),
-                      {}
-                    ),
-                    mapTableId
-                  )
-                )
+            for (const v of items) {
+              let [relId] = await trxQuery(
+                trx($Att[AttCol.type].dbName).where(v).select($Att[AttCol.type].id)
               )
-            )
+              relId = Object.keys(relId).reduce(
+                (_: any, v) => ((_[`${$Att[AttCol.type].dbName}_${v}`] = relId[v]), _),
+                {}
+              )
+              const mapRecord = { ...mapTableId, ...relId }
+              await trxQuery(
+                trx(AttCol.relation.mapTable)
+                  .insert(mapRecord)
+                  .onConflict(Object.keys(mapRecord))
+                  .ignore()
+              )
+            }
           } else {
             let ids: any[] = []
             if (v.disconnect) {
