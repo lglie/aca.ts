@@ -458,9 +458,19 @@ const $Queries = function (trx: any, sql: string[] = []) {
   }
 
   return {
-    async finder(table: string, { where = {}, distinct, orderBy, limit, offset, select = { '*': true } }: any = {}) {
+     async finder(
+      table: string,
+      {
+        where = {},
+        distinct,
+        orderBy,
+        limit,
+        offset,
+        select = { '*': true },
+      }: any = {}
+    ) {
       // Process where condition
-      let Kx = trx.from(`${$Att[table].dbName} as ${$Att[table].dbName}`)
+      let Kx = trx($Att[table].dbName)
       if (typeof limit === 'number') Kx = Kx.limit(limit)
       if (typeof offset === 'number') Kx = Kx.offset(offset)
       if (typeof orderBy === 'object') {
@@ -472,194 +482,179 @@ const $Queries = function (trx: any, sql: string[] = []) {
           })
         )
       }
-      if (distinct) Kx = Kx.distinct(Array.isArray(distinct) ? distinct.toString() : distinct)
+      if (distinct)
+        Kx = Kx.distinct(
+          Array.isArray(distinct) ? distinct.toString() : distinct
+        )
 
       const wKnex = trxWhere(Kx, table, where)
-      let returning = []
-      leftJoin(table, select)
+      const AttCols = $Att[table].columns
+      sql.push(wKnex.select('*').toString())
+      let result = await wKnex.select('*')
       // Process incoming parameters
-      sql.push(wKnex.select(returning).toString())
-      let result = await wKnex.select(returning)
-      const data = returningSelect(table, select, result)
-      return data
-      function returningSelect(
-        table: string,
-        select: Record<string, any>,
-        rows: any[],
-        fieldKey?: string,
-        data?: any[]
-      ) {
-        const AttCols = $Att[table].columns
-        if (Object.keys(select).length) {
-          let [scalarCols, relationCols] = Object.keys(select).reduce(
-            (_: any, v: string) => {
-              if (typeof select[v] === 'object') _[1][v] = select[v]
-              else if (select[v] === true) _[0][v] = select[v]
-              return _
-            },
-            [{}, {}]
-          )
-          if (scalarCols['*']) {
-            scalarCols = $Att[table].scalarColumns.reduce((attr, v) => {
-              return { ...attr, [v]: true }
-            }, {})
-          }
-          if ($Att[table].id) {
-            for (const v of $Att[table].id) {
-              if (!Object.keys(scalarCols).includes(v)) {
-                scalarCols[v] = true
-              }
-            }
-          }
-          const item = {}
-          for (const val of rows) {
-            let dataKey
-            if ($Att[table].id) {
-              dataKey = $Att[table].id.map((v) => (fieldKey ? val[`${fieldKey}.${v}`] : val[v])).join('_')
-            } else {
-              dataKey = Object.keys(val).map(v => (fieldKey ? val[`${fieldKey}.${v}`] : val[v])).join('_')
-            }
-            if (dataKey && !item[dataKey]) {
-              item[dataKey] = $RtnSelect(
-                table,
-                Object.keys(scalarCols).reduce((attrs, v) => {
-                  return {
-                    ...attrs,
-                    [v]: fieldKey ? val[`${fieldKey}.${v}`] : val[v]
-                  }
-                }, {}),
-                select
-              )
-              for (const key in relationCols) {
-                item[dataKey][key] = returningSelect(
-                  AttCols[key].type,
-                  select[key].select ?? select[key],
-                  rows.filter(
-                    (v) => $Att[table].id.map((vv) => (fieldKey ? v[`${fieldKey}.${vv}`] : v[vv])).join('_') === dataKey
-                  ),
-                  fieldKey ? `${fieldKey}.${key}` : key
-                )
-                if (AttCols[key].relation.kind === 'foreign' || AttCols[key].relation.toOne) {
-                  item[dataKey][key] = item[dataKey][key][0]
-                }
-              }
-            }
-          }
-          data = Object.values(item)
+      if (Object.keys(select).length) {
+        const [scalarCols, relationCols] = Object.keys(select).reduce(
+          (_: any, v: string) => {
+            if (typeof select[v] === 'object') _[1][v] = select[v]
+            else if (select[v] === true) _[0][v] = v
+            return _
+          },
+          [{}, {}]
+        )
 
-          return data
-        }
-      }
-      function leftJoin(table: string, select: Record<string, any>, fieldKey?: string) {
-        const AttCols = $Att[table].columns
-        if (Object.keys(select).length) {
-          let [scalarCols, relationCols] = Object.keys(select).reduce(
-            (_: any, v: string) => {
-              if (typeof select[v] === 'object') _[1][v] = select[v]
-              else if (select[v] === true) _[0][v] = v
-              return _
-            },
-            [{}, {}]
-          )
-          if (scalarCols['*']) {
-            scalarCols = $Att[table].scalarColumns.reduce((attr, v) => {
-              return { ...attr, [v]: v }
-            }, {})
-          }
-          if ($Att[table].id) {
-            for (const v of $Att[table].id) {
-              if (!Object.keys(scalarCols).includes(v)) {
-                scalarCols[v] = v
+        for (const key in relationCols) {
+          const where: any = relationCols[key].where ?? {}
+          let pKeys: any, fKeys: any, relIds
+
+          switch (AttCols[key].relation.kind) {
+            case 'primary':
+              const rel =
+                $Att[AttCols[key].type].columns[AttCols[key].relation.relColumn]
+                  .relation
+              pKeys = rel.references
+              fKeys = rel.keys
+              where[fKeys] = {
+                in: result.map((v: { [x: string]: any }) =>
+                  pKeys.map((v2: string | number) => v[v2])
+                ),
               }
-            }
-          }
-          returning = returning.concat(
-            Object.values(scalarCols).map((v: any) => {
-              if (fieldKey) {
-                return `${fieldKey.replace(/[.]/g, '->')}.${AttCols[v].dbName} as ${fieldKey}.${v}`
-              } else {
-                return `${$Att[table].dbName}.${AttCols[v].dbName}`
+              break
+            case 'foreign':
+              pKeys = AttCols[key].relation.references
+              fKeys = AttCols[key].relation.keys
+              where[pKeys] = {
+                in: result.map((v: { [x: string]: any }) =>
+                  fKeys.map((v2: string | number) => v[v2])
+                ),
               }
-            })
-          )
-          for (const key in relationCols) {
-            const where: any = relationCols[key].where ?? {}
-            let pKeys: string[], fKeys: string[], relIds, joinRaw: string
-            let alias = fieldKey ? `${fieldKey}.${key}` : key
-            alias = alias.replace(/[.]/g, '->')
-            let pAlias = fieldKey ? fieldKey : $Att[table].dbName
-            pAlias = pAlias.replace(/[.]/g, '->')
+              break
+            case 'many':
+              const id = $Att[$Att[table].columns[key].type].id
+              const tableId = $Att[table].id.map(
+                (v2: any) => `${$Att[table].dbName}_${v2}`
+              )
+              relIds = await trxQuery(
+                trx($Att[table].columns[key].relation.mapTable)
+                  .select()
+                  .whereIn(
+                    tableId,
+                    result.map((v: { [x: string]: any }) =>
+                      $Att[table].id.map((v2: string | number) => v[v2])
+                    )
+                  )
+              )
+              // @ts-ignore
+              where[id] = {
+                in: relIds.map((v: { [x: string]: any }) =>
+                  id
+                    .map((v2: any) =>
+                      Object.values({
+                        [v2]: v[
+                          `${$Att[$Att[table].columns[key].type].dbName}_${v2}`
+                        ],
+                      })
+                    )
+                    .flat()
+                ),
+              }
+              break
+          }
+          const relationResult = await this.finder(AttCols[key].type, {
+            where,
+            orderBy: relationCols[key].orderBy,
+            limit: relationCols[key].limit,
+            offset: relationCols[key].offset,
+            distinct: relationCols[key].distinct,
+            select: relationCols[key].select ?? select[key],
+          })
+
+          for (const v of result) {
             switch (AttCols[key].relation.kind) {
               case 'primary':
-                const rel = $Att[AttCols[key].type].columns[AttCols[key].relation.relColumn].relation
-                pKeys = rel.references
-                fKeys = rel.keys
-                joinRaw = `left outer join "${$Att[AttCols[key].type].dbName}" as "${alias}" on ${fKeys
-                  .map(
-                    (v, index) =>
-                      `"${alias}"."${$Att[AttCols[key].type].columns[v].dbName}" = "${pAlias}"."${
-                        AttCols[pKeys[index]].dbName
-                      }"`
-                  )
-                  .join(' and ')} `
-                break
               case 'foreign':
-                pKeys = AttCols[key].relation.references
-                fKeys = AttCols[key].relation.keys
-
-                joinRaw = `left outer join "${$Att[AttCols[key].type].dbName}" as "${alias}" on ${pKeys
-                  .map(
-                    (v, index) =>
-                      `"${alias}"."${$Att[AttCols[key].type].columns[v].dbName}" = "${pAlias}"."${
-                        AttCols[fKeys[index]].dbName
-                      }"`
-                  )
-                  .join(' and ')} `
+                v[key] = relationResult.filter(
+                  (r: { [x: string]: string }) =>
+                    `${(AttCols[key].relation.kind === 'primary'
+                      ? fKeys
+                      : pKeys
+                    )
+                      .map((v2: string | number) =>
+                        r[v2] ? r[v2].trim() : null
+                      )
+                      .join('_')}` ===
+                    `${(AttCols[key].relation.kind === 'primary'
+                      ? pKeys
+                      : fKeys
+                    )
+                      .map((v2: string | number) =>
+                        v[v2] ? v[v2].trim() : null
+                      )
+                      .join('_')}`
+                )
+                if (
+                  AttCols[key].relation.toOne ||
+                  AttCols[key].relation.kind === 'foreign'
+                )
+                  v[key] = v[key][0] || null
                 break
               case 'many':
-                const id = $Att[AttCols[key].type].id
-                const tableId = $Att[table].id.map((v2: any) => `${$Att[table].dbName}_${v2}`)
-                wKnex.leftOuterJoin(`${AttCols[key].relation.mapTable}`, function () {
-                  const _this = this
-                  tableId.forEach((v, index) => {
-                    _this.on(
-                      `${AttCols[key].relation.mapTable}.${v}`,
-                      '=',
-                      `${pAlias}.${AttCols[$Att[table].id[index]].dbName}`
-                    )
-                  })
-                })
-                joinRaw = `left outer join "${$Att[AttCols[key].type].dbName}" as "${alias}" on ${$Att[
-                  AttCols[key].type
-                ].id
-                  .map(
-                    (v, index) =>
-                      `"${alias}"."${$Att[AttCols[key].type].columns[v].dbName}" = "${
-                        AttCols[key].relation.mapTable
-                      }"."${$Att[AttCols[key].type].dbName}_${v}"`
-                  )
-                  .join(' and ')} `
-                break
-            }
-            if (Object.keys(where).length) {
-              joinRaw += `and (${$Att[AttCols[key].type].id
-                .map((v) => `"${alias}"."${$Att[AttCols[key].type].columns[v].dbName}"`)
-                .join(',')}) in (${trxWhere(
-                trx.from(`${$Att[AttCols[key].type].dbName}`),
-                AttCols[key].type,
-                where
-              ).select(
-                $Att[AttCols[key].type].id.map(
-                  (v) => `${$Att[AttCols[key].type].dbName}.${$Att[AttCols[key].type].columns[v].dbName}`
+                const id = $Att[$Att[table].columns[key].type].id
+                const tableId = $Att[table].id.map(
+                  (v2: any) => `${$Att[table].dbName}_${v2}`
                 )
-              )})`
+                const mapTableData = relIds
+                  .filter(
+                    (r: { [x: string]: string }) =>
+                      tableId
+                        .map((v2: string | number) =>
+                          r[v2] ? r[v2].trim() : null
+                        )
+                        .join('_') ==
+                      $Att[table].id
+                        .map((v2: string | number) =>
+                          v[v2] ? v[v2].trim() : null
+                        )
+                        .join('_')
+                  )
+                  .map((v3: { [x: string]: string }) =>
+                    id
+                      .map((v2: any) =>
+                        v3[
+                          `${$Att[$Att[table].columns[key].type].dbName}_${v2}`
+                        ]
+                          ? v3[
+                              `${
+                                $Att[$Att[table].columns[key].type].dbName
+                              }_${v2}`
+                            ].trim()
+                          : null
+                      )
+                      .join('_')
+                  )
+                v[key] = relationResult.filter((r: { [x: string]: string }) =>
+                  mapTableData.includes(
+                    id
+                      .map((v2: string | number) =>
+                        r[v2] ? r[v2].trim() : null
+                      )
+                      .join('_')
+                  )
+                )
             }
-            wKnex.joinRaw(joinRaw)
-
-            leftJoin(AttCols[key].type, select[key].select ?? select[key], fieldKey ? `${fieldKey}.${key}` : key)
+            v[key] =
+              v[key] &&
+              $RtnSelect(
+                AttCols[key].type,
+                v[key],
+                typeof relationCols[key].select === 'object'
+                  ? relationCols[key].select
+                  : relationCols[key]
+              )
           }
         }
       }
+
+      return result
     },
 
     async insert(table: string, args: any) {
