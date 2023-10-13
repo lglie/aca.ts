@@ -653,7 +653,7 @@ const $Queries = function (trx: any, sql: string[] = []) {
           }
         }
       }
-
+      result = $RtnSelect(table, result, select)
       return result
     },
 
