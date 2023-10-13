@@ -491,6 +491,7 @@ const $Queries = function (trx: any, sql: string[] = []) {
       const AttCols = $Att[table].columns
       sql.push(wKnex.select('*').toString())
       let result = await wKnex.select('*')
+      result = $RtnSelect(table, result, {'*': true})
       // Process incoming parameters
       if (Object.keys(select).length) {
         const [scalarCols, relationCols] = Object.keys(select).reduce(
@@ -653,7 +654,7 @@ const $Queries = function (trx: any, sql: string[] = []) {
           }
         }
       }
-      result = $RtnSelect(table, result, select)
+      
       return result
     },
 
