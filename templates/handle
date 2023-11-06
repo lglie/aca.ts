@@ -663,9 +663,9 @@ const $Queries = function (trx: any, sql: string[] = []) {
 
       if (Array.isArray(args.data)) {
         // is an array, filter each record in the array, and seperate out if there is a relational field
-        
         const scalarRecords = []
-        const relationRecords = []
+        const primaryRecords = []
+        const manyRecords = []
         for (const val of args.data){
           const [scalarCols, primaryCols, foreignCols, manyCols] = splitCols(table, val)
           if (Object.keys(foreignCols).length) {
@@ -714,13 +714,6 @@ const $Queries = function (trx: any, sql: string[] = []) {
           if (Object.keys(scalarCols).length) {
             scalarRecords.push(scalarCols)
           }
-          
-          if (Object.keys(primaryCols).length) {
-            relationRecords.push(primaryCols)
-          }
-          if (Object.keys(manyCols).length) {
-            relationRecords.push(manyCols)
-          }
         }
         // Create pure scalar record
         if (scalarRecords.length) {
@@ -733,15 +726,70 @@ const $Queries = function (trx: any, sql: string[] = []) {
           scalarRtn = []
         }
 
-        if (relationRecords.length) {
-          for (const record of relationRecords) {
-            scalarRtn = scalarRtn.concat(
-              await this.insert(table, {
-                data: record,
-                select: args.select
-              })
-            )
+        const batchInsert = {}
+        for (const key in args.data){
+          const val = args.data[key]
+          const [scalarCols, primaryCols, foreignCols, manyCols] = splitCols(table, val)
+          if (Object.keys(primaryCols).length) {
+            const relColumns: any = Object.entries(primaryCols)
+            for (const [k, v] of relColumns) {
+              const AttCol = $Att[table].columns[k]
+              const { references, keys } = AttCol.relation
+              const relationForeign: any = {}
+              for (let i = 0; i < keys.length; i++)
+                relationForeign[keys[i]] = scalarRtn[key][references[i]]
+              if (v.insert) {
+                if (!Array.isArray(v.insert)) v.insert = [v.insert]
+                if (batchInsert[AttCol.type]) {
+                  for (const vv of v.insert) {
+                    batchInsert[AttCol.type].push({ ...vv, ...relationForeign })
+                  }
+                } else {
+                  batchInsert[AttCol.type] = v.insert.map(vv => ({...vv, ...relationForeign}))
+                }
+              }
+            }
           }
+          if (Object.keys(manyCols).length) {
+            // Mapping table id
+            const mapTabelId = $Att[table].id.reduce(
+              (_: any, v: string | number) => (
+                (_[`${$Att[table].dbName}_${v}`] = scalarRtn[key][v]), _
+              ),
+              {}
+            )
+            const relColumns: any = Object.entries(manyCols)
+            for (const [k, v] of relColumns) {
+              const AttCol = $Att[table].columns[k]
+              if (v.insert) {
+                if (!Array.isArray(v.insert)) v.insert = [v.insert]
+                const ret = await this.insert(AttCol.type, {
+                  data: v.insert,
+                  select: $ArrayTrue($Att[AttCol.type].id)
+                })
+                let relMapTableIds = ret.map((record) =>
+                  Object.keys(record).reduce(
+                    (_: any, v) => ((_[`${$Att[AttCol.type].dbName}_${v}`] = record[v]), _),
+                    {}
+                  )
+                )
+  
+                await trxQuery(
+                  trx(AttCol.relation.mapTable).insert(
+                    relMapTableIds.map((v) => ({
+                      ...mapTabelId,
+                      ...v
+                    }))
+                  )
+                )
+              }
+            }
+          }
+        }
+        for (const k of Object.keys(batchInsert)) {
+          await this.insert(k, {
+            data: batchInsert[k]
+          })
         }
 
         return scalarRtn
