@@ -1,3 +1,19 @@
+/* eslint-disable no-empty */
+/* eslint-disable node/no-extraneous-require */
+/* eslint-disable eqeqeq */
+/* eslint-disable @typescript-eslint/no-this-alias */
+/* eslint-disable no-case-declarations */
+/* eslint-disable no-trailing-spaces */
+/* eslint-disable prettier/prettier */
+/* eslint-disable prefer-const */
+/* eslint-disable no-fallthrough */
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+/* eslint-disable @typescript-eslint/no-namespace */
+/* eslint-disable @typescript-eslint/no-use-before-define */
+/* eslint-disable @typescript-eslint/no-unused-expressions */
+/* eslint-disable @typescript-eslint/no-redeclare */
+/* eslint-disable @typescript-eslint/no-unused-vars */
+// @ts-nocheck
 import { v4 as uuidv4 } from 'uuid'
 import cuid from 'cuid'
 import { Knex, knex } from 'knex'

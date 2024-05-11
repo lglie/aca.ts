@@ -32,6 +32,15 @@ namespace db {
     @$_.foreign('userId') user: user
   }
 
+  @$.view('select "user"."id" as "userid", "user"."name", "user"."married", "user"."age", "profile"."password" from "user" left join "profile" as "profile" on "user"."id" = "profile"."userId"')
+  class userProfile {
+    userid: id
+    @$_.unique name: string
+    married = false
+    age?: int
+    password?: string
+  }
+
   export class post {
     id: id
     content: string

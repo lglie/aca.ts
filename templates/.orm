@@ -21,7 +21,7 @@ export const $ = {
   unique: (names?: string[]) => dTable,
   index: (names?: string[]) => dTable,
   check: (partten: string) => dTable,
-  view: dTable,
+  view: (sql: string) => dTable,
   distinct: dTable,
   select: (value: string) => dTable,
   deprecated: (suggest?: string) => dTable,

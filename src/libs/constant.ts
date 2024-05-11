@@ -49,7 +49,14 @@ export const queries = [
   'updateMany',
   'delete',
   'deleteMany',
-  '$',
+  'aggregate',
+]
+
+export const viewQueries = [
+  'findOne',
+  'findFirst',
+  'findMany',
+  'aggregate',
 ]
 
 export const argOpts = ['findFirst', 'findMany', 'deleteMany'].concat(

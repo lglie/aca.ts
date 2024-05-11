@@ -207,6 +207,7 @@ interface AddColumn {
   name: string
   dbType: string
   notNull: boolean
+  default: any
 }
 
 type Column = Name & {
@@ -297,6 +298,7 @@ interface DbMigrate {
   add?: TableView[]
   remove?: TableView[]
   alter?: DbAlter
+  alterView?: DbAlter
 }
 
 // model annotations

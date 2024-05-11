@@ -5,7 +5,6 @@ function $Handle(trx: any) {
     // remove undefined
     args = args && JSON.parse(JSON.stringify(args))
     let data
-    let count
 
     const mutatedSelect = async (
       data: any[],
@@ -118,13 +117,15 @@ function $Handle(trx: any) {
           offset: args?.offset
         })
         if (args.count) {
-          count = await $Queries(trx, sql).aggregate(table, 'count', {
+          let count:any = await $Queries(trx, sql).aggregate(table, {
             where: args?.where,
-            select: '*'
+            count: {
+              '*': true
+            }
           })
-          count = Number(count[0]['count'])
+          count = count['count']['*']
+          return args?.sql ? { data, sql, count } : { data, count }
         }
-
         break
 
       case 'insert':
@@ -170,24 +171,15 @@ function $Handle(trx: any) {
         })
         break
 
-      case 'count':
-      case 'countDistinct':
-      case 'sum':
-      case 'sumDistinct':
-      case 'avg':
-      case 'avgDistinct':
-      case 'max':
-      case 'mix':
-        data = await $Queries(trx, sql).aggregate(table, query, args)
-        data = Number(data[0][query.replace('Distinct', '')])
+      case 'aggregate':
+        data = await $Queries(trx, sql).aggregate(table, args)
         break
       default:
     }
-    if ($FindQuery[<$FindQuery>query] && data) data = await $RtnSelect(table, data, args.select)
     if ($MutationQuery[<$MutationQuery>query]) data = await mutatedSelect(data, args.select)
 
     data = data ?? null
 
-    return args?.sql ? { data, sql } : args?.count ? { data, count } : { data }
+    return args?.sql ? { data, sql } : { data }
   }
 }

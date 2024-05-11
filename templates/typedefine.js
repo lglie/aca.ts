@@ -1,5 +1,6 @@
 
 module.exports = `\n
+
 type $EnumKeys = keyof $Enum
 
 type $Enumerable<T> = T | Array<T>
