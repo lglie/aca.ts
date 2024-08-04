@@ -400,7 +400,7 @@ const keywords = {
         const resolveAcaDir = path.resolve(acaDir);
         const app = Object.keys(config.serverApps)[0];
         let Db, db;
-        db = require(path.join(resolveAcaDir, app, "node_modules/sqlite3"));
+        db = require(path.join(resolveAcaDir, app, "node_modules/sqlite3")).verbose().Database;
         const dbName = path.join(
           resolveAcaDir,
           app,
@@ -473,7 +473,12 @@ export default function (driver: Driver) {
           apps[0],
           "node_modules/sqlite3"
         )).verbose();
-        return new db.Database(":memory:");
+        const filename = path.join(resolveAcaDir, apps[0], option.filename)
+
+        return new db.Database(filename, {
+          ...(<SqliteConn>option),
+          filename: undefined
+        });
       },
     },
     tbl(table: string) {
@@ -516,15 +521,18 @@ export default function (driver: Driver) {
                       : ""
                   }`
               )
-              .join(", ");
+              // .join(", ");
 
-            return `ALTER TABLE ${qPrefix}${table}${qName} ${cols}`;
+            return cols.map(v => `ALTER TABLE ${qPrefix}${table}${qName} ${v}`).join(';\n')
+
+            // return `ALTER TABLE ${qPrefix}${table}${qName} ${cols}`;
           },
           drop(columns: string | string[]) {
             if (!Array.isArray(columns)) columns = [columns];
-            return `ALTER TABLE ${qPrefix}${table}${qName} ${columns
-              .map((v) => `DROP COLUMN ${qName}${v}${qName}`)
-              .join(", ")}`;
+            return columns.map(v => `ALTER TABLE ${qPrefix}${table}${qName} DROP COLUMN ${qName}${v}${qName}`).join(';\n')
+            // return `ALTER TABLE ${qPrefix}${table}${qName} ${columns
+            //   .map((v) => `DROP COLUMN ${qName}${v}${qName}`)
+            //   .join(", ")}`;
           },
           alter(column: string) {
             return {
