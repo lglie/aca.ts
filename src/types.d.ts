@@ -35,7 +35,7 @@ interface DbConfig {
   onDelete: OnPrimaryMutation
 }
 
-type Driver = 'pg' | 'mssql' | 'mysql2' | 'betterSqlite3'
+type Driver = 'pg' | 'mssql' | 'mysql2' | 'sqlite3'
 type Id = 'autoincrement' | 'cuid' | 'uuid' | 'string' | 'int'
 
 type RelConn = {
@@ -58,7 +58,7 @@ type ConnectOption = {
       connect: RelConn
     }
   | {
-      driver: 'betterSqlite3'
+      driver: 'sqlite3'
       connect: SqliteConn
     }
 )

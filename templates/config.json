@@ -10,7 +10,7 @@
       "onUpdate": "cascade",
       "onDelete": "cascade",
       "connectOption": {
-        "driver": "betterSqlite3",
+        "driver": "sqlite3",
         "envConnect": "",
         "connect": {
           "filename": "example.sqlite3"
