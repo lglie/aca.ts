@@ -283,7 +283,7 @@ async function mysql2(
   return await (prevDb ? AlterDb() : CreateDb())
 }
 
-async function betterSqlite3(
+async function sqlite3(
   acaDir: AcaDir,
   config: Config,
   timestamp,
@@ -295,7 +295,7 @@ async function betterSqlite3(
     throw new Error(
       `Need to create at least one server-side app, or add an app to register in config.json: aca add [dirname] -s`
     )
-  const sqlDiff = SqlDiff('betterSqlite3')
+  const sqlDiff = SqlDiff('sqlite3')
   const connConf =
     process.env[currdb.config.connectOption.envConnect || ''] ||
     currdb.config.connectOption.connect
@@ -309,7 +309,7 @@ async function betterSqlite3(
         `Database: ${connOption.filename} already exists, please delete this database to recreate`
       )
     }
-    console.log(`Creating database tables...`)
+    console.log(`Creating database tables......`)
     const db: any = sqlDiff.db.createSqliteDb(acaDir, config, connOption)
     const allSql = CreateAllTblSqls(currdb.config, currdb.tables)
     allSql.sqls =
@@ -397,7 +397,7 @@ export async function up(yargs: any) {
         pg,
         mssql,
         mysql2,
-        betterSqlite3,
+        sqlite3,
       }[dbs[k].config.connectOption.driver](
         acaDir,
         config,

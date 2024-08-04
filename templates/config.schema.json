@@ -64,7 +64,7 @@
             "pg",
             "mssql",
             "mariadb",
-            "betterSqlite3"
+            "sqlite3"
           ]
         },
         "envConnection": {

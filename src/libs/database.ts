@@ -55,7 +55,7 @@ function CreateTblSql(config: DbConfig, tbls: FlatTables, jsName: string) {
   if ((<ViewProp>tblProps).select) {
   }
 
-  if (config.connectOption.driver === 'betterSqlite3') {
+  if (config.connectOption.driver === 'sqlite3') {
     rtn.create.push(sqlDiff.tbl(tbls[jsName].dbName).create(create.concat(foreigns).join(',\n')))
     rtn.alter.push(uniques.join(';\n\n'))
   } else {
@@ -154,8 +154,8 @@ export function AlterTblSql(config: DbConfig, tbls: FlatTables, alter: DbAlter) 
           rtn.alter.push(uniqueOrIndex)
         }
         if (constraint) {
-          if (config.connectOption.driver === 'betterSqlite3') {
-            throw new Error('betterSqlite3 暂不支持修改外键')
+          if (config.connectOption.driver === 'sqlite3') {
+            throw new Error('sqlite3 暂不支持修改外键')
           }
           rtn.alter.push(constraint)
         }
@@ -178,8 +178,8 @@ export function AlterTblSql(config: DbConfig, tbls: FlatTables, alter: DbAlter) 
           }
         })
         if (constraint) {
-          if (config.connectOption.driver === 'betterSqlite3') {
-            throw new Error('betterSqlite3 暂不支持修改外键')
+          if (config.connectOption.driver === 'sqlite3') {
+            throw new Error('sqlite3 暂不支持修改外键')
           }
           rtn.alter.push(constraint)
         }
@@ -283,8 +283,8 @@ export function AlterTblSql(config: DbConfig, tbls: FlatTables, alter: DbAlter) 
               }
             }
             if (alterCol.props.foreign && config.foreignKeyConstraint) {
-              if (config.connectOption.driver === 'betterSqlite3') {
-                throw new Error('betterSqlite3 暂不支持修改外键')
+              if (config.connectOption.driver === 'sqlite3') {
+                throw new Error('sqlite3 暂不支持修改外键')
               }
               if (alterCol.props.foreign.old) {
                 const relTbl = <Table>tbls[alterCol.props.foreign.old.jsType?.split('.')[0]]
@@ -518,7 +518,7 @@ export function DbDiffSqls(currdb, prevDb) {
       for (const k in diff.alterView) {
         const tbl = <Table>curr[k]
         if (diff.alterView[k].map) {
-          if (currdb.config.connectOption.driver === 'betterSqlite3') {
+          if (currdb.config.connectOption.driver === 'sqlite3') {
             rtn.alter.push(`DROP VIEW IF EXISTS "${diff.alterView[k].map['old']}"`)
             rtn.alter.push(`CREATE VIEW "${diff.alterView[k].map['new']['name']}" AS ${diff.alterView[k].map['new']['sql']}`)
           } else {
