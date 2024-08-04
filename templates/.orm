@@ -1,4 +1,4 @@
-type DriverEnum = 'pg' | 'mssql' | 'mysql2' | 'betterSqlite3'
+type DriverEnum = 'pg' | 'mssql' | 'mysql2' | 'sqlite3'
 type OnPrimaryMutation = 'cascade' | 'set null' | 'restrict' | 'no action'
 
 export type $db = string
