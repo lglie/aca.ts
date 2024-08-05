@@ -1,7 +1,7 @@
 {
   "name": "aca.ts",
   "version": "0.0.92",
-  "description": "ACA.ts is a fullstack development toolkit, which can automatically synchronize database schema and generate database query APIs according to a typescript ORM document; Automatically generate the client access server APIs according to the server functions and database query APIs, so that the client code can be developed on the client.",
+  "description": "Aca.ts is a full stack development tool without backend development, which can automatically synchronize database schema and generate database query APIs according to a typescript ORM document; Automatically generate the client access server APIs according to the server functions and database query APIs, so that the client code can be developed on the client.",
   "keywords": [
     "aca",
     "orm",
@@ -34,7 +34,7 @@
     "@microsoft/api-extractor": "",
     "dts-generator": "",
     "shelljs": "",
-    "typescript": "^4.8.4",
+    "typescript": "",
     "util": "",
     "yargs": ""
   },

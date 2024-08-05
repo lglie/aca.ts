@@ -22,6 +22,7 @@ export async function client(yargs: any) {
     `Creating app '${name}' using create-react-app, may take a few munites...`
   )
   process.chdir(acaRoot)
+  execSync(`npm config set registry https://registry.npmmirror.com/`)
   execSync(`npx create-react-app ${name} --template typescript`)
   const dbs = (await orm('.')).dbs
   const expArr = Object.keys(dbs).concat(Cst.ClientApiExport)
