@@ -180,7 +180,7 @@ async function mssql(
     }
 
     const allSqls = DbDiffSqls(currdb, prevDb)
-    
+
     if (allSqls) {
       console.log(allSqls)
       try {
@@ -313,14 +313,18 @@ async function sqlite3(
     const db: any = sqlDiff.db.createSqliteDb(acaDir, config, connOption)
     const allSql = CreateAllTblSqls(currdb.config, currdb.tables)
     allSql.sqls =
-      sqlDiff.aca.create + sqlDiff.aca.insert(timestamp) + '\n' + allSql.sqls + ';'
+      sqlDiff.aca.create +
+      sqlDiff.aca.insert(timestamp) +
+      '\n' +
+      allSql.sqls +
+      ';'
     console.log(allSql.sqls)
     try {
       await new Promise((resolve, reject) => {
         db.exec(allSql.sqls, function (err) {
           if (err) {
             reject(err)
-          }else {
+          } else {
             resolve(true)
           }
         })
@@ -364,15 +368,12 @@ async function sqlite3(
             }
           })
         })
-       
       } catch (e) {
         console.log(e)
         throw e
       }
       console.log(`Database(${connOption.filename}) updated successfully！`)
       return allSqls
-    } else {
-      db.close()
     }
   }
 
