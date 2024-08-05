@@ -2,7 +2,7 @@ English | [中文文档](https://aca.ts.center/zh)
 
 # Aca.ts
 
-> ACA.ts is a fullstack development toolkit, which can automatically synchronize databases and generate database query APIs according to a typescript ORM document; Automatically generate the frontend access backend APIs according to the backend functions and database query APIs, so that the backend code can be developed on the frontend.
+> Aca.ts is a full stack development tool without backend development, which can automatically synchronize databases and generate database query APIs according to a typescript ORM document; Automatically generate the frontend access backend APIs according to the backend functions and database query APIs, so that the backend code can be developed on the frontend.
 
 Use the class syntax of Typescript to define ORM:
 
