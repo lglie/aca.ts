@@ -316,7 +316,15 @@ async function sqlite3(
       sqlDiff.aca.create + sqlDiff.aca.insert(timestamp) + '\n' + allSql.sqls + ';'
     console.log(allSql.sqls)
     try {
-      db.exec(allSql.sqls)
+      await new Promise((resolve, reject) => {
+        db.exec(allSql.sqls, function (err) {
+          if (err) {
+            reject(err)
+          }else {
+            resolve(true)
+          }
+        })
+      })
       db.close()
       console.log(`Total: ${allSql.total} tables created successfully！`)
     } catch (e) {
@@ -347,16 +355,24 @@ async function sqlite3(
     if (allSqls) {
       console.log(allSqls)
       try {
-        await db.exec(allSqls)
+        await new Promise((resolve, reject) => {
+          db.exec(allSqls, function (err) {
+            if (err) {
+              reject(err)
+            } else {
+              resolve(true)
+            }
+          })
+        })
+       
       } catch (e) {
+        console.log(e)
         throw e
-      } finally {
-        await db.close()
       }
       console.log(`Database(${connOption.filename}) updated successfully！`)
       return allSqls
     } else {
-      await db.close()
+      db.close()
     }
   }
 

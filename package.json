@@ -34,7 +34,7 @@
     "@microsoft/api-extractor": "",
     "dts-generator": "",
     "shelljs": "",
-    "typescript": "^4.8.4",
+    "typescript": "",
     "util": "",
     "yargs": ""
   },
