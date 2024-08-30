@@ -61,7 +61,10 @@ export async function RPCProxy(serverName: string, RPCDir: string) {
         // Generate dts temporary file for index.ts
         await tsParse({ baseDir: root, out: RPCTmpdts, files: [v] });
         // Generate frontend function based on dts file
-        const file_name = v.replaceAll("\\", "/").slice(root.length + 1, -3);
+        let file_name = v.replaceAll("\\", "/").slice(root.length + 1, -3);
+        if (file_name.endsWith('index')) {
+          file_name = file_name.slice(0, file_name.length - 6)
+        }
         const api = generate(RPCTmpdts, file_name.split("/").map(d => `'${d}'`));
 
         // Delete dts temporary file
@@ -77,7 +80,11 @@ export async function RPCProxy(serverName: string, RPCDir: string) {
       let apit = "";
       for (const key in obj) {
         const t = await geneExp(obj[key]);
-        apit += `export namespace ${key} {\n ${t} \n}`;
+        if (key === 'index') {
+          apit += `${t} \n`;
+        } else {
+          apit += `export namespace ${key} {\n ${t} \n}`;
+        }
       }
       return apit;
     };
@@ -128,7 +135,11 @@ export async function RPCProxy(serverName: string, RPCDir: string) {
       let tt = "{\n";
       for (const key in obj) {
         const t = geneExp(obj[key]);
-        tt += `${key}: ${t}, \n`;
+        if (key === 'index') {
+          tt += `...${t}, \n`
+        } else {
+          tt += `${key}: ${t}, \n`;
+        }
       }
       tt += "}\n";
       return tt;
