@@ -9,6 +9,7 @@ export async function create(yargs: any) {
     [Cst.AcaConfigSchema]: 'config.schema.json',
     [Cst.AcaConfig]: 'config.json',
     [Cst.AcaExample]: 'example-blog',
+    [Cst.AcaExampleComment]: 'example-comment',
     [Cst.AcaOrmPropetty]: '.orm',
     [Cst.AcaTsconfig]: 'tsconfig.aca',
     [Cst.AcaMiscRemark]: 'remark',
@@ -23,6 +24,7 @@ export async function create(yargs: any) {
 
   // Recursively create directory
   MkdirsSync(path.join(name, Cst.AcaMiscRecordsDir))
+  MkdirsSync(path.join(name, Cst.AcaExampleDir))
   const tplDir = path.join(__dirname, '../../templates')
 
   for (const k in files) {

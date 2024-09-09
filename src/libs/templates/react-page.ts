@@ -4,7 +4,7 @@ export const reactPage = (consts: string) =>
   `import React, { useState } from 'react'
 import logo from './logo.svg'
 import './App.css'
-import { Blog, $RPC } from './aca.client'
+import { example, $RPC } from './aca.client'
 
 function App() {
   const [state, setState] = useState(
@@ -12,14 +12,14 @@ function App() {
   )
   async function click() {
     // ********************Frontend access database*********************************
-    await Blog.user.insert({
+    await example.user.insert({
       data: {
         firstName: 'foo',
         lastName: 'bar',
       },
     })
     //Return id by Using RPC example:
-    const rtn = await $RPC.server.example({ firstName: 'foo', lastName: 'bar' })
+    const rtn = await $RPC.server.example.findOne({ firstName: 'foo', lastName: 'bar' })
     setState(JSON.stringify(rtn))
   }
   // ********************************************************************************

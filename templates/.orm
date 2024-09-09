@@ -1,10 +1,11 @@
-type DriverEnum = 'pg' | 'mssql' | 'mysql2' | 'sqlite3'
-type OnPrimaryMutation = 'cascade' | 'set null' | 'restrict' | 'no action'
 
-export type $db = string
-export type int = number
-export type float = number
-export type id = {
+type DriverEnum = "pg" | "mssql" | "mysql2" | "sqlite3"
+type OnPrimaryMutation = "cascade" | "set null" | "restrict" | "no action"
+
+declare type $db = string
+declare type int = number
+declare type float = number
+declare type id = {
   cuid: string
   uuid: string
   string: string
@@ -12,39 +13,39 @@ export type id = {
   autoincrement: number
 }
 
-const dTable = (target: object) => {}
-const dColumn = (target: object, name?: string, descriptor?: object) => {}
+type dTable = (target: object) => void
+type dColumn = (target: object, name?: string, descriptor?: object) => void
 
-export const $ = {
-  map: (name: string) => dTable,
-  id: (names?: string[]) => dTable,
-  unique: (names?: string[]) => dTable,
-  index: (names?: string[]) => dTable,
-  check: (partten: string) => dTable,
-  view: (sql: string) => dTable,
-  distinct: dTable,
-  select: (value: string) => dTable,
-  deprecated: (suggest?: string) => dTable,
+declare namespace $ {
+  const map: (name: string) => dTable
+  const id: (names?: string[]) => dTable
+  const unique: (names?: string[]) => dTable
+  const index: (names?: string[]) => dTable
+  const check: (partten: string) => dTable
+  const view: (sql: string) => dTable
+  const distinct: dTable
+  const select: (value: string) => dTable
+  const deprecated: (suggest?: string) => dTable
 }
 
-export const $_ = {
+declare namespace $_ {
   // map: (name: string) => dColumn,
-  dbType: (typeName: string) => dColumn,
-  createdAt: dColumn,
-  updatedAt: dColumn,
-  unique: dColumn,
-  index: dColumn,
-  check: (partten: string) => dColumn,
-  foreign: (
+  const dbType: (typeName: string) => dColumn
+  const createdAt: dColumn
+  const updatedAt: dColumn
+  const unique: dColumn
+  const index: dColumn
+  const check: (partten: string) => dColumn
+  const foreign: (
     args:
       | string
       | string[]
       | {
-          keys: string | string[]
-          references: string | string[]
-          onUpdate?: OnPrimaryMutation
-          onDelete?: OnPrimaryMutation
+          keys: string | string[];
+          references: string | string[];
+          onUpdate?: OnPrimaryMutation;
+          onDelete?: OnPrimaryMutation;
         }
-  ) => dColumn,
-  deprecated: (suggest?: string) => dColumn,
+  ) => dColumn
+  const deprecated: (suggest?: string) => dColumn
 }

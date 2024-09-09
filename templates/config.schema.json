@@ -67,17 +67,8 @@
             "sqlite3"
           ]
         },
-        "envConnection": {
-          "type": [
-            "string",
-            "object"
-          ]
-        },
         "connection": {
-          "type": [
-            "string",
-            "object"
-          ]
+          "type": "object"
         },
         "idDefaultType": {
           "type": "string",

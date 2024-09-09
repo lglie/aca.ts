@@ -2,3 +2,10 @@
 // It cannot be written in the index.ts page unless there is only one page in the directory
 // The first parameter of RPC function must be context. The generated front-end function with the same name does not have this parameter
 // Refer to the following wording:
+
+import { example } from '..'
+
+export async function findOne(ctx: any, name: example.user.uniqueWhere) {
+  return await example.user.findOne({ where: name, select: { id: true } })
+}
+

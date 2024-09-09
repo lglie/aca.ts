@@ -81,7 +81,7 @@ async function pg(
 
       db = await sqlDiff.keyword.stmt.connect(acaDir, config, {
         ...connOption,
-        database: 'postgres',
+        database: 'postgres'
       })
       await db.query(`DROP DATABASE "${connOption.database}"`)
       await db.end()
@@ -159,7 +159,7 @@ async function mssql(
       // Delete the new database if not successful
       db = await sqlDiff.keyword.stmt.connect(acaDir, config, {
         ...connOption,
-        database: 'master',
+        database: 'master'
       })
       await db.query(`DROP DATABASE "${connOption.database}"`)
       await db.close()
@@ -240,7 +240,7 @@ async function mysql2(
     } catch (e) {
       db = await sqlDiff.keyword.stmt.connect(acaDir, config, {
         ...(<RelConn>conn),
-        database: undefined,
+        database: undefined
       })
       await db.query(sqlDiff.db.drop((<RelConn>conn).database))
       await db.end()
@@ -389,6 +389,20 @@ export async function up(yargs: any) {
   const acaDir = currDir === '.' ? '.' : '..'
   const acaRoot = path.resolve(acaDir)
   const config: Config = require(path.join(acaRoot, Cst.AcaConfig))
+  if (!config.databases) {
+    throw new Error('No database config found in config.ts')
+  }
+  config.orm = []
+  for (const key in config.databases) {
+    const dbConfig = config.databases[key]
+    if (dbConfig.connectOption.driver === 'sqlite3') {
+      const ormName = dbConfig.connectOption.connect.filename.slice(0, -8)
+      config.orm.push(ormName)
+    } else {
+      const ormName = dbConfig.connectOption.connect.database
+      config.orm.push(ormName)
+    }
+  }
   const isRollback = yargs.argv['_'][0] === 'rollback' ? true : false
   const timestamp = Date.now()
   let logs = <Remark[]>require(path.join(acaRoot, Cst.AcaMiscRemark))
@@ -414,7 +428,7 @@ export async function up(yargs: any) {
         pg,
         mssql,
         mysql2,
-        sqlite3,
+        sqlite3
       }[dbs[k].config.connectOption.driver](
         acaDir,
         config,
@@ -436,29 +450,52 @@ export async function up(yargs: any) {
     const [lastLog] = isRollback ? logs.slice(-2, -1) : logs.slice(-1)
     if (!lastLog) return
     const logName = lastLog.id
-    const logPath = `${acaDir}/${Cst.AcaMiscRecordsDir}/${logName}/orm.md`
-    return fs.readFileSync(logPath, 'utf-8')
+    let content = ''
+    const Iter = (d: string) => {
+      if (fs.statSync(d).isDirectory()) {
+        fs.readdirSync(d, 'utf-8').forEach((v) => Iter(path.join(d, v)))
+      } else {
+        if (d.endsWith('.ts')) {
+          content += fs.readFileSync(d, 'utf-8')
+        }
+      }
+    }
+    for (const key of config.orm) {
+      const ormPath = `${acaDir}/${Cst.AcaMiscRecordsDir}/${logName}/${key}`
+      if (fs.existsSync(ormPath)) {
+        Iter(ormPath)
+      }
+    }
+    return content
   }
 
   function WriteLog(changed: string, isRollback: boolean) {
     if (isRollback) {
       const rmk: Remark = logs.slice(-1)[0]
-      fs.rmSync(`${acaDir}/${Cst.AcaMiscRecordsDir}/${rmk.id}`, {
-        recursive: true,
-      })
+      deleteFolderRecursive(`${acaDir}/${Cst.AcaMiscRecordsDir}/${rmk.id}`)
       logs = logs.slice(0, -1)
       fs.writeFileSync(
-        `${acaDir}/${Cst.AcaDir}/${config.orm}`,
-        rollOrm,
+        `${acaDir}/${Cst.AcaMiscRemark}`,
+        JSON.stringify(logs, null, 2),
         'utf-8'
       )
+      for (const name of config.orm) {
+        deleteFolderRecursive(`${acaDir}/${Cst.AcaDir}/${name}`)
+      }
+      for (const name of config.orm) {
+        copyDir(
+          `${acaDir}/${Cst.AcaMiscRecordsDir}/${
+            logs[logs.length - 1].id
+          }/${name}`,
+          `${acaDir}/${Cst.AcaDir}/${name}`
+        )
+      }
     } else {
       const changedDir = `${acaDir}/${Cst.AcaMiscRecordsDir}/${timestamp}`
       fs.mkdirSync(changedDir)
-      fs.copyFileSync(
-        `${acaDir}/${Cst.AcaDir}/${config.orm}`,
-        `${changedDir}/orm.md`
-      )
+      for (const name of config.orm) {
+        copyDir(`${acaDir}/${Cst.AcaDir}/${name}`, `${changedDir}/${name}`)
+      }
       fs.writeFileSync(`${changedDir}/sql.md`, changed, 'utf-8')
       logs.push(remark(timestamp, ''))
     }
@@ -467,5 +504,41 @@ export async function up(yargs: any) {
       JSON.stringify(logs, null, 2),
       'utf-8'
     )
+  }
+
+  function copyDir(src, dest) {
+    if (fs.existsSync(src)) {
+      const entries = fs.readdirSync(src, {
+        encoding: 'utf8',
+        withFileTypes: true
+      })
+
+      fs.mkdirSync(dest, { recursive: true })
+
+      for (let entry of entries) {
+        const srcPath = path.join(src, entry.name)
+        const destPath = path.join(dest, entry.name)
+
+        if (entry.isDirectory()) {
+          copyDir(srcPath, destPath)
+        } else {
+          fs.copyFileSync(srcPath, destPath)
+        }
+      }
+    }
+  }
+
+  function deleteFolderRecursive(path) {
+    if (fs.existsSync(path)) {
+      fs.readdirSync(path).forEach((file) => {
+        const curPath = path + '/' + file
+        if (fs.lstatSync(curPath).isDirectory()) {
+          deleteFolderRecursive(curPath)
+        } else {
+          fs.unlinkSync(curPath)
+        }
+      })
+      fs.rmdirSync(path)
+    }
   }
 }

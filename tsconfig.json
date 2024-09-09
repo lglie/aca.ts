@@ -1,15 +1,17 @@
 {
   "include": [
     "src",
+    "src/types.d.ts"
   ],
   "compilerOptions": {
     "module": "CommonJS",
     "target": "ES2021",
     "outDir": "dist",
+    "declaration": true,
     "esModuleInterop": true,
     "removeComments": true,
     "downlevelIteration": true,
     "resolveJsonModule": true,
     "experimentalDecorators": true
-  }
+  },
 }

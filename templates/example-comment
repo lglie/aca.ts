@@ -1,0 +1,14 @@
+
+
+namespace example {
+  export class comment {
+    id: id['autoincrement']
+    topEnum = Gender.Fomale
+    rating: string
+    category: ns.category[]
+    commenter: user[]
+    //@ts-ignore
+    @$_.foreign('postsId') post: ns.post['comments']
+    date: Date = new Date()
+  }
+}

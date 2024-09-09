@@ -4,7 +4,7 @@
 // many-to-many：optional: array, type ends with []
 type AcaDir = '.' | '..'
 type Config = {
-  orm: string
+  orm: string[]
   databases?: { default: DbConfig } & { [K: string]: DbConfig }
   serverApps: {
     kind: 'server'
@@ -341,3 +341,5 @@ interface Remark {
   id: string
   comment: string
 }
+
+

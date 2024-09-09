@@ -1,30 +1,18 @@
-// The CLI is currently in the internal testing stage
-// Note: all identifiers must not start with $ to prevent naming conflicts
-// Scalar types supported by class members：id, int, float, string, object(json object), Date，and enum type
-
-import {
-  id,
-  int,
-  float,
-  $db, // Database connection configuration type
-  $, // Class decorator
-  $_, // Member decorator
-} from './.misc/.orm'
-
-enum Gender {
-  Male,
-  Fomale,
-  Unkown,
-}
 
 // Class pointing to the database
-namespace Blog {
+namespace example {
   // Each database class has at most one const, and the type is: $db
   // Its value points to the field with the same name in config.json/database. The default is: default
   const dbConfig: $db = 'default'
 
+  export enum Gender {
+    Male,
+    Fomale,
+    Unkown,
+  }
+
   @$.unique(['firstName', 'lastName'])
-  class user {
+  export class user {
     id: id
     firstName: string
     lastName: string
@@ -41,7 +29,7 @@ namespace Blog {
   }
 
   @$.map('PROF') // Map database table name
-  class profile {
+  export class profile {
     id: id
     // Types supported by the database
     @$_.dbType('char(8)') password: string
@@ -50,20 +38,10 @@ namespace Blog {
     user: user
   }
 
-  @$.view('select "user"."id" as "userid", "user"."firstName", "user"."lastName", "user"."gender","user"."age", "profile"."password" from "user" left join "PROF" as "profile" on "user"."id" = "profile"."userId"')
-  class userProfile {
-    userid: id
-    firstName: string
-    lastName: string
-    gender = Gender.Male
-    age: int = 25
-    created_at?: Date
-    password?: string
-  }
 
   // Supports multi-level namespaces
-  namespace ns {
-    enum KindEnum {
+  export namespace ns {
+    export enum KindEnum {
       Political,
       Economy,
     }
@@ -100,15 +78,4 @@ namespace Blog {
     }
   }
 
-  export class comment {
-    // 5 ID types can be specified
-    id: id['autoincrement']
-    topEnum = Gender.Fomale
-    rating: string
-    category: ns.category[]
-    commenter: user[]
-    //@ts-ignore
-    @$_.foreign('postsId') post: ns.post['comments']
-    date: Date = new Date()
-  }
 }

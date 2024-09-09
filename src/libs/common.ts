@@ -219,6 +219,7 @@ export function addAppConfig(
 
   const serverFiles = {
     [Cst.ServerRPCIndex]: 'rpc-index',
+    [Cst.ServerRPCExample]: 'rpc-example'
   }
 
   switch (kind) {
@@ -253,7 +254,7 @@ export function addAppConfig(
       }
       fetcher && (config.clientApps[appName]['fetcher'] = fetcher)
   }
-
+  delete config.orm
   fs.writeFileSync(
     path.join(acaRoot, Cst.AcaConfig),
     JSON.stringify(config, null, 2),
