@@ -16,7 +16,10 @@ declare type id = {
 type dTable = (target: object) => void
 type dColumn = (target: object, name?: string, descriptor?: object) => void
 
-declare namespace $ {
+/**
+ * Class decorator
+ */
+declare namespace C {
   const map: (name: string) => dTable
   const id: (names?: string[]) => dTable
   const unique: (names?: string[]) => dTable
@@ -27,8 +30,10 @@ declare namespace $ {
   const select: (value: string) => dTable
   const deprecated: (suggest?: string) => dTable
 }
-
-declare namespace $_ {
+/**
+ * Member decorator
+ */
+declare namespace M {
   // map: (name: string) => dColumn,
   const dbType: (typeName: string) => dColumn
   const createdAt: dColumn

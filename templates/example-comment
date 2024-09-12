@@ -1,14 +1,4 @@
-
-
-namespace example {
-  export class comment {
-    id: id['autoincrement']
-    topEnum = Gender.Fomale
-    rating: string
-    category: ns.category[]
-    commenter: user[]
-    //@ts-ignore
-    @$_.foreign('postsId') post: ns.post['comments']
-    date: Date = new Date()
-  }
+// When it is necessary to split the schema into multiple files (folders), the same top-level namespace as the index file must be used in this way.
+namespace blog {
+  
 }

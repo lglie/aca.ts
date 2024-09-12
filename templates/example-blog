@@ -1,6 +1,6 @@
 
 // Class pointing to the database
-namespace example {
+namespace blog {
   // Each database class has at most one const, and the type is: $db
   // Its value points to the field with the same name in config.json/database. The default is: default
   const dbConfig: $db = 'default'
@@ -11,7 +11,7 @@ namespace example {
     Unkown,
   }
 
-  @$.unique(['firstName', 'lastName'])
+  @C.unique(['firstName', 'lastName'])
   export class user {
     id: id
     firstName: string
@@ -21,20 +21,20 @@ namespace example {
     married: boolean = true
     detail?: object // json
     // timestamp
-    @$_.createdAt created_at?: Date
-    // @$_.updatedAt updated_at: Date // Not supported at the moment
+    @M.createdAt created_at?: Date
+    // @M.updatedAt updated_at: Date // Not supported at the moment
     profile?: profile // one-to-one
     posts: ns.post[] // one-to-many
     comments: comment[] // many-to-many
   }
 
-  @$.map('PROF') // Map database table name
+  @C.map('PROF') // Map database table name
   export class profile {
     id: id
     // Types supported by the database
-    @$_.dbType('char(8)') password: string
+    @M.dbType('char(8)') password: string
     // foreign key
-    @$_.foreign('userId')
+    @M.foreign('userId')
     user: user
   }
 
@@ -51,7 +51,7 @@ namespace example {
       enum?: KindEnum
       content: string
       score: float
-      @$_.foreign({
+      @M.foreign({
         keys: ['firstNameId', 'lastNameId'],
         references: ['firstName', 'lastName'],
         onUpdate: 'cascade',
@@ -69,13 +69,24 @@ namespace example {
     export class category {
       id: id
       // unique, index constraint
-      @$_.unique @$_.index name: string
+      @M.unique @M.index name: string
       posts: post[]
       // self relationship
-      @$_.foreign('categoriesId') parent?: category
+      @M.foreign('categoriesId') parent?: category
       children: category[]
       comments: comment[]
     }
+  }
+
+  export class comment {
+    id: id['autoincrement']
+    topEnum = Gender.Fomale
+    rating: string
+    category: ns.category[]
+    commenter: user[]
+    //@ts-ignore
+    @M.foreign('postsId') post: ns.post['comments']
+    date: Date = new Date()
   }
 
 }

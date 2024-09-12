@@ -12,7 +12,7 @@ function App() {
   )
   async function click() {
     // ********************Frontend access database*********************************
-    await example.user.insert({
+    await blog.user.insert({
       data: {
         firstName: 'foo',
         lastName: 'bar',

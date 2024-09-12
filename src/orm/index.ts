@@ -239,14 +239,16 @@ const NodeParse = {
             }
           }, {})[0]
       }
-      if (['$.unique', '$.index'].includes(key)) {
-        const k = { '$.unique': 'uniques', '$.index': 'indexes' }[key]!
+
+      if (['C.unique', 'C.index'].includes(key)) {
+        const k = { 'C.unique': 'uniques', 'C.index': 'indexes' }[key]!
         _[k] = _[k] || []
         _[k].push(value)
+      } else if (key.split('.').length > 1) {
+        _[key.split('.')[1]] = value
       } else {
-        _[key.split('.').reverse()[0]] = value
+        _[key] = value
       }
-
       return _
     }, {})
 
@@ -365,6 +367,7 @@ async function PickModel(acaDir: '.' | '..', ast: ts.SourceFile) {
               ? ts.getDecorators(classV)
               : classV.decorators || []
           )
+
           let MR = MapRename(props)
           const body = {
             kind: 'table',
@@ -635,13 +638,13 @@ async function PickModel(acaDir: '.' | '..', ast: ts.SourceFile) {
             const typeReg = /([^\[]+)(?:\[(\w+)\])?(\?|\[\])?$/
             const tbl = <Table>subModels[k]
             const tblName = [...tbl.namespace, tbl.name].join('.')
-
             for (const k2 in tbl.columns) {
               const col = tbl.columns[k2]
               const typ = col.type.match(typeReg)!
               if (!ScalarTypes.includes(typ[1]) && !col.props.dbType) {
                 // Find relation table
                 const relTbl = <Table>findModel(tbl.namespace, typ[1])
+                
                 for (const relK2 in relTbl.columns) {
                   const relCol = relTbl.columns[relK2]
                   const relTyp = relCol.type.match(typeReg)!

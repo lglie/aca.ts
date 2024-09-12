@@ -3,9 +3,9 @@
 // The first parameter of RPC function must be context. The generated front-end function with the same name does not have this parameter
 // Refer to the following wording:
 
-import { example } from '..'
+import { blog } from '..'
 
-export async function findOne(ctx: any, name: example.user.uniqueWhere) {
-  return await example.user.findOne({ where: name, select: { id: true } })
+export async function findOne(ctx: any, name: blog.user.uniqueWhere) {
+  return await blog.user.findOne({ where: name, select: { id: true } })
 }
 
