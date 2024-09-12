@@ -1,6 +1,6 @@
 {
   "name": "aca.ts",
-  "version": "0.0.94",
+  "version": "0.1.00",
   "description": "Aca.ts is a full stack development tool without backend development, which can automatically synchronize database schema and generate database query APIs according to a typescript ORM document; Automatically generate the client access server APIs according to the server functions and database query APIs, so that the client code can be developed on the client.",
   "keywords": [
     "aca",
