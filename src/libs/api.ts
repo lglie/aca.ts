@@ -3,7 +3,15 @@
 import fs from 'fs'
 import path from 'path'
 import * as Cst from './constant'
-import { FlatTables, MapTblName, AddQuote, Deprecated, MkdirsSync, isEmpty, checkApps } from './common'
+import {
+  FlatTables,
+  MapTblName,
+  AddQuote,
+  Deprecated,
+  MkdirsSync,
+  isEmpty,
+  checkApps
+} from './common'
 import * as parser from './ts-parser'
 import {
   transaction,
@@ -25,7 +33,8 @@ const templatePath = `../../templates`
 // Generate enum types
 const EnumType = (enums: Enums) => {
   let rtn = ``
-  for (const k in enums) rtn += `\n  ${k}: ${enums[k].values.map((v) => "'" + v + "'").join(' | ')}`
+  for (const k in enums)
+    rtn += `\n  ${k}: ${enums[k].values.map((v) => "'" + v + "'").join(' | ')}`
 
   return `export type $Enum = {${rtn}\n}`
 }
@@ -33,12 +42,19 @@ const EnumType = (enums: Enums) => {
 // Generate enum constants
 const EnumConst = (enums: Enums) => {
   let rtn = []
-  for (const k in enums) rtn.push(`\n  ${k}: [ ${enums[k].values.map((v) => "'" + v + "'").join(', ')} ]`)
+  for (const k in enums)
+    rtn.push(
+      `\n  ${k}: [ ${enums[k].values.map((v) => "'" + v + "'").join(', ')} ]`
+    )
 
   return `\n\nconst $Enum = {${rtn.join(`,`)}\n}`
 }
 
-const tblQueries = (tables: Tables, dbVar: string, api: 'server' | 'transaction' | 'client' | 'transaction_client') => {
+const tblQueries = (
+  tables: Tables,
+  dbVar: string,
+  api: 'server' | 'transaction' | 'client' | 'transaction_client'
+) => {
   const TblQuery = (tbl: Table) => {
     const tblName = tbl.jsName
     const tblType = tbl.jsName.replace(/_/g, '.')
@@ -55,15 +71,20 @@ const tblQueries = (tables: Tables, dbVar: string, api: 'server' | 'transaction'
                 ? `Array<{[P in keyof ${tblType}]?: ${tblType}[P]}>`
                 : `{[P in keyof ${tblType}]?: ${tblType}[P]}`
             }`
-      } , sql?: string[], error?: string, ${'findMany' === Q ? `count?: number` : ''}}> => ${
+      } , sql?: string[], error?: string, ${
+        'findMany' === Q ? `count?: number` : ''
+      }}> => ${
         'server' === api
           ? tableQuery(Q, tblName)
-          : `await ${api.endsWith('client') ? `$.${dbVar}.req` : '$Handle'}${'transaction' === api ? '( trx )' : ''}({
+          : `await ${api.endsWith('client') ? `$.${dbVar}.req` : '$Handle'}${
+              'transaction' === api ? '( trx )' : ''
+            }({
             query: '${Q}', args, ${
               api.endsWith('client')
-                ? `kind: 'orm', dbVar: '${dbVar}', method: [${AddQuote([...tbl.namespace, tbl.name], "'").toString()}${
-                    Cst.aggregates.includes(Q) ? ", '$'" : ''
-                  }]`
+                ? `kind: 'orm', dbVar: '${dbVar}', method: [${AddQuote(
+                    [...tbl.namespace, tbl.name],
+                    "'"
+                  ).toString()}${Cst.aggregates.includes(Q) ? ", '$'" : ''}]`
                 : `table: ${AddQuote(tblName, "'")}`
             } })`
       }`
@@ -82,13 +103,23 @@ const tblQueries = (tables: Tables, dbVar: string, api: 'server' | 'transaction'
     }, <string[]>[])
 
   const tblApi = (tbl: TableItem, key: string, spt: '=' | ':') => `${
-    (<Table>tbl).props?.deprecated ? Deprecated((<Table>tbl).props.deprecated) : ``
+    (<Table>tbl).props?.deprecated
+      ? Deprecated((<Table>tbl).props.deprecated)
+      : ``
   }${key} ${spt} {
   ${typeof tbl.kind === 'string' ? TblQuery(<Table>tbl) : tblIter(<Tables>tbl)}
 }`
 
   return Object.keys(tables)
-    .reduce((_, v) => (_.push(tblApi(<Table>tables[v], v, api.startsWith('transaction') ? ':' : '=')), _), <string[]>[])
+    .reduce(
+      (_, v) => (
+        _.push(
+          tblApi(<Table>tables[v], v, api.startsWith('transaction') ? ':' : '=')
+        ),
+        _
+      ),
+      <string[]>[]
+    )
     .join(`${api.startsWith('transaction') ? ',' : ''}\n\n`)
 }
 
@@ -141,8 +172,14 @@ const Orm = (tables: { [k: string]: any }) => {
   // Initialize all tables
   for (const k in tables) {
     const tbl = tables[k]
-    Att[tbl.jsName] = { columns: {}, scalarColumns: [], foreignKeys: [], updatedAtColumns: [] }
-    for (const td in typeDefine) typeDefine[td][tbl.jsName] = typeDefine[td][tbl.jsName] || []
+    Att[tbl.jsName] = {
+      columns: {},
+      scalarColumns: [],
+      foreignKeys: [],
+      updatedAtColumns: []
+    }
+    for (const td in typeDefine)
+      typeDefine[td][tbl.jsName] = typeDefine[td][tbl.jsName] || []
   }
 
   for (const k in tables) {
@@ -159,10 +196,14 @@ const Orm = (tables: { [k: string]: any }) => {
 
     tbl.uniques.forEach((v) => {
       if (1 === v.length) {
-        typeDefine.unique[tbl.jsName].push(`{${v[0]}: $TB['${tbl.jsName}']['${v[0]}']}`)
+        typeDefine.unique[tbl.jsName].push(
+          `{${v[0]}: $TB['${tbl.jsName}']['${v[0]}']}`
+        )
       } else {
         typeDefine.unique[tbl.jsName].push(
-          `{${v.map((v2: string) => `  ${v2}: $TB['${tbl.jsName}']['${v2}']`).join('\n')}}`
+          `{${v
+            .map((v2: string) => `  ${v2}: $TB['${tbl.jsName}']['${v2}']`)
+            .join('\n')}}`
         )
       }
     })
@@ -171,10 +212,15 @@ const Orm = (tables: { [k: string]: any }) => {
       const colName = col.jsName
       let [typeTbl, relColOpt] = col.props.jsType.split('.')
       // Default
-      let colDefine = `${col.jsName}${'required' === col.optional ? '' : '?'}: ${typeTbl}`
-      Att[tbl.jsName].columns[colName] = Object.assign(Att[tbl.jsName].columns[colName] || {}, {
-        name: colName
-      })
+      let colDefine = `${col.jsName}${
+        'required' === col.optional ? '' : '?'
+      }: ${typeTbl}`
+      Att[tbl.jsName].columns[colName] = Object.assign(
+        Att[tbl.jsName].columns[colName] || {},
+        {
+          name: colName
+        }
+      )
       // Is relation field
       if (relColOpt) {
         const relTbl = tables[typeTbl]
@@ -195,9 +241,13 @@ const Orm = (tables: { [k: string]: any }) => {
         // Is foreign key field
         if (col.props.foreign) {
           typeDefine.table[tbl.jsName].push(
-            `${col.jsName}${'optional' === col.optional ? '?' : ''}: $Relation<'${typeTbl}', '${relColName}', 'toOne'>`
+            `${col.jsName}${
+              'optional' === col.optional ? '?' : ''
+            }: $Relation<'${typeTbl}', '${relColName}', 'toOne'>`
           )
-          typeDefine.foreign[tbl.jsName] = typeDefine.foreign[tbl.jsName].concat(col.props.foreign.keys)
+          typeDefine.foreign[tbl.jsName] = typeDefine.foreign[
+            tbl.jsName
+          ].concat(col.props.foreign.keys)
 
           Att[tbl.jsName].foreignKeys?.push(...col.props.foreign.keys)
           Att[tbl.jsName].columns[colName].relation = {
@@ -209,7 +259,9 @@ const Orm = (tables: { [k: string]: any }) => {
 
           // Add primary keys
           typeDefine.table[typeTbl].push(
-            `${relColName}${'required' !== relCol.optional ? '?' : ''}: $Relation<'${tbl.jsName}', '${colName}', '${
+            `${relColName}${
+              'required' !== relCol.optional ? '?' : ''
+            }: $Relation<'${tbl.jsName}', '${colName}', '${
               'array' === relCol.optional ? 'toMany' : 'toOne'
             }'>`
           )
@@ -222,8 +274,15 @@ const Orm = (tables: { [k: string]: any }) => {
           }
         } // Is many-to-many field
         else if (relColOpt.endsWith(']')) {
-          typeDefine.table[tbl.jsName].push(`${col.jsName}?: $Relation<'${typeTbl}', '${relColName}', 'M2M'>`)
-          const mapTable = MapTblName(tbl.dbName, col.dbName, relTbl.dbName, relCol.dbName)
+          typeDefine.table[tbl.jsName].push(
+            `${col.jsName}?: $Relation<'${typeTbl}', '${relColName}', 'M2M'>`
+          )
+          const mapTable = MapTblName(
+            tbl.dbName,
+            col.dbName,
+            relTbl.dbName,
+            relCol.dbName
+          )
 
           Object.assign(Att[tbl.jsName].columns[colName], {
             optional: 'optional',
@@ -253,18 +312,26 @@ const Orm = (tables: { [k: string]: any }) => {
               typeDefine.onTime[tbl.jsName].push(colName)
               Att[tbl.jsName].updatedAtColumns.push(colName)
             }
-            colDefine = `${col.jsName}${'required' === col.optional ? '' : '?'}: Date | string`
+            colDefine = `${col.jsName}${
+              'required' === col.optional ? '' : '?'
+            }: Date | string`
             break
           case 'int':
           case 'float':
-            colDefine = `${col.jsName}${'required' === col.optional ? '' : '?'}: number`
+            colDefine = `${col.jsName}${
+              'required' === col.optional ? '' : '?'
+            }: number`
             break
           case 'id':
             if (['cuid', 'uuid'].includes(col.props.jsType))
-              colDefine = `${col.jsName}${'required' === col.optional ? '' : '?'}: string`
+              colDefine = `${col.jsName}${
+                'required' === col.optional ? '' : '?'
+              }: string`
             break
           case 'enum':
-            colDefine = `${colName}${'required' === col.optional ? '' : '?'}: $Enum['${col.props.jsType}']`
+            colDefine = `${colName}${
+              'required' === col.optional ? '' : '?'
+            }: $Enum['${col.props.jsType}']`
             break
         }
         if (col.props.deprecated) {
@@ -300,7 +367,14 @@ const generateTsType = (tables) => {
         case 'scalar':
           return fields
             .filter((v) => !v.isRelation)
-            .map((v) => `${v.fieldName}${v.required}: ${v.fieldType}${v.isArray}`)
+            .map(
+              (v) => `${v.fieldName}${v.required}: ${v.fieldType}${v.isArray}`
+            )
+            .join('\n')
+        case 'omit':
+          return fields
+            .filter((v) => !v.isRelation)
+            .map((v) => `${v.fieldName}?: boolean`)
             .join('\n')
         case 'orderBy':
           return fields
@@ -326,7 +400,15 @@ const generateTsType = (tables) => {
                     : `${
                         v.isEnum
                           ? `$EnumFilter<${v.fieldType}, ${v.isNull}>`
-                          : `$${v.fieldType === 'Date | string' ? 'Date' : titleCase(v.fieldType.endsWith(']') ? v.fieldType.slice(0, -2) : v.fieldType)}Filter<${v.isNull}>`
+                          : `$${
+                              v.fieldType === 'Date | string'
+                                ? 'Date'
+                                : titleCase(
+                                    v.fieldType.endsWith(']')
+                                      ? v.fieldType.slice(0, -2)
+                                      : v.fieldType
+                                  )
+                            }Filter<${v.isNull}>`
                       } | ${v.fieldType} ${v.isNull ? ' | null' : ''}`
                 }`
             )
@@ -418,7 +500,9 @@ const generateTsType = (tables) => {
                             : `Omit<${v.fieldType}.insertInput, ${v.relationKeys}>`
                         }
                         connect?: ${
-                          v.isArray ? `$Enumerable<${v.fieldType}.uniqueWhere>` : `${v.fieldType}.uniqueWhere`
+                          v.isArray
+                            ? `$Enumerable<${v.fieldType}.uniqueWhere>`
+                            : `${v.fieldType}.uniqueWhere`
                         }
                         connectOrInsert?: ${
                           v.isArray
@@ -451,7 +535,11 @@ const generateTsType = (tables) => {
                       ? `$Enumerable<Omit<${v.fieldType}.insertInput, ${v.relationKeys}>>`
                       : `Omit<${v.fieldType}.insertInput, ${v.relationKeys}>`
                   }
-                  connect?: ${v.isArray ? `$Enumerable<${v.fieldType}.uniqueWhere>` : `${v.fieldType}.uniqueWhere`}
+                  connect?: ${
+                    v.isArray
+                      ? `$Enumerable<${v.fieldType}.uniqueWhere>`
+                      : `${v.fieldType}.uniqueWhere`
+                  }
                   connectOrInsert?: ${
                     v.isArray
                       ? `$Enumerable<{
@@ -515,6 +603,7 @@ const generateTsType = (tables) => {
           return `
                     where: uniqueWhere
                     select?: {[P in keyof select]?: select[P]}
+                    omit?: {[P in keyof omit]?: omit[P]}
                     sql?: boolean
                 `
         case 'findFirst':
@@ -522,6 +611,7 @@ const generateTsType = (tables) => {
                     where?: where
                     orderBy?: orderBy
                     select?: {[P in keyof select]?: select[P]}
+                    omit?: {[P in keyof omit]?: omit[P]}
 										distinct?: '*' | $Enumerable<scalar>
                     sql?: boolean
                 `
@@ -532,6 +622,7 @@ const generateTsType = (tables) => {
                     limit?: number
                     offset?: number
                     select?: {[P in keyof select]?: select[P]}
+                    omit?: {[P in keyof omit]?: omit[P]}
 										distinct?: '*' | $Enumerable<scalar>
                     count?: boolean
                     sql?: boolean
@@ -540,6 +631,7 @@ const generateTsType = (tables) => {
           return `
                 data: $Enumerable<insertInput>
                 select?: {[P in keyof select]?: select[P]}
+                omit?: {[P in keyof omit]?: omit[P]}
                 sql?: boolean
                 `
         case 'update':
@@ -547,6 +639,7 @@ const generateTsType = (tables) => {
                 where: uniqueWhere
                 data: updateInput
                 select?: {[P in keyof select]?: select[P]}
+                omit?: {[P in keyof omit]?: omit[P]}
                 sql?: boolean
                 `
         case 'updateMany':
@@ -566,12 +659,14 @@ const generateTsType = (tables) => {
                 insert: insertInput
                 update: updateInput
                 select?: {[P in keyof select]?: select[P]}
+                omit?: {[P in keyof omit]?: omit[P]}
                 sql?: boolean
                 `
         case 'delete':
           return `
                 where: uniqueWhere
                 select?: {[P in keyof select]?: select[P]}
+                omit?: {[P in keyof omit]?: omit[P]}
                 sql?: boolean
                 `
         case 'deleteMany':
@@ -652,11 +747,31 @@ const generateTsType = (tables) => {
         : `{}`)
     const queries = (
       tbl.kind === 'view'
-        ? ['where', 'scalar', 'orderBy', 'select', 'aggregateReturning', ...Cst.viewQueries]
-        : ['where', 'scalar', 'orderBy', 'select', 'aggregateReturning', 'insertInput', 'updateInput', ...Cst.queries]
+        ? [
+            'where',
+            'scalar',
+            'orderBy',
+            'select',
+            'omit',
+            'aggregateReturning',
+            ...Cst.viewQueries
+          ]
+        : [
+            'where',
+            'scalar',
+            'orderBy',
+            'select',
+            'omit',
+            'aggregateReturning',
+            'insertInput',
+            'updateInput',
+            ...Cst.queries
+          ]
     )
       .map(
-        (v) => `export ${v === '$' ? 'namespace' : 'type'} ${v === 'delete' ? 'del' : v} ${v === '$' ? '' : '='} {
+        (v) => `export ${v === '$' ? 'namespace' : 'type'} ${
+          v === 'delete' ? 'del' : v
+        } ${v === '$' ? '' : '='} {
          ${v === '$' ? aggr() : query(v)}
         }`
       )
@@ -678,11 +793,16 @@ const generateTsType = (tables) => {
       const col = tbl.columns[k]
       let [typeTbl, relColOpt] = col.props.jsType.split('.')
       if (col.type === 'enum') typeTbl = `$Enum['${typeTbl}']`
-      if (col.type === 'Date') typeTbl = `Date | string`      
+      if (col.type === 'Date') typeTbl = `Date | string`
       columns[col.jsName] = {
         fieldName: col.jsName,
         isEnum: col.type === 'enum' ? true : false,
-        fieldType: typeTbl.endsWith(']') && col.type !== 'enum' && !['number[]','string[]','boolean[]','Date[]'].includes(typeTbl) ? typeTbl.slice(0, -2) : typeTbl,
+        fieldType:
+          typeTbl.endsWith(']') &&
+          col.type !== 'enum' &&
+          !['number[]', 'string[]', 'boolean[]', 'Date[]'].includes(typeTbl)
+            ? typeTbl.slice(0, -2)
+            : typeTbl,
         required: col.optional === 'required' ? '' : '?',
         isRelation: false,
         isAuto: false,
@@ -709,9 +829,14 @@ const generateTsType = (tables) => {
       }
       if (relColOpt) {
         columns[col.jsName].isRelation = true
-        columns[col.jsName].fieldType = col.type.substring(0, col.type.lastIndexOf('.'))
-        columns[col.jsName].isArray = relColOpt.endsWith(']') || col.optional === 'array' ? '[]' : ''
-        columns[col.jsName].required = relColOpt.endsWith(']') || col.optional !== 'required' ? '?' : ''
+        columns[col.jsName].fieldType = col.type.substring(
+          0,
+          col.type.lastIndexOf('.')
+        )
+        columns[col.jsName].isArray =
+          relColOpt.endsWith(']') || col.optional === 'array' ? '[]' : ''
+        columns[col.jsName].required =
+          relColOpt.endsWith(']') || col.optional !== 'required' ? '?' : ''
         columns[col.jsName].relationKeys = `'${relColOpt.match(/^\w+/)[0]}'`
 
         if (col.props.foreign) {
@@ -723,14 +848,21 @@ const generateTsType = (tables) => {
               foreign.push(k)
             }
           }
-          if (columns[col.jsName].fieldType.split('.').reduce((_, v) => (_.columns ? _.columns[v] : _[v]), tables)) {
+          if (
+            columns[col.jsName].fieldType
+              .split('.')
+              .reduce((_, v) => (_.columns ? _.columns[v] : _[v]), tables)
+          ) {
             const relationTbl = columns[col.jsName].fieldType
               .split('.')
               .reduce((_, v) => (_.columns ? _.columns[v] : _[v]), tables)
             if (relationTbl) {
-              const relationCol = relationTbl.columns[`${relColOpt.match(/^\w+/)[0]}`]
+              const relationCol =
+                relationTbl.columns[`${relColOpt.match(/^\w+/)[0]}`]
               if (relationCol && relationCol.optional !== 'array') {
-                columns[col.jsName].OmitSelectKeys = `'${relColOpt.match(/^\w+/)[0]}'`
+                columns[col.jsName].OmitSelectKeys = `'${
+                  relColOpt.match(/^\w+/)[0]
+                }'`
               }
             }
           }
@@ -744,13 +876,20 @@ const generateTsType = (tables) => {
           typeof tbl.kind === 'string'
             ? `export type ${key} = {
             ${Object.values(columns)
-              .map((v: any) => `${v.fieldName}${v.required}:${v.fieldType}${v.isArray}`)
+              .map(
+                (v: any) =>
+                  `${v.fieldName}${v.required}:${v.fieldType}${v.isArray}`
+              )
               .join('\n')}
         }`
             : ''
         }
         export namespace ${key} {
-        ${typeof tbl.kind === 'string' ? TblType({ kind: tbl.kind, columns }, tbl.uniques) : tblIter(tbl)}
+        ${
+          typeof tbl.kind === 'string'
+            ? TblType({ kind: tbl.kind, columns }, tbl.uniques)
+            : tblIter(tbl)
+        }
     }`
   }
   return Object.keys(tables)
@@ -760,7 +899,10 @@ const generateTsType = (tables) => {
 // Generate frontend and backend api
 async function DbApi(ast: Ast) {
   // Packages needed to be imported
-  let serverApi = fs.readFileSync(path.join(__dirname, `${templatePath}/import`), 'utf-8')
+  let serverApi = fs.readFileSync(
+    path.join(__dirname, `${templatePath}/import`),
+    'utf-8'
+  )
   // Generate enum types
   let clientApi =
     EnumType(ast.enums) +
@@ -798,7 +940,12 @@ async function DbApi(ast: Ast) {
     for (const v2 of ['foreign', 'onTime']) {
       tmp.length = 0
       for (const k3 in orm.typeDefine[v2]) {
-        tmp.push(`  ${k3}: ${orm.typeDefine[v2][k3].map((v3: string) => `'${v3}'`).join(' | ') || 'never'}`)
+        tmp.push(
+          `  ${k3}: ${
+            orm.typeDefine[v2][k3].map((v3: string) => `'${v3}'`).join(' | ') ||
+            'never'
+          }`
+        )
       }
       dbType[<'FK' | 'CU'>{ foreign: 'FK', onTime: 'CU' }[v2]].push(...tmp)
     }
@@ -812,19 +959,29 @@ async function DbApi(ast: Ast) {
   //     .map((v) => `type $${v} = {\n${dbType[v].join('\n')}}`)
   //     .join('\n\n')
 
-  serverApi += `\n\n${fs.readFileSync(path.join(__dirname, `${templatePath}/annotation`), 'utf-8')} = ${JSON.stringify(
-    dbType.anno,
-    null,
-    2
-  )}`
+  serverApi += `\n\n${fs.readFileSync(
+    path.join(__dirname, `${templatePath}/annotation`),
+    'utf-8'
+  )} = ${JSON.stringify(dbType.anno, null, 2)}`
   // Backend enum constants
   serverApi += EnumConst(ast.enums)
   // Table processing logic
-  serverApi += fs.readFileSync(path.join(__dirname, `${templatePath}/handle`), 'utf-8')
+  serverApi += fs.readFileSync(
+    path.join(__dirname, `${templatePath}/handle`),
+    'utf-8'
+  )
   // Handle interface
-  serverApi += fs.readFileSync(path.join(__dirname, `${templatePath}/handle-server`), 'utf-8')
+  serverApi += fs.readFileSync(
+    path.join(__dirname, `${templatePath}/handle-server`),
+    'utf-8'
+  )
   // Add frontend base class
-  clientApi += '\n\n' + fs.readFileSync(path.join(__dirname, `${templatePath}/client-request`), 'utf-8')
+  clientApi +=
+    '\n\n' +
+    fs.readFileSync(
+      path.join(__dirname, `${templatePath}/client-request`),
+      'utf-8'
+    )
 
   // Generate the class of access table
   for (const k in ast.dbs) {
@@ -864,7 +1021,8 @@ export default async function (acaDir: AcaDir, config: Config, ast: Ast) {
     const resolveApiDir = path.join(
       resolveAcaDir,
       k,
-      serverConfig.apiDir ?? path.join(Cst.DefaultTsDir, Cst.DefaultServerApiDir)
+      serverConfig.apiDir ??
+        path.join(Cst.DefaultTsDir, Cst.DefaultServerApiDir)
     )
     const apiIndex = path.join(resolveApiDir, Cst.ApiIndex)
     const RPCDir = path.join(resolveApiDir, Cst.ServerRPCDir)
@@ -877,8 +1035,12 @@ export default async function (acaDir: AcaDir, config: Config, ast: Ast) {
   for (const k in clientApps) {
     const clientConfig = config.clientApps[k]
     const allowRPCs = clientApps[k]?.allowRPCs || Object.keys(serverApps)
-    const RPCs = allowRPCs.filter((v) => (clientRPCApis[v] !== undefined ? true : false))
-    const RPCApis = RPCs.map((v) => (clientRPCApis[v] ? nsRPCTpl(v) : '')).join('\n\n')
+    const RPCs = allowRPCs.filter((v) =>
+      clientRPCApis[v] !== undefined ? true : false
+    )
+    const RPCApis = RPCs.map((v) => (clientRPCApis[v] ? nsRPCTpl(v) : '')).join(
+      '\n\n'
+    )
     const reqInstance = () => {
       const fnStr = RPCs.map((v) => `${v}: ${reqInitValueTpl}`).join(',\n')
       const dbStr = Object.keys(ast.dbs)
@@ -892,15 +1054,23 @@ export default async function (acaDir: AcaDir, config: Config, ast: Ast) {
 ${reqInstance()}
 ${fnTpl(RPCApis)}
 `
-    const apiDir = path.join(k, clientConfig.apiDir ?? path.join(Cst.DefaultTsDir, Cst.DefaultClientApiDir))
+    const apiDir = path.join(
+      k,
+      clientConfig.apiDir ??
+        path.join(Cst.DefaultTsDir, Cst.DefaultClientApiDir)
+    )
     const api = path.join(resolveAcaDir, apiDir, Cst.ClientApi)
     const apiIndex = path.join(resolveAcaDir, apiDir, Cst.ClientApiIndex)
 
-    if (!fs.existsSync(path.join(resolveAcaDir, apiDir))) MkdirsSync(path.join(resolveAcaDir, apiDir))
+    if (!fs.existsSync(path.join(resolveAcaDir, apiDir)))
+      MkdirsSync(path.join(resolveAcaDir, apiDir))
     fs.writeFileSync(api, clientApi)
     if (!fs.existsSync(apiIndex)) {
       const fetcher = clientApps[k]?.fetcher || 'fetch'
-      fs.writeFileSync(apiIndex, apiIndexClient(Object.keys(ast.dbs), RPCs, fetcher))
+      fs.writeFileSync(
+        apiIndex,
+        apiIndexClient(Object.keys(ast.dbs), RPCs, fetcher)
+      )
     }
   }
 }

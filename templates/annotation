@@ -1,4 +1,4 @@
-const $Att: {
+export const $Att: {
   [k: string]: {
     columns: {
       [C: string]: {

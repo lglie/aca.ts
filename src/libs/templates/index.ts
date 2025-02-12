@@ -120,7 +120,7 @@ export const constructor = (config: DbConfig) => {
 
   return `
   private $Driver = '${sqlDiff.keyword.fullName}'
-  private knex: Knex
+  knex: Knex
   constructor() {
     let connection = process.env['${
       config.connectOption.envConnect || ''

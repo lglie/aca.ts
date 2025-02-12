@@ -87,6 +87,22 @@ function $Handle(trx: any) {
       return rtn
     }
 
+    const mutatedOmit = async (  data: any[], omit: any) => {
+      let rtn
+      if (Array.isArray(data)) {
+        rtn = []
+        for (const val of data) {
+          const newVal = await mutatedOmit(val, omit)
+          rtn.push(newVal)
+        }
+      } else {
+        if (omit && Object.keys(omit).length) {
+          rtn = await _.omit(data, Object.entries(omit).filter(v => v[1]).map(v => v[0]))
+        }
+      }
+      return rtn
+    }
+
     switch (query) {
       case 'findOne':
         if (Object.keys(args?.where).length) {
@@ -177,7 +193,7 @@ function $Handle(trx: any) {
       default:
     }
     if ($MutationQuery[<$MutationQuery>query]) data = await mutatedSelect(data, args.select)
-
+    if (args.omit && Object.keys(args.omit).length) data = await mutatedOmit(data, args.omit)
     data = data ?? null
 
     return args?.sql ? { data, sql } : { data }
