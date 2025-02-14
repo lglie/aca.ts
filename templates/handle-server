@@ -192,8 +192,8 @@ function $Handle(trx: any) {
         break
       default:
     }
-    if ($MutationQuery[<$MutationQuery>query]) data = await mutatedSelect(data, args.select)
-    if (args.omit && Object.keys(args.omit).length) data = await mutatedOmit(data, args.omit)
+    if ($MutationQuery[<$MutationQuery>query] && data) data = await mutatedSelect(data, args.select)
+    if (args.omit && Object.keys(args.omit).length && data) data = await mutatedOmit(data, args.omit)
     data = data ?? null
 
     return args?.sql ? { data, sql } : { data }

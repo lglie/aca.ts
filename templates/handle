@@ -667,8 +667,11 @@ const $Queries = function (trx: any, sql: string[] = []) {
         const scalarRecords = []
         const primaryRecords = []
         const manyRecords = []
-        for (const val of args.data){
-          const [scalarCols, primaryCols, foreignCols, manyCols] = splitCols(table, val)
+        for (const val of args.data) {
+          const [scalarCols, primaryCols, foreignCols, manyCols] = splitCols(
+            table,
+            val
+          )
           if (Object.keys(foreignCols).length) {
             const relColumns: any = Object.entries(foreignCols)
             // If there exists a foreign key field, you must create a primary key table to obtain the referenced field value
@@ -682,33 +685,38 @@ const $Queries = function (trx: any, sql: string[] = []) {
                     .where(dbCols(AttCol.type, v.connectOrInsert.connect))
                     .select('*')
                 )
-  
+
                 ;[pTable] = pTable.length
                   ? pTable
                   : await this.insert(AttCol.type, {
                       data: v.connectOrInsert.insert
                     })
                 pTable = $RtnSelect(AttCol.type, pTable, { '*': true })
-                for (let i = 0; i < keys.length; i++) scalarCols[keys[i]] = pTable[references[i]]
+                for (let i = 0; i < keys.length; i++)
+                  scalarCols[keys[i]] = pTable[references[i]]
               }
               if (v.connect) {
                 // Find the connection
                 let [pTable] = await trxQuery(
-                  trx($Att[AttCol.type].dbName).where(dbCols(AttCol.type, v.connect)).select('*')
+                  trx($Att[AttCol.type].dbName)
+                    .where(dbCols(AttCol.type, v.connect))
+                    .select('*')
                 )
                 if (!pTable)
-                  throw `table found "${$Att[AttCol.type].dbName}" record "${JSON.stringify(
-                    v.connect
-                  )}" does not exist`
+                  throw `table found "${
+                    $Att[AttCol.type].dbName
+                  }" record "${JSON.stringify(v.connect)}" does not exist`
                 pTable = $RtnSelect(AttCol.type, pTable, { '*': true })
-                for (let i = 0; i < keys.length; i++) scalarCols[keys[i]] = pTable[references[i]]
+                for (let i = 0; i < keys.length; i++)
+                  scalarCols[keys[i]] = pTable[references[i]]
               }
               if (v.insert) {
                 let [pTable] = await this.insert(AttCol.type, {
                   data: v.insert
                 })
                 pTable = $RtnSelect(AttCol.type, pTable, { '*': true })
-                for (let i = 0; i < keys.length; i++) scalarCols[keys[i]] = pTable[references[i]]
+                for (let i = 0; i < keys.length; i++)
+                  scalarCols[keys[i]] = pTable[references[i]]
               }
             }
           }
@@ -718,19 +726,63 @@ const $Queries = function (trx: any, sql: string[] = []) {
         }
         // Create pure scalar record
         if (scalarRecords.length) {
-          scalarRtn = await trxQuery(
-            trx($Att[table].dbName)
-              .insert(dbCols(table, argsValidate(table, scalarRecords, 'insert', trx)))
-              .returning('*')
-          )
+          if (
+            args.skipConflict &&
+            args.skipConflict.onConflict &&
+            args.skipConflict.action &&
+            Array.isArray(args.skipConflict.onConflict)
+          ) {
+            if (args.skipConflict.action === 'merge') {
+              scalarRtn = await trxQuery(
+                trx($Att[table].dbName)
+                  .insert(
+                    dbCols(
+                      table,
+                      argsValidate(table, scalarRecords, 'insert', trx)
+                    )
+                  )
+                  .onConflict(args.skipConflict.onConflict)
+                  .merge()
+                  .returning('*')
+              )
+            } 
+            if (args.skipConflict.action === 'ignore') {
+              scalarRtn = await trxQuery(
+                trx($Att[table].dbName)
+                  .insert(
+                    dbCols(
+                      table,
+                      argsValidate(table, scalarRecords, 'insert', trx)
+                    )
+                  )
+                  .onConflict(args.skipConflict.onConflict)
+                  .ignore()
+                  .returning('*')
+              )
+            } 
+          } else {
+            scalarRtn = await trxQuery(
+              trx($Att[table].dbName)
+                .insert(
+                  dbCols(
+                    table,
+                    argsValidate(table, scalarRecords, 'insert', trx)
+                  )
+                )
+                .returning('*')
+            )
+          }
         } else {
           scalarRtn = []
         }
 
         const batchInsert = {}
-        for (const key in args.data){
+        for (const key in args.data) {
           const val = args.data[key]
-          const [scalarCols, primaryCols, foreignCols, manyCols] = splitCols(table, val)
+          const [scalarCols, primaryCols, foreignCols, manyCols] = splitCols(
+            table,
+            val
+          )
           if (Object.keys(primaryCols).length) {
             const relColumns: any = Object.entries(primaryCols)
             for (const [k, v] of relColumns) {
@@ -746,7 +798,10 @@ const $Queries = function (trx: any, sql: string[] = []) {
                     batchInsert[AttCol.type].push({ ...vv, ...relationForeign })
                   }
                 } else {
-                  batchInsert[AttCol.type] = v.insert.map(vv => ({...vv, ...relationForeign}))
+                  batchInsert[AttCol.type] = v.insert.map((vv) => ({
+                    ...vv,
+                    ...relationForeign
+                  }))
                 }
               }
             }
@@ -770,11 +825,13 @@ const $Queries = function (trx: any, sql: string[] = []) {
                 })
                 let relMapTableIds = ret.map((record) =>
                   Object.keys(record).reduce(
-                    (_: any, v) => ((_[`${$Att[AttCol.type].dbName}_${v}`] = record[v]), _),
+                    (_: any, v) => (
+                      (_[`${$Att[AttCol.type].dbName}_${v}`] = record[v]), _
+                    ),
                     {}
                   )
                 )
-  
+
                 await trxQuery(
                   trx(AttCol.relation.mapTable).insert(
                     relMapTableIds.map((v) => ({
@@ -796,7 +853,10 @@ const $Queries = function (trx: any, sql: string[] = []) {
         return scalarRtn
       } else {
         // is single record, seperate out scalar fields, relational(primary key table, foreign key table, many-to-many table) fields
-        const [scalarCols, primaryCols, foreignCols, manyCols] = splitCols(table, args.data)
+        const [scalarCols, primaryCols, foreignCols, manyCols] = splitCols(
+          table,
+          args.data
+        )
 
         // When there is a foreign key field, create its primary key table and get tje foreign key value
         if (Object.keys(foreignCols).length) {
@@ -819,35 +879,72 @@ const $Queries = function (trx: any, sql: string[] = []) {
                     data: v.connectOrInsert.insert
                   })
               pTable = $RtnSelect(AttCol.type, pTable, { '*': true })
-              for (let i = 0; i < keys.length; i++) scalarCols[keys[i]] = pTable[references[i]]
+              for (let i = 0; i < keys.length; i++)
+                scalarCols[keys[i]] = pTable[references[i]]
             }
             if (v.connect) {
               // Find the connection
               let [pTable] = await trxQuery(
-                trx($Att[AttCol.type].dbName).where(dbCols(AttCol.type, v.connect)).select('*')
+                trx($Att[AttCol.type].dbName)
+                  .where(dbCols(AttCol.type, v.connect))
+                  .select('*')
               )
               if (!pTable)
-                throw `table found "${$Att[AttCol.type].dbName}" record "${JSON.stringify(
-                  v.connect
-                )}" does not exist`
+                throw `table found "${
+                  $Att[AttCol.type].dbName
+                }" record "${JSON.stringify(v.connect)}" does not exist`
               pTable = $RtnSelect(AttCol.type, pTable, { '*': true })
-              for (let i = 0; i < keys.length; i++) scalarCols[keys[i]] = pTable[references[i]]
+              for (let i = 0; i < keys.length; i++)
+                scalarCols[keys[i]] = pTable[references[i]]
             }
             if (v.insert) {
               let [pTable] = await this.insert(AttCol.type, {
                 data: v.insert
               })
               pTable = $RtnSelect(AttCol.type, pTable, { '*': true })
-              for (let i = 0; i < keys.length; i++) scalarCols[keys[i]] = pTable[references[i]]
+              for (let i = 0; i < keys.length; i++)
+                scalarCols[keys[i]] = pTable[references[i]]
             }
           }
         }
         // Create this table and get the uniqur field for foreign key table to use
-        scalarRtn = await trxQuery(
-          trx($Att[table].dbName)
-            .insert(dbCols(table, argsValidate(table, scalarCols, 'insert', trx)))
-            .returning('*')
-        )
+        if (
+          args.skipConflict &&
+          args.skipConflict.onConflict &&
+          args.skipConflict.action &&
+          Array.isArray(args.skipConflict.onConflict)
+        ) {
+          if (args.skipConflict.action === 'merge') {
+            scalarRtn = await trxQuery(
+              trx($Att[table].dbName)
+                .insert(
+                  dbCols(table, argsValidate(table, scalarCols, 'insert', trx))
+                )
+                .onConflict(args.skipConflict.onConflict)
+                .merge()
+                .returning('*')
+            )
+          }
+          if (args.skipConflict.action === 'ignore') {
+            scalarRtn = await trxQuery(
+              trx($Att[table].dbName)
+                .insert(
+                  dbCols(table, argsValidate(table, scalarCols, 'insert', trx))
+                )
+                .onConflict(args.skipConflict.onConflict)
+                .ignore()
+                .returning('*')
+            )
+          }
+        } else {
+          scalarRtn = await trxQuery(
+            trx($Att[table].dbName)
+              .insert(
+                dbCols(table, argsValidate(table, scalarCols, 'insert', trx))
+              )
+              .returning('*')
+          )
+        }
         scalarRtn = $RtnSelect(table, scalarRtn, { '*': true })
         // Create all foreign key tables and apply the unique key of this table to the corresponding table
         if (Object.keys(primaryCols).length) {
@@ -865,7 +962,15 @@ const $Queries = function (trx: any, sql: string[] = []) {
                   trx($Att[AttCol.type].dbName)
                     .where(dbCols(AttCol.type, v.connectOrInsert.connect))
                     .update(
-                      dbCols(AttCol.type, argsValidate(AttCol.type, relationForeign, 'update', trx))
+                      dbCols(
+                        AttCol.type,
+                        argsValidate(
+                          AttCol.type,
+                          relationForeign,
+                          'update',
+                          trx
+                        )
+                      )
                     )
                     .returning('*')
                 )
@@ -882,7 +987,15 @@ const $Queries = function (trx: any, sql: string[] = []) {
                   trx($Att[AttCol.type].dbName)
                     .where(dbCols(AttCol.type, v.connect))
                     .update(
-                      dbCols(AttCol.type, argsValidate(AttCol.type, relationForeign, 'update', trx))
+                      dbCols(
+                        AttCol.type,
+                        argsValidate(
+                          AttCol.type,
+                          relationForeign,
+                          'update',
+                          trx
+                        )
+                      )
                     )
                     .returning('*')
                 )
@@ -895,7 +1008,8 @@ const $Queries = function (trx: any, sql: string[] = []) {
             } else {
               // one-to-many relationship
               if (v.connectOrInsert) {
-                if (!Array.isArray(v.connectOrInsert)) v.connectOrInsert = [v.connectOrInsert]
+                if (!Array.isArray(v.connectOrInsert))
+                  v.connectOrInsert = [v.connectOrInsert]
                 for (const val of v.connectOrInsert) {
                   let rTable = await trxQuery(
                     trx($Att[AttCol.type].dbName)
@@ -903,7 +1017,12 @@ const $Queries = function (trx: any, sql: string[] = []) {
                       .update(
                         dbCols(
                           AttCol.type,
-                          argsValidate(AttCol.type, relationForeign, 'update', trx)
+                          argsValidate(
+                            AttCol.type,
+                            relationForeign,
+                            'update',
+                            trx
+                          )
                         )
                       )
                       .returning('*')
@@ -927,7 +1046,12 @@ const $Queries = function (trx: any, sql: string[] = []) {
                         trx($Att[AttCol.type].dbName).update(
                           dbCols(
                             AttCol.type,
-                            argsValidate(AttCol.type, relationForeign, 'update', trx)
+                            argsValidate(
+                              AttCol.type,
+                              relationForeign,
+                              'update',
+                              trx
+                            )
                           )
                         )
                       )
@@ -966,11 +1090,16 @@ const $Queries = function (trx: any, sql: string[] = []) {
               // Query the id of each record in the relational table
               for (const item of items) {
                 let [relMapTableId] = await trxQuery(
-                  trx($Att[AttCol.type].dbName).where(item).select($Att[AttCol.type].id)
+                  trx($Att[AttCol.type].dbName)
+                    .where(item)
+                    .select($Att[AttCol.type].id)
                 )
 
                 relMapTableId = Object.keys(relMapTableId).reduce(
-                  (_: any, v) => ((_[`${$Att[AttCol.type].dbName}_${v}`] = relMapTableId[v]), _),
+                  (_: any, v) => (
+                    (_[`${$Att[AttCol.type].dbName}_${v}`] = relMapTableId[v]),
+                    _
+                  ),
                   {}
                 )
                 // upsert data to the mapping table
@@ -990,7 +1119,9 @@ const $Queries = function (trx: any, sql: string[] = []) {
               })
               let relMapTableIds = ret.map((record) =>
                 Object.keys(record).reduce(
-                  (_: any, v) => ((_[`${$Att[AttCol.type].dbName}_${v}`] = record[v]), _),
+                  (_: any, v) => (
+                    (_[`${$Att[AttCol.type].dbName}_${v}`] = record[v]), _
+                  ),
                   {}
                 )
               )

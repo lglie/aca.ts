@@ -632,6 +632,10 @@ const generateTsType = (tables) => {
                 data: $Enumerable<insertInput>
                 select?: {[P in keyof select]?: select[P]}
                 omit?: {[P in keyof omit]?: omit[P]}
+                skipConflict?: {
+                  onConflict: onConflict,
+                  action: 'ignore' | 'merge'
+                }
                 sql?: boolean
                 `
         case 'update':
@@ -734,6 +738,17 @@ const generateTsType = (tables) => {
           )
           .join(`\n`)}
     `
+    const onConflict =
+      `export type onConflict =` +
+      (uniques?.length
+        ? uniques
+            .map(
+              (u) => `[
+            ${u.map((v) => `"${v}"`).join(',')}
+            ]`
+            )
+            .join(' | ')
+        : `[]`)
     const uniqueWhere =
       `export type uniqueWhere =` +
       (uniques?.length
@@ -777,7 +792,7 @@ const generateTsType = (tables) => {
       )
       .join(`\n`)
 
-    return [uniqueWhere, queries].join(`\n`)
+    return [onConflict, uniqueWhere, queries].join(`\n`)
   }
   const tblIter = (subTbls) =>
     Object.keys(subTbls)
