@@ -17,6 +17,14 @@ function $RtnSelect(table: string, rtnCols: any, select?: any): any {
       rtn[name] = rtnCols[name]
       if (typeof rtn[name] === 'string') rtn[name] = rtn[name].trim()
       switch ($Att[table].columns[name].type) {
+        case 'id':
+          if ($Att[table].columns[name].jsType === 'number') {
+            rtn[name] = (rtn[name] || rtn[name] === 0) ? Math.round(Number(rtn[name])) : null
+          }
+          if ($Att[table].columns[name].jsType === 'string') {
+            rtn[name] = rtn[name].trim()
+          }
+          break
         case 'int':
         case 'bigint':
           rtn[name] = (rtn[name] || rtn[name] === 0) ? Math.round(Number(rtn[name])) : null
