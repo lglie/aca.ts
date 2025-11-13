@@ -53,6 +53,7 @@ export const queries = [
   'delete',
   'deleteMany',
   'aggregate',
+  'groupBy'
 ]
 
 export const viewQueries = [

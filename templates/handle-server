@@ -190,6 +190,9 @@ function $Handle(trx: any) {
       case 'aggregate':
         data = await $Queries(trx, sql).aggregate(table, args)
         break
+      case 'groupBy':
+        data = await $Queries(trx, sql).groupBy(table, args)
+        break
       default:
     }
     if ($MutationQuery[<$MutationQuery>query] && data) data = await mutatedSelect(data, args.select)

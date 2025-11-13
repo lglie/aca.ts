@@ -69,7 +69,7 @@ const tblQueries = (
           : `${
               'findMany' === Q
                 ? `Array<{[P in keyof ${tblType}]?: ${tblType}[P]}>`
-                : `{[P in keyof ${tblType}]?: ${tblType}[P]}`
+                : Q === 'groupBy' ? `Array<${tblType}.aggregateReturning & ${tblType}.scalar>` : `{[P in keyof ${tblType}]?: ${tblType}[P]}`
             }`
       } , sql?: string[], error?: string, ${
         'findMany' === Q ? `count?: number` : ''
@@ -678,6 +678,55 @@ const generateTsType = (tables) => {
                 where: where
                 sql?: boolean
                 `
+        case 'groupBy':
+          return `where?: where
+                groupBy?: {[P in keyof scalar]?: boolean}
+                count?: {'*'?: boolean} & {[P in keyof scalar]?: boolean}
+                countDistinct?: {[P in keyof scalar]?: boolean}
+                ${
+                  fields.filter((v) => v.fieldType === 'number').length
+                    ? `
+                    sum?: {
+                      ${fields
+                        .filter((v) => v.fieldType === 'number')
+                        .map((v) => `${v.fieldName}?: boolean`)
+                        .join('\n')}
+                    }
+                    sumDistinct?: {
+                      ${fields
+                        .filter((v) => v.fieldType === 'number')
+                        .map((v) => `${v.fieldName}?: boolean`)
+                        .join('\n')}
+                    }
+                    avg?: {
+                      ${fields
+                        .filter((v) => v.fieldType === 'number')
+                        .map((v) => `${v.fieldName}?: boolean`)
+                        .join('\n')}
+                    }
+                    avgDistinct?: {
+                      ${fields
+                        .filter((v) => v.fieldType === 'number')
+                        .map((v) => `${v.fieldName}?: boolean`)
+                        .join('\n')}
+                    }
+                    max?: {
+                      ${fields
+                        .filter((v) => v.fieldType === 'number')
+                        .map((v) => `${v.fieldName}?: boolean`)
+                        .join('\n')}
+                    }
+                    min?: {
+                      ${fields
+                        .filter((v) => v.fieldType === 'number')
+                        .map((v) => `${v.fieldName}?: boolean`)
+                        .join('\n')}
+                    }
+                    `
+                    : ''
+                }
+                sql?: boolean
+              `
         case 'aggregate':
           return `
                 where?: where

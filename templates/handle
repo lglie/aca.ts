@@ -22,7 +22,7 @@ function $RtnSelect(table: string, rtnCols: any, select?: any): any {
             rtn[name] = (rtn[name] || rtn[name] === 0) ? Math.round(Number(rtn[name])) : null
           }
           if ($Att[table].columns[name].jsType === 'string') {
-            rtn[name] = rtn[name].trim()
+            rtn[name] = rtn[name] ? rtn[name].trim() : null
           }
           break
         case 'int':
@@ -92,7 +92,11 @@ const $Queries = function (trx: any, sql: string[] = []) {
               ? typeof records[i][AttCol] !== 'object'
               : typeof records[i][AttCol] !== AttCols[AttCol].jsType
           ) {
-            throw `table "${$Att[table].dbName}" field "${AttCol}" data type mismatch`
+            if (AttCols[AttCol].jsType === 'number' &&  typeof records[i][AttCol] === 'string' && !Number.isNaN(Number(records[i][AttCol]))) {
+               records[i][AttCol] = Number(records[i][AttCol])
+            } else {
+              throw `table "${$Att[table].dbName}" field "${AttCol}" data type mismatch`
+            }
           }
           // If it is a number type and an int type
           if (AttCols[AttCol].type === 'int' && typeof records[i][AttCol] === 'number') {
@@ -466,7 +470,7 @@ const $Queries = function (trx: any, sql: string[] = []) {
   }
 
   return {
-     async finder(
+    async finder(
       table: string,
       {
         where = {},
@@ -588,7 +592,7 @@ const $Queries = function (trx: any, sql: string[] = []) {
                       : pKeys
                     )
                       .map((v2: string | number) =>
-                        r[v2] ? r[v2].trim() : null
+                        r[v2] ? typeof r[v2] === 'string' ? r[v2].trim() : r[v2] : null
                       )
                       .join('_')}` ===
                     `${(AttCols[key].relation.kind === 'primary'
@@ -596,7 +600,7 @@ const $Queries = function (trx: any, sql: string[] = []) {
                       : fKeys
                     )
                       .map((v2: string | number) =>
-                        v[v2] ? v[v2].trim() : null
+                        v[v2] ? typeof v[v2] === 'string' ? v[v2].trim() : v[v2] : null
                       )
                       .join('_')}`
                 )
@@ -616,12 +620,12 @@ const $Queries = function (trx: any, sql: string[] = []) {
                     (r: { [x: string]: string }) =>
                       tableId
                         .map((v2: string | number) =>
-                          r[v2] ? r[v2].trim() : null
+                          r[v2] ? typeof r[v2] === 'string' ? r[v2].trim() : r[v2] : null
                         )
                         .join('_') ==
                       $Att[table].id
                         .map((v2: string | number) =>
-                          v[v2] ? v[v2].trim() : null
+                          v[v2] ? typeof v[v2] === 'string' ? v[v2].trim() : v[v2] : null
                         )
                         .join('_')
                   )
@@ -635,7 +639,7 @@ const $Queries = function (trx: any, sql: string[] = []) {
                               `${
                                 $Att[$Att[table].columns[key].type].dbName
                               }_${v2}`
-                            ].trim()
+                            ]
                           : null
                       )
                       .join('_')
@@ -644,7 +648,7 @@ const $Queries = function (trx: any, sql: string[] = []) {
                   mapTableData.includes(
                     id
                       .map((v2: string | number) =>
-                        r[v2] ? r[v2].trim() : null
+                        r[v2] ? typeof r[v2] === 'string' ? r[v2].trim() : r[v2] : null
                       )
                       .join('_')
                   )
@@ -1689,6 +1693,91 @@ const $Queries = function (trx: any, sql: string[] = []) {
       const wKnex = trxWhere(Kx, table, args.where)
       return await trxQuery(wKnex.del())
       // return await trxQuery(trx($Att[table].dbName).where(args?.where).del())
+    },
+
+    async groupBy(table: string, args: any) {
+      // if (!args?.select || args.select === '*') (<any>args).select = { count: '*' }
+      const aggregates = [
+        'count',
+        'countDistinct',
+        'sum',
+        'sumDistinct',
+        'avg',
+        'avgDistinct',
+        'max',
+        'min'
+      ]
+      let Kx = trx.from(`${$Att[table].dbName} as ${$Att[table].dbName}`)
+      if (typeof args.limit === 'number') Kx = Kx.limit(args.limit)
+      if (typeof args.offset === 'number') Kx = Kx.offset(args.offset)
+      const groupByFields = []
+      if (typeof args.groupBy === 'object' && args.groupBy) {
+        for (const [k, v] of Object.entries(args.groupBy)) {
+          if (v === true) {
+            groupByFields.push(k)
+          }
+        }
+      }
+      if (groupByFields.length) {
+         Kx = Kx.groupBy(groupByFields)
+      }
+      const wKnex = trxWhere(Kx, table, args.where)
+      for (const key in args) {
+        if (
+          aggregates.includes(key) &&
+          args[key] &&
+          typeof args[key] === 'object' &&
+          Object.keys(args[key])
+        ) {
+          Object.keys(args[key]).forEach((k) => {
+            if (args[key][k]) {
+              if (k === '*' && ['count', 'countDistinct'].includes(key)) {
+                wKnex[key](`* as ${key}->${k}`)
+              } else if ($Att[table].columns[k]) {
+                wKnex[key](`${$Att[table].columns[k].dbName} as ${key}->${k}`)
+              }
+            }
+          })
+        }
+      }
+      if (groupByFields.length) {
+        for(const f of groupByFields) {
+          wKnex.column(f)
+        }
+      }
+      sql.push(wKnex.toString())
+      let result = await wKnex
+      const list = []
+      for (const val of result) {
+        const returning = {}
+        for (const key in args) {
+          if (
+            aggregates.includes(key) &&
+            args[key] &&
+            typeof args[key] === 'object' &&
+            Object.keys(args[key])
+          ) {
+            Object.keys(args[key]).forEach((k) => {
+              if (args[key][k]) {
+                if (returning[key]) {
+                  returning[key][k] = Number(val[`${key}->${k}`])
+                } else {
+                  returning[key] = {
+                    [k]: Number(val[`${key}->${k}`])
+                  }
+                }
+              }
+            })
+          }
+        }
+        if (groupByFields.length) {
+          for(const f of groupByFields) {
+            returning[f] = val[f]
+          }
+        }
+        list.push(returning)
+      }
+      return list
     },
 
     async aggregate(table: string, args: any) {
