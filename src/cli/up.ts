@@ -95,6 +95,7 @@ async function pg(
       // Determine if the database is created by aca (through aca-specific system table: "___ACA")
       await db.query(sqlDiff.aca.select)
     } catch (e) {
+      console.log(e)
       await db.end()
       throw `Database "${
         (<any>connOption).database
