@@ -34,7 +34,7 @@ const msg = (acaDir: AcaDir, config: Config) => {
   }
 }
 
-async function pg(
+export async function pg(
   acaDir: AcaDir,
   config: Config,
   timestamp,
@@ -122,7 +122,7 @@ async function pg(
   return await (prevDb ? AlterDb() : CreateDb())
 }
 
-async function mssql(
+export async function mssql(
   acaDir: AcaDir,
   config: Config,
   timestamp,
@@ -201,7 +201,7 @@ async function mssql(
   return await (prevDb ? AlterDb() : CreateDb())
 }
 
-async function mysql2(
+export async function mysql2(
   acaDir: AcaDir,
   config: Config,
   timestamp,
@@ -284,7 +284,7 @@ async function mysql2(
   return await (prevDb ? AlterDb() : CreateDb())
 }
 
-async function sqlite3(
+export async function sqlite3(
   acaDir: AcaDir,
   config: Config,
   timestamp,

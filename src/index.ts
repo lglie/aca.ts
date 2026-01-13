@@ -13,7 +13,10 @@ const comment = {
   client: 'create a client app, [appName] default: client',
   add: 'add yourself app to the project, -s(--server) -c(--client), -a(--apiDir) [path]: default src/aca.server src/aca.client',
   up: 'create or alter database schema, and generate api',
+  deploy: 'deploy to production database schema',
+  pull: 'pull database schema from existing database and generate orm file',
   rollback: 'rollback to previous release',
+  undeploy: 'rollback to previous release'
 }
 const usage = `
 aca create <projectName>           ${comment.create}
@@ -21,6 +24,9 @@ aca server [appName]               ${comment.server}
 aca client [appName]               ${comment.client}
 aca add [appName] -s -c -a [path]  ${comment.add}
 aca up                             ${comment.up}
+aca pull                           ${comment.pull}
+aca deploy                         ${comment.deploy}
+aca undeploy                       ${comment.rollback}
 aca rollback                       ${comment.rollback}
 aca --version                      show current version
 `
@@ -32,6 +38,9 @@ if (yargs.argv._.length) {
     .command('client', comment.client, command.client)
     .command('add', comment.add, command.addApp)
     .command('up', comment.up, command.up)
+    .command('pull', comment.pull, command.pull)
+    .command('deploy', comment.deploy, command.deploy)
+    .command('undeploy', comment.rollback, command.deploy)
     .command('rollback', comment.rollback, command.up)
     .usage(usage)
     .help('h')

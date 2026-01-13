@@ -12,7 +12,9 @@ export const AcaTsconfig = `${AcaDir}/tsconfig.json`
 export const AcaMiscDir = `${AcaDir}/.misc`
 export const AcaConfigSchema = `${AcaMiscDir}/config.schema.json`
 export const AcaMiscRecordsDir = `${AcaMiscDir}/records`
+export const AcaMiscDeployDir = `${AcaMiscDir}/deploys`
 export const AcaMiscRemark = `${AcaMiscDir}/remark.json`
+export const AcaMiscDeployRemark = `${AcaMiscDeployDir}/deploy.json`
 export const AcaOrmPropetty = `${AcaMiscDir}/typings.d.ts`
 
 export const DefaultServerName = `server`
