@@ -1,71 +1,73 @@
 interface IHttpClient {
-	fetcher?: (req: RequestInit & {url: string}) => Promise<{
-		data?: any
-		sql?: string[]
-		error?: string
-	}>
-	interceptors?: {
-		request?: (req: RequestInit) => RequestInit
-		response?: (res: { data?: any; sql?: string[]; error?: string, errcode?: number }) => {
-			data?: any
-			sql?: string[]
-			error?: string
-      errcode?: number
-		}
-	}
+  fetcher?: (req: RequestInit & { url: string }) => Promise<{
+    data?: any;
+    sql?: string[];
+    error?: string;
+  }>;
+  interceptors?: {
+    request?: (req: RequestInit) => RequestInit;
+    response?: (res: {
+      data?: any;
+      sql?: string[];
+      error?: string;
+      errcode?: number;
+    }) => {
+      data?: any;
+      sql?: string[];
+      error?: string;
+      errcode?: number;
+    };
+  };
 }
 export class $Request {
   constructor(url: string, init?: RequestInit) {
     if (!url)
-      throw `Here is no URL parameter, please fill in the index.ts of the generated API directory`
-    this.url = url
-    if (init) this.requestInit = init
+      throw `Here is no URL parameter, please fill in the index.ts of the generated API directory`;
+    this.url = url;
+    if (init) this.requestInit = init;
   }
-  private url = ''
+  private url = "";
   private requestInit: RequestInit = {
-    method: 'post',
-    mode: 'cors',
+    method: "post",
+    mode: "cors",
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     },
-  }
+  };
   private HttpClient: IHttpClient = {
     fetcher: undefined,
     interceptors: {
       request: undefined,
       response: undefined,
     },
-  }
+  };
   public req = async (args: any) => {
     if (!this.url)
-      throw `Here is no URL parameter, please fill in the index.ts of the generated API directory`
-    let data
+      throw `Here is no URL parameter, please fill in the index.ts of the generated API directory`;
+    let data;
     if (this.HttpClient.interceptors?.request) {
-      this.requestInit = this.HttpClient.interceptors.request(this.requestInit)
+      this.requestInit = this.HttpClient.interceptors.request(this.requestInit);
     }
     if (this.HttpClient.fetcher) {
-      data = this.HttpClient.fetcher({
+      data = await this.HttpClient.fetcher({
         url: this.url,
         ...this.requestInit,
         body: JSON.stringify(args),
-      })
+      });
     } else {
       const res = await fetch(this.url, {
         ...this.requestInit,
         body: JSON.stringify(args),
-      })
-      data = await res.json()
+      });
+      data = await res.json();
     }
     if (this.HttpClient.interceptors?.response) {
-      data = this.HttpClient.interceptors.response(data)
+      data = this.HttpClient.interceptors.response(data);
     }
-    return data
-  }
-  public setHttpClient({
-    fetcher,
-    interceptors,
-  }: IHttpClient) {
-    fetcher && (this.HttpClient.fetcher = fetcher)
-    interceptors && (this.HttpClient.interceptors = interceptors)
+    return data;
+  };
+  public setHttpClient({ fetcher, interceptors }: IHttpClient) {
+    fetcher && (this.HttpClient.fetcher = fetcher);
+    interceptors && (this.HttpClient.interceptors = interceptors);
   }
 }
